@@ -12,6 +12,7 @@ storeBuilderRouter
     .post( '/updateFloor', isAllowedSessionHandler, validate( validateDtos.updateFloor ), storeBuilderController.updateFloor )
     .post( '/uploadBulkStore', isAllowedSessionHandler, storeBuilderController.uploadBulkStore )
     .post( '/uploadFile', isAllowedSessionHandler, storeBuilderController.uploadFile )
-    .get( '/storeList', isAllowedSessionHandler, storeBuilderController.storeList );
+    .post( '/storeList', isAllowedSessionHandler, storeBuilderController.storeList )
+    .get( '/storeDetails', isAllowedSessionHandler, storeBuilderController.getStoreDetails );
 
 

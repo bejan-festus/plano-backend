@@ -19,3 +19,7 @@ export async function aggregate( query ) {
 export async function updateOne( query, record ) {
   return model.storeModel.updateOne( query, { $set: record } );
 }
+
+export async function findCamera( query, field ) {
+  return model.cameraModel.findOne( query.field );
+}
