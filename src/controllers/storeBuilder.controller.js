@@ -215,7 +215,7 @@ export async function uploadBulkStore( req, res ) {
       },
     ];
     let getStoreDetails = await storeService.aggregate( query );
-    req.body.data.forEach( ( item ) => {
+    req.body.data.forEach( async ( item ) => {
       let findStore = data.find( ( ele ) => ele.storeName == item.storeName && ele.floorNumber == item.floorNumber );
       if ( !findStore ) {
         let getStoreData = req.body.data.filter( ( ele ) => ele.storeName == item.storeName && ele.floorNumber == item.floorNumber );
@@ -295,6 +295,21 @@ export async function getStoreDetails( req, res ) {
     if ( !getStoreDetails ) {
       return res.sendError( 'No data found', 204 );
     }
+    getStoreDetails = { ...getStoreDetails._doc, cameraBaseImage: '', attachments: [] };
+    const camera = await storeService.findCamera( { storeId: req.body.storeId, isUp: true, isActivated: true }, { thumbnailImage: 1 } );
+    if ( camera.thumbnailImage ) {
+      const bucket= JSON.parse( process.env.BUCKET );
+      const params = {
+        file_path: camera.thumbnailImage,
+        Bucket: bucket.baseImage,
+      };
+      const cameraBaseImage = await signedUrl( params );
+      getStoreDetails.cameraBaseImage = cameraBaseImage;
+    }
+
+    let getAttachments = await planoService.findOne( { storeId: req.body.storeId, clientId: req.body.clientId }, { attachments: 1 } );
+    getStoreDetails.attachments = getAttachments?.attachments;
+    return res.sendSuccess( getStoreDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getStoreDetails', error: e, message: req.body } );
     return res.sendError( e, 500 );
@@ -303,12 +318,19 @@ export async function getStoreDetails( req, res ) {
 
 export async function storeList( req, res ) {
   try {
-    let getStoreList = await planoService.find( { clientId: req.query.clientId } );
+    let query;
+    if ( req.body.id ) {
+      query = { _id: req.body.id };
+    }
+    if ( req.body.storeId ) {
+      query = { storeId: { $in: req.body.storeId } };
+    }
+    let getStoreList = await planoService.find( query );
     if ( !getStoreList ) {
       return res.sendError( 'No data found', 204 );
     }
     let idList = getStoreList.map( ( item ) => new mongoose.Types.ObjectId( item._id ) );
-    let query = [
+    query = [
       {
         $match: {
           planoId: { $in: idList },
@@ -318,7 +340,8 @@ export async function storeList( req, res ) {
         $group: {
           _id: '$storeName',
           storeId: { $first: '$storeId' },
-          floor: { $sum: 1 },
+          floor: { $push: { floorName: '$floorName', id: '$_id' } },
+          planoId: { $first: '$planoId' },
         },
       },
       {
@@ -327,6 +350,7 @@ export async function storeList( req, res ) {
           storeName: '$_id',
           storeId: 1,
           floor: 1,
+          planoId: 1,
         },
       },
     ];
