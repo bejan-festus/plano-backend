@@ -68,14 +68,15 @@ export async function updateStoreLayout( req, res ) {
 
 export async function updateFloor( req, res ) {
   try {
-    let getLayoutDetails = await storeBuilderService.findOne( { _id: req.body.id } );
+    let getLayoutDetails = await storeBuilderService.findOne( { planoId: req.body.id } );
     if ( !getLayoutDetails ) {
       return res.sendError( 'no data found', 204 );
     }
+    getLayoutDetails = { ...getLayoutDetails._doc };
     delete getLayoutDetails._id;
     let data = [];
-    for ( let i=1; i<req.body.floorNumber; i++ ) {
-      data.push( { ...getLayoutDetails._doc, floorNumber: i, floorName: `floor ${i}` } );
+    for ( let i=getLayoutDetails.floorNumber + 1; i <= getLayoutDetails.floorNumber + req.body.floorNumber; i++ ) {
+      data.push( { ...getLayoutDetails, floorNumber: i, floorName: `floor ${i}` } );
     }
     await storeBuilderService.insertMany( data );
     return res.sendSuccess( 'Floor added successfully' );
@@ -107,6 +108,7 @@ export async function getLayoutList( req, res ) {
           clientId: { $last: '$clientId' },
           storeId: { $last: '$storeId' },
           createdAt: { $last: '$createdAt' },
+          planoId: { $last: '$planoId' },
         },
       },
       {
@@ -121,6 +123,7 @@ export async function getLayoutList( req, res ) {
           floorNumber: 1,
           status: 1,
           createdAt: 1,
+          planoId: 1,
         },
       },
       { $sort: { createdAt: -1 } },
@@ -340,7 +343,7 @@ export async function storeList( req, res ) {
         $group: {
           _id: '$storeName',
           storeId: { $first: '$storeId' },
-          floor: { $push: { floorName: '$floorName', id: '$_id' } },
+          floor: { $push: { floorName: '$floorName', id: '$_id', layoutPolygon: '$layoutPolygon' } },
           planoId: { $first: '$planoId' },
         },
       },

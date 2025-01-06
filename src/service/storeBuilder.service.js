@@ -5,7 +5,7 @@ export async function find( query={}, field={} ) {
 }
 
 export async function findOne( query={}, field={} ) {
-  return model.storeLayoutModel.findOne( query, field );
+  return model.storeLayoutModel.findOne( query, field ).sort( { floorNumber: -1 } );
 }
 
 export async function insertMany( data ) {
