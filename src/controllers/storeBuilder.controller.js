@@ -40,7 +40,7 @@ export async function createStoreBuilder( req, res ) {
       data.push( { ...params, floorNumber: i, floorName: `floor ${i}` } );
     }
     await storeBuilderService.insertMany( data );
-    return res.sendSuccess( 'Store Layout Created Successfully' );
+    return res.sendSuccess( { message: 'Store Layout Created Successfully', id: planoId._id } );
   } catch ( e ) {
     logger.error( { functionName: 'createStoreBuilder', error: e } );
     return res.sendError( e, 500 );
@@ -126,8 +126,10 @@ export async function getLayoutList( req, res ) {
           planoId: 1,
         },
       },
-      { $sort: { createdAt: -1 } },
     ];
+    if ( req.body?.sortColumnName == '' && req.body.sortBy == '' ) {
+      query.push( { $sort: { createdAt: -1 } } );
+    }
     if ( req.body?.filter.length ) {
       query.push( {
         $match: {
@@ -160,6 +162,11 @@ export async function getLayoutList( req, res ) {
         );
       }
     }
+    if ( req.body?.sortColumnName != '' && req.body.sortBy != '' ) {
+      query.push( {
+        $sort: { [req.body.sortColumnName]: req.body.sortBy },
+      } );
+    }
     query.push( {
       $facet: {
         data: [
@@ -170,15 +177,7 @@ export async function getLayoutList( req, res ) {
         ],
       },
     } );
-    if ( req.body?.sortColumnName != '' && req.body.sortBy != '' ) {
-      query.push( {
-        $sort: { [req.body.sortColumnName]: req.body.sortBy },
-      } );
-    }
-    console.log( JSON.stringify( query ) );
-
     let storeLayoutList = await storeBuilderService.aggregate( query );
-    console.log( storeLayoutList );
     if ( !storeLayoutList[0].data.length ) {
       return res.sendError( 'No data found', 204 );
     }
@@ -197,6 +196,7 @@ export async function getLayoutList( req, res ) {
 export async function uploadBulkStore( req, res ) {
   try {
     let data = [];
+    let planoData = [];
     let storeList = req.body.data.map( ( ele ) => ele['storeName'].toLowerCase() );
     let query = [
       {
@@ -218,7 +218,30 @@ export async function uploadBulkStore( req, res ) {
       },
     ];
     let getStoreDetails = await storeService.aggregate( query );
-    req.body.data.forEach( async ( item ) => {
+    storeList = [ ...new Set( getStoreDetails.map( ( item ) => item.storeId ) ) ];
+
+    let duplicateStoreList = await planoService.find( { storeId: storeList } );
+
+    if ( duplicateStoreList.length ) {
+      let existStore = duplicateStoreList.map( ( ele ) => ele.storeName );
+      return res.sendError( `${existStore.toString()} - store Already exists`, 400 );
+    }
+
+    for ( let ele of getStoreDetails ) {
+      let insertData = {
+        storeName: ele.storeName,
+        storeId: ele.storeId,
+        layoutName: `${ele.storeName} - Layout`,
+        clientId: req.body.clientId,
+        createdBy: req.user._id,
+        createdByName: req.user.userName,
+        createdByEmail: req.user.email,
+      };
+      let planoRes = await planoService.create( insertData );
+      planoData.push( { id: planoRes, storeName: planoRes.storeName } );
+    }
+
+    req.body.data.forEach( ( item ) => {
       let findStore = data.find( ( ele ) => ele.storeName == item.storeName && ele.floorNumber == item.floorNumber );
       if ( !findStore ) {
         let getStoreData = req.body.data.filter( ( ele ) => ele.storeName == item.storeName && ele.floorNumber == item.floorNumber );
@@ -236,6 +259,7 @@ export async function uploadBulkStore( req, res ) {
 
         let getStoreId = getStoreDetails.find( ( ele ) => ele.storeName == item.storeName );
         if ( getStoreId ) {
+          let getPlanoId = planoData.find( ( ele ) => ele.storeName == item.storeName );
           data.push( {
             storeName: item.storeName,
             storeId: getStoreId.storeId,
@@ -247,6 +271,7 @@ export async function uploadBulkStore( req, res ) {
             layoutPolygon: layoutPolygon,
             floorNumber: item.floorNumber,
             floorName: `floor ${item.floorNumber}`,
+            planoId: getPlanoId?.id,
           } );
         }
       }
@@ -321,18 +346,13 @@ export async function getStoreDetails( req, res ) {
 
 export async function storeList( req, res ) {
   try {
-    let query;
-    if ( req.body.id ) {
-      query = { _id: req.body.id };
-    }
-    if ( req.body.storeId ) {
-      query = { storeId: { $in: req.body.storeId } };
-    }
+    let idList = req.body.id.map( ( item ) => new mongoose.Types.ObjectId );
+    let query = { _id: { $in: req.body.id } };
     let getStoreList = await planoService.find( query );
     if ( !getStoreList ) {
       return res.sendError( 'No data found', 204 );
     }
-    let idList = getStoreList.map( ( item ) => new mongoose.Types.ObjectId( item._id ) );
+    idList = getStoreList.map( ( item ) => new mongoose.Types.ObjectId( item._id ) );
     query = [
       {
         $match: {
@@ -362,6 +382,22 @@ export async function storeList( req, res ) {
       return res.sendError( 'No data found', 204 );
     }
     return res.sendSuccess( getStoreList );
+  } catch ( e ) {
+    logger.error( { functionName: 'storeList', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function deleteStoreLayout( req, res ) {
+  try {
+    let getDetails = await planoService.findOne( { _id: req.body.id } );
+    if ( !getDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    await storeBuilderService.deleteMany( { planoId: req.body.id } );
+    await planoService.deleteOne( { _id: req.body.id } );
+    return res.sendSuccess( 'Store layout successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'storeList', error: e, message: req.body } );
     return res.sendError( e, 500 );
