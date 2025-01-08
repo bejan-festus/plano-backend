@@ -286,26 +286,29 @@ export async function uploadBulkStore( req, res ) {
 
 export async function uploadFile( req, res ) {
   try {
+    let getPlanoDetails = await planoService.findOne( { _id: req.body.id } );
+    if ( !getPlanoDetails ) {
+      return res.sendError( 'No data found' );
+    }
     if ( req.files.file ) {
       let bucket = JSON.parse( process.env.Bucket );
       let params ={
         Bucket: bucket.storeBuilder,
-        Key: `${req.body.clientId}/${req.body.storeName}/attachments/`,
+        Key: `${getPlanoDetails.clientId}/${getPlanoDetails.storeName}/attachments/`,
         fileName: req.files.file.name,
         ContentType: req.files.file.mimetype,
         body: req.files.file.data,
       };
       let fileuploadRes = await fileUpload( params );
-      let updateAttachments = await planoService.findOne( { storeName: req.body.storeName, clientId: req.body.clientId } );
-      if ( updateAttachments ) {
-        let updateRes = await planoService.updateOne( { _id: updateAttachments. _id }, { $push: { attachments: fileuploadRes.Key } } );
+      if ( getPlanoDetails ) {
+        let updateRes = await planoService.updateOne( { _id: getPlanoDetails. _id }, { $push: { attachments: fileuploadRes.Key } } );
         if ( updateRes.modifiedCount ) {
           let params = {
             Bucket: bucket.storeBuilder,
             file_path: fileuploadRes.Key,
           };
           let getSignedUrl = await signedUrl( params );
-          return res.sendSuccess( getSignedUrl );
+          return res.sendSuccess( { url: getSignedUrl, name: fileuploadRes.Key.split( '/' ).pop() } );
         }
       } else {
         return res.sendError( 'Something went wrong', 500 );
@@ -336,7 +339,15 @@ export async function getStoreDetails( req, res ) {
     }
 
     let getAttachments = await planoService.findOne( { storeId: req.body.storeId, clientId: req.body.clientId }, { attachments: 1 } );
-    getStoreDetails.attachments = getAttachments?.attachments;
+    let bucket = JSON.parse( process.env.BUCKET );
+    for ( let attach of getAttachments?.attachments ) {
+      let params = {
+        Bucket: bucket.storeBuilder,
+        file_path: attach,
+      };
+      let getSignedUrl = await signedUrl( params );
+      getStoreDetails.attachments .push( { url: getSignedUrl, name: attach.split( '/' ).pop() } );
+    }
     return res.sendSuccess( getStoreDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getStoreDetails', error: e, message: req.body } );
@@ -399,7 +410,25 @@ export async function deleteStoreLayout( req, res ) {
     await planoService.deleteOne( { _id: req.body.id } );
     return res.sendSuccess( 'Store layout successfully' );
   } catch ( e ) {
-    logger.error( { functionName: 'storeList', error: e, message: req.body } );
+    logger.error( { functionName: 'deleteStoreLayout', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function deleteFile( req, res ) {
+  try {
+    let getPlanoDetails = await planoService.findOne( { _id: req.body.id } );
+    if ( !getPlanoDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    let updateFileRes = await planoService.updateOne( { _id: req.body.id }, { $unset: { 'attachments.0': req.body.fileIndex } } );
+    updateFileRes = await planoService.updateOne( { _id: req.body.id }, { $pull: { 'attachments': null } } );
+    if ( updateFileRes.matchedCount ) {
+      return res.sendSuccess( 'File removed successfully' );
+    }
+  } catch ( e ) {
+    logger.error( { functionName: 'deleteFile', error: e, message: req.body } );
     return res.sendError( e, 500 );
   }
 }
