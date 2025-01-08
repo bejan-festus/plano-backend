@@ -20,6 +20,10 @@ export async function updateOne( query, record ) {
   return model.planogramModel.updateOne( query, record );
 }
 
+export async function deleteOne( query ) {
+  return model.planogramModel.deleteOne( query );
+}
+
 export async function create( data ) {
   return model.planogramModel.create( data );
 }
