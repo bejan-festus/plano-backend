@@ -238,7 +238,7 @@ export async function uploadBulkStore( req, res ) {
         createdByEmail: req.user.email,
       };
       let planoRes = await planoService.create( insertData );
-      planoData.push( { id: planoRes, storeName: planoRes.storeName } );
+      planoData.push( { id: planoRes._id, storeName: planoRes.storeName } );
     }
 
     req.body.data.forEach( ( item ) => {
@@ -248,12 +248,14 @@ export async function uploadBulkStore( req, res ) {
         getStoreData = getStoreData.sort( ( a, b ) => a.step - b.step );
         let layoutPolygon = [];
         getStoreData.forEach( ( ele ) => {
+          let findEle = layoutPolygon.filter( ( element ) => element.elementType == ele.elements );
           layoutPolygon.push( {
             elementType: ele.elements,
             distance: ele.distance,
             unit: 'ft',
             direction: ele.direction,
             angle: ele.degree,
+            elementNumber: findEle.length ? `${findEle.length + 1}` : `1`,
           } );
         } );
 
@@ -276,8 +278,9 @@ export async function uploadBulkStore( req, res ) {
         }
       }
     } );
-    storeBuilderService.insertMany( data );
-    return res.sendSuccess( 'Bulk Stored upload successfully' );
+    await storeBuilderService.insertMany( data );
+    let planoIdList = planoData.map( ( ele ) => ele.id );
+    return res.sendSuccess( { message: 'Bulk Stored upload successfully', id: planoIdList.toString() } );
   } catch ( e ) {
     logger.error( { functionName: 'uploadBulkStore', error: e, message: req.body } );
     return res.sendError( e, 500 );
@@ -429,6 +432,21 @@ export async function deleteFile( req, res ) {
     }
   } catch ( e ) {
     logger.error( { functionName: 'deleteFile', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function deleteFloor( req, res ) {
+  try {
+    let getBuilderDetails = await storeBuilderService.findOne( { _id: req.body.id } );
+    if ( !getBuilderDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    await storeBuilderService.deleteOne( { _id: req.body.id } );
+    return res.sendSuccess( 'Floor Deleted successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'deleteFloor', error: e, message: req.body } );
     return res.sendError( e, 500 );
   }
 }

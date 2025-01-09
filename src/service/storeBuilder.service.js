@@ -16,6 +16,10 @@ export async function deleteMany( data ) {
   return model.storeLayoutModel.deleteMany( data );
 }
 
+export async function deleteOne( data ) {
+  return model.storeLayoutModel.deleteOne( data );
+}
+
 export async function aggregate( query ) {
   return model.storeLayoutModel.aggregate( query, { collation: { locale: 'en_US', numericOrdering: true } } );
 }
