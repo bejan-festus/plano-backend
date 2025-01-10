@@ -20,6 +20,10 @@ export async function updateOne( query, record ) {
   return model.planogramModel.updateOne( query, record );
 }
 
+export async function updateMany( query, record ) {
+  return model.planogramModel.updateMany( query, { $set: record } );
+}
+
 export async function deleteOne( query ) {
   return model.planogramModel.deleteOne( query );
 }

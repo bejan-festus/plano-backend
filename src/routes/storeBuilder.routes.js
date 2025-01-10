@@ -16,6 +16,7 @@ storeBuilderRouter
     .post( '/storeDetails', isAllowedSessionHandler, validate( validateDtos.storeDetails ), storeBuilderController.getStoreDetails )
     .delete( '/deleteStoreLayout:/id', isAllowedSessionHandler, validate( validateDtos.deleteStoreLayout ), storeBuilderController.deleteStoreLayout )
     .post( '/removeFile', isAllowedSessionHandler, storeBuilderController.deleteFile )
-    .post( '/deleteFloor', isAllowedSessionHandler, storeBuilderController.deleteFloor );
+    .post( '/deleteFloor', isAllowedSessionHandler, storeBuilderController.deleteFloor )
+    .post( '/updateStatus', isAllowedSessionHandler, validate( validateDtos.updateStatus ), storeBuilderController.updateStatus );
 
 

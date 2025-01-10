@@ -27,3 +27,7 @@ export async function aggregate( query ) {
 export async function updateOne( query, record ) {
   return model.storeLayoutModel.updateOne( query, { $set: record } );
 }
+
+export async function updateMany( query, record ) {
+  return model.storeLayoutModel.updateMany( query, { $set: record } );
+}
