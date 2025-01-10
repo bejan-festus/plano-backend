@@ -24,6 +24,7 @@ export async function createStoreBuilder( req, res ) {
       createdBy: req.user._id,
       createdByName: req.user.userName,
       createdByEmail: req.user.email,
+      floorNumber: req.body.floorNumber,
     };
     let planoId = await planoService.create( insertData );
     let params = {
@@ -68,7 +69,7 @@ export async function updateStoreLayout( req, res ) {
 
 export async function updateFloor( req, res ) {
   try {
-    let getLayoutDetails = await storeBuilderService.findOne( { planoId: req.body.id } );
+    let getLayoutDetails = await planoService.findOne( { _id: req.body.id } );
     if ( !getLayoutDetails ) {
       return res.sendError( 'no data found', 204 );
     }
@@ -83,9 +84,12 @@ export async function updateFloor( req, res ) {
       planoId: req.body.id,
     };
     let data = [];
-    for ( let i=getLayoutDetails.floorNumber + 1; i <= getLayoutDetails.floorNumber + req.body.floorNumber; i++ ) {
+    let num = getLayoutDetails.floorNumber + req.body.floorNumber;
+    for ( let i=getLayoutDetails.floorNumber + 1; i <= num; i++ ) {
       data.push( { ...params, floorNumber: i, floorName: `floor ${i}` } );
     }
+    getLayoutDetails.floorNumber = num;
+    getLayoutDetails.save();
     await storeBuilderService.insertMany( data );
     return res.sendSuccess( 'Floor added successfully' );
   } catch ( e ) {
@@ -103,35 +107,6 @@ export async function getLayoutList( req, res ) {
       {
         $match: {
           clientId: req.body.clientId,
-        },
-      },
-      {
-        $group: {
-          _id: '$storeName',
-          floorNumber: { $sum: 1 },
-          createdByName: { $last: '$createdByName' },
-          layoutName: { $last: '$layoutName' },
-          status: { $last: '$status' },
-          floorName: { $last: '$floorName' },
-          clientId: { $last: '$clientId' },
-          storeId: { $last: '$storeId' },
-          createdAt: { $last: '$createdAt' },
-          planoId: { $last: '$planoId' },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          storeName: '$_id',
-          storeId: 1,
-          layoutName: 1,
-          floorName: 1,
-          clientId: 1,
-          createdByName: 1,
-          floorNumber: 1,
-          status: 1,
-          createdAt: 1,
-          planoId: 1,
         },
       },
     ];
@@ -185,7 +160,7 @@ export async function getLayoutList( req, res ) {
         ],
       },
     } );
-    let storeLayoutList = await storeBuilderService.aggregate( query );
+    let storeLayoutList = await planoService.aggregate( query );
     if ( !storeLayoutList[0].data.length ) {
       return res.sendError( 'No data found', 204 );
     }
@@ -205,6 +180,7 @@ export async function uploadBulkStore( req, res ) {
   try {
     let data = [];
     let planoData = [];
+    let error = [];
     let storeList = req.body.data.map( ( ele ) => ele['storeName'].toLowerCase() );
     let query = [
       {
@@ -228,24 +204,40 @@ export async function uploadBulkStore( req, res ) {
     let getStoreDetails = await storeService.aggregate( query );
     if ( !getStoreDetails.length ) {
       let invalidStoreList = [ ...new Set( req.body.data.map( ( ele ) => ele.storeName ) ) ];
-      return res.sendError( `invalid Stores ${invalidStoreList.toString()}`, 400 );
+      return res.sendError( [ { message: 'Invalid Stores', value: invalidStoreList } ], 400 );
     }
-    let existStore = getStoreDetails.map( ( element ) => element.storeName );
-    let invalidStoreList = req.body.data.filter( ( ele ) => !existStore.includes( ele.storeName ) );
-    if ( !invalidStoreList.length ) {
+    let existStore = getStoreDetails.map( ( element ) => element.storeName.toLowerCase() );
+    let invalidStoreList = req.body.data.filter( ( ele ) => !existStore.includes( ele.storeName.toLowerCase() ) );
+    if ( invalidStoreList.length ) {
       invalidStoreList = [ ...new Set( invalidStoreList.map( ( ele ) => ele.storeName ) ) ];
-      return res.sendError( `invalid Stores ${invalidStoreList.toString()}`, 400 );
+      error.push( { message: 'Invalid Stores', value: invalidStoreList } );
     }
     storeList = [ ...new Set( getStoreDetails.map( ( item ) => item.storeId ) ) ];
 
     let duplicateStoreList = await planoService.find( { storeId: storeList } );
-
     if ( duplicateStoreList.length ) {
-      let existStore = duplicateStoreList.map( ( ele ) => ele.storeName );
-      return res.sendError( `${existStore.toString()} - store Already exists`, 400 );
+      let existStore = [];
+      let planoIdList = duplicateStoreList.map( ( item ) => item._id );
+      let getStorePlanoDetails = await storeBuilderService.find( { planoId: { $in: planoIdList } }, { floorNumber: 1, storeName: 1 } );
+      if ( getStorePlanoDetails ) {
+        getStorePlanoDetails.forEach( ( item ) => {
+          let existsData = req.body.data.find( ( ele ) => ele.storeName.toLowerCase() == item.storeName.toLowerCase() && ele.floorNumber == item.floorNumber );
+          if ( existsData ) {
+            existStore.push( item.storeName );
+          }
+        } );
+      }
+      if ( existStore.length ) {
+        error.push( { message: 'Duplicate Store Name', value: existStore } );
+      }
+    }
+
+    if ( error.length ) {
+      return res.sendError( error, 400 );
     }
 
     for ( let ele of getStoreDetails ) {
+      let getNumber = req.body.data.filter( ( store ) => store.storeName == ele.storeName ).sort( ( a, b ) => b.floorNumber - a.floorNumber );
       let insertData = {
         storeName: ele.storeName,
         storeId: ele.storeId,
@@ -254,16 +246,16 @@ export async function uploadBulkStore( req, res ) {
         createdBy: req.user._id,
         createdByName: req.user.userName,
         createdByEmail: req.user.email,
+        floorNumber: getNumber?.[0]?.floorNumber,
       };
       let planoRes = await planoService.create( insertData );
       planoData.push( { id: planoRes._id, storeName: planoRes.storeName } );
-      console.log( planoData );
     }
 
     req.body.data.forEach( ( item ) => {
-      let findStore = data.find( ( ele ) => ele.storeName == item.storeName && ele.floorNumber == item.floorNumber );
+      let findStore = data.find( ( ele ) => ele.storeName.toLowerCase() == item.storeName.toLowerCase() && ele.floorNumber == item.floorNumber );
       if ( !findStore ) {
-        let getStoreData = req.body.data.filter( ( ele ) => ele.storeName == item.storeName && ele.floorNumber == item.floorNumber );
+        let getStoreData = req.body.data.filter( ( ele ) => ele.storeName.toLowerCase() == item.storeName.toLowerCase() && ele.floorNumber == item.floorNumber );
         getStoreData = getStoreData.sort( ( a, b ) => a.step - b.step );
         let layoutPolygon = [];
         getStoreData.forEach( ( ele ) => {
@@ -282,7 +274,7 @@ export async function uploadBulkStore( req, res ) {
         if ( getStoreId ) {
           let getPlanoId = planoData.find( ( ele ) => ele.storeName == item.storeName );
           data.push( {
-            storeName: item.storeName,
+            storeName: getStoreId.storeName,
             storeId: getStoreId.storeId,
             layoutName: `${item.storeName} - Layout`,
             clientId: req.body.clientId,
@@ -297,7 +289,6 @@ export async function uploadBulkStore( req, res ) {
         }
       }
     } );
-    console.log( data );
     await storeBuilderService.insertMany( data );
     let planoIdList = planoData.map( ( ele ) => ele.id );
     return res.sendSuccess( { message: 'Bulk Stored upload successfully', id: planoIdList.toString() } );
