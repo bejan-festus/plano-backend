@@ -1,11 +1,11 @@
 {
     "name": "store-builder",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "store-builder",
-    "main": "index.js.js",
+    "main": "index.js",
     "type": "module",
     "scripts": {
-        "start": "nodemon --exec \"eslint --fix . && node index.js.js\""
+        "start": "nodemon --exec \"eslint --fix . && node index.js\""
     },
     "engines": {
         "node": ">=18.10.0"
