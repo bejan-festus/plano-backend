@@ -72,11 +72,19 @@ export async function updateFloor( req, res ) {
     if ( !getLayoutDetails ) {
       return res.sendError( 'no data found', 204 );
     }
-    getLayoutDetails = { ...getLayoutDetails._doc };
-    delete getLayoutDetails._id;
+    let params = {
+      storeName: getLayoutDetails.storeName,
+      storeId: getLayoutDetails.storeId,
+      layoutName: `${getLayoutDetails.storeName} - Layout`,
+      clientId: getLayoutDetails.clientId,
+      createdBy: req.user._id,
+      createdByName: req.user.userName,
+      createdByEmail: req.user.email,
+      planoId: req.body.id,
+    };
     let data = [];
     for ( let i=getLayoutDetails.floorNumber + 1; i <= getLayoutDetails.floorNumber + req.body.floorNumber; i++ ) {
-      data.push( { ...getLayoutDetails, floorNumber: i, floorName: `floor ${i}` } );
+      data.push( { ...params, floorNumber: i, floorName: `floor ${i}` } );
     }
     await storeBuilderService.insertMany( data );
     return res.sendSuccess( 'Floor added successfully' );
@@ -390,6 +398,7 @@ export async function storeList( req, res ) {
           planoId: 1,
         },
       },
+      { $sort: { createdAt: -1 } },
     ];
     getStoreList = await storeBuilderService.aggregate( query );
     if ( !getStoreList.length ) {
