@@ -70,3 +70,13 @@ export const deleteStoreLayout = {
   params: deleteStoreLayoutSchema,
 };
 
+export const updateStatusSchema = joi.object( {
+  storeId: joi.array().required(),
+  status: joi.string().required(),
+} );
+
+export const updateStatus = {
+  body: updateStatusSchema,
+};
+
+

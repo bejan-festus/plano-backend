@@ -226,6 +226,16 @@ export async function uploadBulkStore( req, res ) {
       },
     ];
     let getStoreDetails = await storeService.aggregate( query );
+    if ( !getStoreDetails.length ) {
+      let invalidStoreList = [ ...new Set( req.body.data.map( ( ele ) => ele.storeName ) ) ];
+      return res.sendError( `invalid Stores ${invalidStoreList.toString()}`, 400 );
+    }
+    let existStore = getStoreDetails.map( ( element ) => element.storeName );
+    let invalidStoreList = req.body.data.filter( ( ele ) => !existStore.includes( ele.storeName ) );
+    if ( !invalidStoreList.length ) {
+      invalidStoreList = [ ...new Set( invalidStoreList.map( ( ele ) => ele.storeName ) ) ];
+      return res.sendError( `invalid Stores ${invalidStoreList.toString()}`, 400 );
+    }
     storeList = [ ...new Set( getStoreDetails.map( ( item ) => item.storeId ) ) ];
 
     let duplicateStoreList = await planoService.find( { storeId: storeList } );
@@ -247,6 +257,7 @@ export async function uploadBulkStore( req, res ) {
       };
       let planoRes = await planoService.create( insertData );
       planoData.push( { id: planoRes._id, storeName: planoRes.storeName } );
+      console.log( planoData );
     }
 
     req.body.data.forEach( ( item ) => {
@@ -286,6 +297,7 @@ export async function uploadBulkStore( req, res ) {
         }
       }
     } );
+    console.log( data );
     await storeBuilderService.insertMany( data );
     let planoIdList = planoData.map( ( ele ) => ele.id );
     return res.sendSuccess( { message: 'Bulk Stored upload successfully', id: planoIdList.toString() } );
@@ -459,3 +471,24 @@ export async function deleteFloor( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+
+export async function updateStatus( req, res ) {
+  try {
+    let getBuilderDetails = await planoService.find( { storeId: { $in: req.body.storeId } } );
+    if ( !getBuilderDetails.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    getBuilderDetails.status = req.body.status;
+    await planoService.updateMany( { storeId: { $in: req.body.storeId } }, { status: req.body.status } );
+    let planoId = getBuilderDetails.map( ( item ) => item._id );
+    await storeBuilderService.updateMany( { planoId: { $in: planoId } }, { status: req.body.status } );
+
+    return res.sendSuccess( 'Statu updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateStatus', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
+
