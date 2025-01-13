@@ -416,16 +416,16 @@ export async function storeList( req, res ) {
 
 export async function deleteStoreLayout( req, res ) {
   try {
-    let getDetails = await planoService.findOne( { _id: req.body.id } );
+    let getDetails = await planoService.findOne( { _id: req.params.id } );
     if ( !getDetails ) {
       return res.sendError( 'No data found', 204 );
     }
 
-    await storeBuilderService.deleteMany( { planoId: req.body.id } );
-    await planoService.deleteOne( { _id: req.body.id } );
+    await storeBuilderService.deleteMany( { planoId: req.params.id } );
+    await planoService.deleteOne( { _id: req.params.id } );
     return res.sendSuccess( 'Store layout successfully' );
   } catch ( e ) {
-    logger.error( { functionName: 'deleteStoreLayout', error: e, message: req.body } );
+    logger.error( { functionName: 'deleteStoreLayout', error: e, message: req.params } );
     return res.sendError( e, 500 );
   }
 }
@@ -454,6 +454,10 @@ export async function deleteFloor( req, res ) {
     if ( !getBuilderDetails ) {
       return res.sendError( 'No data found', 204 );
     }
+
+    let planoDetails = await planoService.findOne( { _id: getBuilderDetails.planoId } );
+    planoDetails.floorNumber = planoDetails.floorNumber - 1;
+    planoDetails.save();
 
     await storeBuilderService.deleteOne( { _id: req.body.id } );
     return res.sendSuccess( 'Floor Deleted successfully' );
