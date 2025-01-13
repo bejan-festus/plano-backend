@@ -455,6 +455,10 @@ export async function deleteFloor( req, res ) {
       return res.sendError( 'No data found', 204 );
     }
 
+    let planoDetails = await planoService.findOne( { _id: getBuilderDetails.planoId } );
+    planoDetails.floorNumber = planoDetails.floorNumber - 1;
+    planoDetails.save();
+
     await storeBuilderService.deleteOne( { _id: req.body.id } );
     return res.sendSuccess( 'Floor Deleted successfully' );
   } catch ( e ) {
