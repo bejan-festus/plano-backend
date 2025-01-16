@@ -305,7 +305,7 @@ export async function uploadFile( req, res ) {
       return res.sendError( 'No data found' );
     }
     if ( req.files.file ) {
-      let bucket = JSON.parse( process.env.Bucket );
+      let bucket = JSON.parse( process.env.BUCKET );
       let params ={
         Bucket: bucket.storeBuilder,
         Key: `${getPlanoDetails.clientId}/${getPlanoDetails.storeName}/attachments/`,
