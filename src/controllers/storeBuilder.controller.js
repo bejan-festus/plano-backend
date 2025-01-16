@@ -423,7 +423,7 @@ export async function deleteStoreLayout( req, res ) {
 
     await storeBuilderService.deleteMany( { planoId: req.params.id } );
     await planoService.deleteOne( { _id: req.params.id } );
-    return res.sendSuccess( 'Store layout successfully' );
+    return res.sendSuccess( 'Layout deleted successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'deleteStoreLayout', error: e, message: req.params } );
     return res.sendError( e, 500 );
