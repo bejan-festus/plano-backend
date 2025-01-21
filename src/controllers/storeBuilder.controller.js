@@ -6,6 +6,11 @@ import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 import utc from 'dayjs/plugin/utc.js';
 import mongoose from 'mongoose';
+import * as storeFixtureService from '../service/storeFixture.service.js';
+import * as fixtureShelfService from '../service/fixtureShelf.service.js';
+import * as planoProductService from '../service/planoProduct.service.js';
+import * as planoMappingService from '../service/planoMapping.service.js';
+import * as planoComplianceService from '../service/planoCompliance.service.js';
 dayjs.extend( utc );
 dayjs.extend( customParseFormat );
 
@@ -371,13 +376,13 @@ export async function getStoreDetails( req, res ) {
 
 export async function storeList( req, res ) {
   try {
-    let idList = req.body.id.map( ( item ) => new mongoose.Types.ObjectId );
+    let idList = req.body.id.map( ( item ) => new mongoose.Types.ObjectId( item ) );
     let query = { _id: { $in: req.body.id } };
-    let getStoreList = await planoService.find( query );
-    if ( !getStoreList ) {
+    let getPlanoDetails = await planoService.find( query );
+    if ( !getPlanoDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-    idList = getStoreList.map( ( item ) => new mongoose.Types.ObjectId( item._id ) );
+    idList = getPlanoDetails.map( ( item ) => new mongoose.Types.ObjectId( item._id ) );
     query = [
       {
         $match: {
@@ -403,11 +408,20 @@ export async function storeList( req, res ) {
       },
       { $sort: { createdAt: -1 } },
     ];
-    getStoreList = await storeBuilderService.aggregate( query );
+    let getStoreList = await storeBuilderService.aggregate( query );
     if ( !getStoreList.length ) {
       return res.sendError( 'No data found', 204 );
     }
-    return res.sendSuccess( getStoreList );
+    let fixtureDetails = await storeFixtureService.find( { planoId: { $in: idList } } );
+    for ( let layout of getStoreList ) {
+      for ( let floor of layout.floor ) {
+        for ( let polygon of floor.layoutPolygon ) {
+          let polygonfixtureDetails = fixtureDetails.filter( ( ele ) => layout.planoId.toString() == ele.planoId.toString() && ele.floorId.toString() == floor.id.toString() && ele.associatedElementType == polygon.elementType && ele.associatedElementNumber == polygon.elementNumber );
+          polygon.fixture = polygonfixtureDetails;
+        }
+      }
+    }
+    return res.sendSuccess( { FloorDetails: getStoreList, productResolutionLevel: getPlanoDetails?.productResolutionLevel || '', productResolutionFilters: getPlanoDetails?.productResolutionFilters || [] } );
   } catch ( e ) {
     logger.error( { functionName: 'storeList', error: e, message: req.body } );
     return res.sendError( e, 500 );
@@ -482,6 +496,118 @@ export async function updateStatus( req, res ) {
     return res.sendSuccess( 'Status updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateStatus', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function fixtureShelfProduct( req, res ) {
+  try {
+    if ( !req.body.fixtureId ) {
+      return res.sendError( 'Fixture id is required', 400 );
+    }
+
+    let fixtureDetails = await storeFixtureService.findOne( { _id: req.body.fixtureId } );
+    if ( !fixtureDetails ) {
+      return res.sendError( 'Fixture not found', 204 );
+    }
+    let shelfDetails = await fixtureShelfService.find( { fixtureId: req.body.fixtureId } );
+    let shelfList = [];
+    for ( let shelf of shelfDetails ) {
+      let data = { ...shelf._doc, products: [] };
+      let productMappingDetails = await planoMappingService.find( { shelfId: shelf._id } );
+      let productIdList = productMappingDetails.map( ( item ) => item.productId );
+      let productDetails = await planoProductService.find( { _id: productIdList } );
+      data.products = productDetails;
+      shelfList.push( data );
+    }
+    console.log( shelfList );
+    fixtureDetails = { ...fixtureDetails._doc, shelves: shelfList };
+    return res.sendSuccess( fixtureDetails );
+  } catch ( e ) {
+    logger.error( { functionName: 'fixtureShelfProduct', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function scan( req, res ) {
+  try {
+    if ( !req.body.planoId ) {
+      return res.sendError( 'Plano id is required', 400 );
+    }
+    if ( !req.body.rfId ) {
+      return res.sendError( 'RFID is required', 400 );
+    }
+    let planoDetails = await planoService.findOne( { _id: req.body.planoId } );
+    if ( !planoDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    let productCheck= await planoMappingService.findOne( { rfId: req.body.rfId } );
+    if ( !productCheck ) {
+      return res.sendError( 'Product not found', 400 );
+    }
+    let query;
+    switch ( planoDetails.productResolutionLevel ) {
+      case 'L1':
+        if ( !req.body.floorId ) {
+          return res.sendError( 'Floor id is required', 400 );
+        }
+        query = { floorId: req.body.floorId };
+        break;
+      case 'L2':
+        if ( !req.body.floorId ) {
+          return res.sendError( 'Floor id is required', 400 );
+        }
+        if ( !req.body.fixtureId ) {
+          return res.sendError( 'Fixture id is required', 400 );
+        }
+        query = { floorId: req.body.floorId, fixtureId: req.body.fixtureId };
+        break;
+      case 'L3':
+        if ( !req.body.floorId ) {
+          return res.sendError( 'Floor id is required', 400 );
+        }
+        if ( !req.body.fixtureId ) {
+          return res.sendError( 'Fixture id is required', 400 );
+        }
+        if ( !req.body.shelfId ) {
+          return res.sendError( 'Shelf id is required', 400 );
+        }
+        query = { floorId: req.body.floorId, fixtureId: req.body.fixtureId, shelfId: req.body.shelfId };
+        break;
+      case 'L4':
+        if ( !req.body.floorId ) {
+          return res.sendError( 'Floor id is required', 400 );
+        }
+        if ( !req.body.fixtureId ) {
+          return res.sendError( 'Fixture id is required', 400 );
+        }
+        if ( !req.body.shelfId ) {
+          return res.sendError( 'Shelf id is required', 400 );
+        }
+        if ( !req.body.shelfPosition ) {
+          return res.sendError( 'Shelf position is required', 400 );
+        }
+        query = { floorId: req.body.floorId, fixtureId: req.body.fixtureId, shelfId: req.body.shelfId, shelfPosition: req.body.shelfPosition };
+        break;
+      default:
+        break;
+    }
+    query = { ...query, rfId: req.body.rfId };
+
+    let planoProductDetails = await planoMappingService.findOne( query );
+    let data = {
+      ...( planoProductDetails ) ? { ...planoProductDetails._doc } : { planoId: req.body?.planoId, floorId: req.body?.floorId, fixtureId: req.body?.fixtureId, shelfId: req.body?.shelfId, clientId: planoDetails.clientId, storeName: planoDetails.storeName, storeId: planoDetails.storeId, shelfPosition: req.body?.shelfPosition },
+      rfId: req.body.rfId,
+      compliance: !planoProductDetails ? 'misplaced' : 'proper',
+    };
+    delete data._id;
+    await planoComplianceService.create( data );
+    if ( !planoProductDetails ) {
+      return res.sendSuccess( false );
+    }
+    return res.sendSuccess( true );
+  } catch ( e ) {
+    logger.error( { functonName: 'scan', error: e } );
     return res.sendError( e, 500 );
   }
 }
