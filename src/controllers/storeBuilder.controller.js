@@ -41,7 +41,7 @@ export async function createStoreBuilder( req, res ) {
       data.push( { ...params, floorNumber: i, floorName: `floor ${i}` } );
     }
     await storeBuilderService.insertMany( data );
-    return res.sendSuccess( { message: 'Store Layout Created Successfully', id: planoId._id } );
+    return res.sendSuccess( { message: 'Store layout created successfully', id: planoId._id } );
   } catch ( e ) {
     logger.error( { functionName: 'createStoreBuilder', error: e } );
     return res.sendError( e, 500 );
@@ -57,7 +57,7 @@ export async function updateStoreLayout( req, res ) {
     getLayoutDetails.status = req.body.status;
     getLayoutDetails.layoutPolygon = req.body.layoutPolygon;
     getLayoutDetails.save().then( () => {
-      return res.sendSuccess( 'Store Layout Updated Successfully' );
+      return res.sendSuccess( 'Store layout updated successfully' );
     } ).catch( ( e ) => {
       return res.sendError( e, 500 );
     } );
@@ -101,7 +101,7 @@ export async function updateFloor( req, res ) {
 export async function getLayoutList( req, res ) {
   try {
     let limit = req.body?.limit || 10;
-    let page = req.body?.offset || 0;
+    let page = req.body?.offset - 1 || 0;
     let skip = limit * page;
     let query = [
       {
@@ -153,7 +153,7 @@ export async function getLayoutList( req, res ) {
     query.push( {
       $facet: {
         data: [
-          { $limit: limit }, { $skip: skip },
+          { $skip: skip }, { $limit: limit },
         ],
         count: [
           { $count: 'total' },
@@ -291,7 +291,7 @@ export async function uploadBulkStore( req, res ) {
     } );
     await storeBuilderService.insertMany( data );
     let planoIdList = planoData.map( ( ele ) => ele.id );
-    return res.sendSuccess( { message: 'Bulk Stored upload successfully', id: planoIdList.toString() } );
+    return res.sendSuccess( { message: 'Bulk store upload successfully', id: planoIdList.toString() } );
   } catch ( e ) {
     logger.error( { functionName: 'uploadBulkStore', error: e, message: req.body } );
     return res.sendError( e, 500 );
@@ -305,7 +305,7 @@ export async function uploadFile( req, res ) {
       return res.sendError( 'No data found' );
     }
     if ( req.files.file ) {
-      let bucket = JSON.parse( process.env.Bucket );
+      let bucket = JSON.parse( process.env.BUCKET );
       let params ={
         Bucket: bucket.storeBuilder,
         Key: `${getPlanoDetails.clientId}/${getPlanoDetails.storeName}/attachments/`,
@@ -416,16 +416,16 @@ export async function storeList( req, res ) {
 
 export async function deleteStoreLayout( req, res ) {
   try {
-    let getDetails = await planoService.findOne( { _id: req.body.id } );
+    let getDetails = await planoService.findOne( { _id: req.params.id } );
     if ( !getDetails ) {
       return res.sendError( 'No data found', 204 );
     }
 
-    await storeBuilderService.deleteMany( { planoId: req.body.id } );
-    await planoService.deleteOne( { _id: req.body.id } );
-    return res.sendSuccess( 'Store layout successfully' );
+    await storeBuilderService.deleteMany( { planoId: req.params.id } );
+    await planoService.deleteOne( { _id: req.params.id } );
+    return res.sendSuccess( 'Layout deleted successfully' );
   } catch ( e ) {
-    logger.error( { functionName: 'deleteStoreLayout', error: e, message: req.body } );
+    logger.error( { functionName: 'deleteStoreLayout', error: e, message: req.params } );
     return res.sendError( e, 500 );
   }
 }
@@ -455,8 +455,12 @@ export async function deleteFloor( req, res ) {
       return res.sendError( 'No data found', 204 );
     }
 
+    let planoDetails = await planoService.findOne( { _id: getBuilderDetails.planoId } );
+    planoDetails.floorNumber = planoDetails.floorNumber - 1;
+    planoDetails.save();
+
     await storeBuilderService.deleteOne( { _id: req.body.id } );
-    return res.sendSuccess( 'Floor Deleted successfully' );
+    return res.sendSuccess( 'Floor deleted successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'deleteFloor', error: e, message: req.body } );
     return res.sendError( e, 500 );
@@ -475,7 +479,7 @@ export async function updateStatus( req, res ) {
     let planoId = getBuilderDetails.map( ( item ) => item._id );
     await storeBuilderService.updateMany( { planoId: { $in: planoId } }, { status: req.body.status } );
 
-    return res.sendSuccess( 'Statu updated successfully' );
+    return res.sendSuccess( 'Status updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateStatus', error: e, message: req.body } );
     return res.sendError( e, 500 );
