@@ -510,17 +510,45 @@ export async function fixtureShelfProduct( req, res ) {
     if ( !fixtureDetails ) {
       return res.sendError( 'Fixture not found', 204 );
     }
+    let planoDetails = await planoService.findOne( { _id: fixtureDetails.planoId } );
     let shelfDetails = await fixtureShelfService.find( { fixtureId: req.body.fixtureId } );
+    let shelfId = shelfDetails.map( ( ele ) => ele._id );
+    let query;
+    switch ( planoDetails.productResolutionLevel ) {
+      case 'L1':
+        query = { floorId: fixtureDetails.floorId };
+        break;
+      case 'L2':
+        query = { floorId: fixtureDetails.floorId, fixtureId: req.body.fixtureId };
+        break;
+      case 'L3':
+        query = { floorId: fixtureDetails.floorId, fixtureId: req.body.fixtureId, shelfId: { $in: shelfId } };
+        break;
+      case 'L4':
+        query = { floorId: fixtureDetails.floorId, fixtureId: req.body.fixtureId, shelfId: { $in: shelfId } };
+        break;
+      default:
+        break;
+    }
     let shelfList = [];
     for ( let shelf of shelfDetails ) {
       let data = { ...shelf._doc, products: [] };
       let productMappingDetails = await planoMappingService.find( { shelfId: shelf._id } );
       let productIdList = productMappingDetails.map( ( item ) => item.productId );
       let productDetails = await planoProductService.find( { _id: productIdList } );
-      data.products = productDetails;
+      let productComplianceDetails = await planoComplianceService.find( { ...query, productId: { $in: productIdList }, createdAt: { $gte: dayjs().startOf( 'day' ).format(), $lte: dayjs().endOf( 'day' ).format() } } );
+      let product = [];
+      productDetails.forEach( ( item ) => {
+        let data = { ...item._doc, status: 'missing' };
+        let findCompliance = productComplianceDetails.find( ( ele ) => ele.productId.toString() == item._id.toString() );
+        if ( findCompliance ) {
+          data.status = findCompliance.compliance;
+        }
+        product.push( data );
+      } );
+      data.products = product;
       shelfList.push( data );
     }
-    console.log( shelfList );
     fixtureDetails = { ...fixtureDetails._doc, shelves: shelfList };
     return res.sendSuccess( fixtureDetails );
   } catch ( e ) {
@@ -611,5 +639,3 @@ export async function scan( req, res ) {
     return res.sendError( e, 500 );
   }
 }
-
-
