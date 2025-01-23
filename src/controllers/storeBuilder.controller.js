@@ -442,7 +442,7 @@ export async function storeList( req, res ) {
                       $match: {
                         $expr: {
                           $and: [
-                            { createdAt: { $gte: dayjs().startOf( 'day' ).format(), $lte: dayjs().endOf( 'day' ).format() } },
+                            { date: new Date( dayjs().format( 'YYYY-MM-DD' ) ) },
                             { $eq: [ '$fixtureId', '$$id' ] },
                             { $eq: [ '$compliance', 'proper' ] },
                           ],
@@ -581,7 +581,7 @@ export async function fixtureShelfProduct( req, res ) {
         ...query,
         ...( [ 'L3', 'L4' ].includes( planoDetails.productResolutionLevel ) ) ? { shelfId: shelf._id } : {},
         productId: { $in: productIdList },
-        createdAt: { $gte: dayjs().startOf( 'day' ).format(), $lte: dayjs().endOf( 'day' ).format() },
+        date: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
       };
       let productComplianceDetails = await planoComplianceService.find( query );
       let product = [];
