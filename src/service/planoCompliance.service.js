@@ -21,5 +21,9 @@ export async function aggregate( query ) {
 }
 
 export async function updateOne( query, record ) {
-  return model.planoComplianceModel.updateOne( query, { $set: record } );
+  return model.planoComplianceModel.updateOne( query, { $set: record }, { upsert: true } );
+}
+
+export async function count( data ) {
+  return model.planoComplianceModel.countDocuments( data );
 }
