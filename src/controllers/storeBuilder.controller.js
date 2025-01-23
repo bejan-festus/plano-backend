@@ -417,8 +417,58 @@ export async function storeList( req, res ) {
       for ( let floor of layout.floor ) {
         for ( let polygon of floor.layoutPolygon ) {
           let polygonfixtureDetails = fixtureDetails.filter( ( ele ) => layout.planoId.toString() == ele.planoId.toString() && ele.floorId.toString() == floor.id.toString() && ele.associatedElementType == polygon.elementType && ele.associatedElementNumber == polygon.elementNumber );
-          polygon.fixture = polygonfixtureDetails;
+          let fixtures = [];
+          for ( let fixture of polygonfixtureDetails ) {
+            let data = { ...fixture._doc, status: '' };
+            let query = [
+              {
+                $match: {
+                  fixtureId: fixture._id,
+                },
+              },
+              {
+                $group: {
+                  _id: '',
+                  count: { $sum: '$shelfCapacity' },
+                  fixtureId: { $first: '$fixtureId' },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'planocompliances',
+                  let: { 'id': '$fixtureId' },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { createdAt: { $gte: dayjs().startOf( 'day' ).format(), $lte: dayjs().endOf( 'day' ).format() } },
+                            { $eq: [ '$fixtureId', '$$id' ] },
+                            { $eq: [ '$compliance', 'proper' ] },
+                          ],
+                        },
+                      },
+                    },
+                    {
+                      $group: {
+                        _id: '',
+                        count: { $sum: 1 },
+                      },
+                    },
+                  ],
+                  as: 'planoCompliance',
+                },
+              },
+            ];
+            let fixtureDetails = await fixtureShelfService.aggregate( query );
+            if ( fixtureDetails.length ) {
+              data.status = fixtureDetails[0]?.planoCompliance?.length ? fixtureDetails[0].count == fixtureDetails[0]?.planoCompliance?.count ? 'complete' : 'incomplete' : '';
+            }
+            fixtures.push( data );
+          }
+          polygon.fixture = fixtures;
         }
+        floor.centerFixture = fixtureDetails.filter( ( ele ) => layout.planoId.toString() == ele.planoId.toString() && ele.floorId.toString() == floor.id.toString() && ele.fixtureType == 'floor' );
       }
     }
     return res.sendSuccess( { FloorDetails: getStoreList, productResolutionLevel: getPlanoDetails?.productResolutionLevel || '', productResolutionFilters: getPlanoDetails?.productResolutionFilters || [] } );
@@ -533,13 +583,18 @@ export async function fixtureShelfProduct( req, res ) {
         productId: { $in: productIdList },
         createdAt: { $gte: dayjs().startOf( 'day' ).format(), $lte: dayjs().endOf( 'day' ).format() },
       };
-      // let productComplianceDetails = await planoComplianceService.find( query );
+      let productComplianceDetails = await planoComplianceService.find( query );
       let product = [];
       productDetails.forEach( ( item ) => {
         let data = { ...item._doc, status: 'missing' };
-        // let findCompliance = productComplianceDetails.find( ( ele ) => {
-        //   if(planoDetails.productResolutionLevel)
-        // });
+        let getPosition = productMappingDetails.find( ( ele ) => ele.productId.toString() == item._id.toString() );
+        let findCompliance = productComplianceDetails.find( ( ele ) => {
+          if ( planoDetails.productResolutionLevel == 'L4' && getPosition ) {
+            return ( item._id.toString() == ele.productId.toString() && ele.shelfPosition == getPosition.shelfPosition );
+          } else {
+            return ( item._id.toString() == ele.productId.toString() );
+          }
+        } );
         if ( findCompliance ) {
           data.status = findCompliance.compliance;
         }
@@ -567,6 +622,23 @@ export async function scan( req, res ) {
     let planoDetails = await planoService.findOne( { _id: req.body.planoId } );
     if ( !planoDetails ) {
       return res.sendError( 'No data found', 204 );
+    }
+    if ( ![ 'L1', 'L2' ].includes( planoDetails.productResolutionLevel ) ) {
+      if ( !req.body.shelfId ) {
+        let shelfDetails = await fixtureShelfService.findOne( { rfId: req.body.rfId } );
+        if ( !shelfDetails ) {
+          return res.sendError( 'Please scan shelf first', 400 );
+        }
+        return res.sendSuccess( shelfDetails._id );
+      }
+    }
+    if ( planoDetails.productResolutionLevel == 'L5' ) {
+      let shelfDetails = await fixtureShelfService.findOne( { _id: req.body.shelfId } );
+      if ( !shelfDetails ) {
+        return res.sendError( 'No data found', 204 );
+      }
+      shelfDetails = await fixtureShelfService.find( { sectionName: shelfDetails?.sectionName } );
+      req.body.shelfId = shelfDetails.map( ( ele ) => ele._id );
     }
     let productCheck= await planoMappingService.findOne( { rfId: req.body.rfId } );
     if ( !productCheck ) {
@@ -616,7 +688,20 @@ export async function scan( req, res ) {
         }
         query = { floorId: req.body.floorId, fixtureId: req.body.fixtureId, shelfId: req.body.shelfId, shelfPosition: req.body.shelfPosition };
         break;
+      case 'L5':
+        if ( !req.body.floorId ) {
+          return res.sendError( 'Floor id is required', 400 );
+        }
+        if ( !req.body.fixtureId ) {
+          return res.sendError( 'Fixture id is required', 400 );
+        }
+        if ( !req.body.shelfId ) {
+          return res.sendError( 'Shelf id is required', 400 );
+        }
+        query = { floorId: req.body.floorId, fixtureId: req.body.fixtureId, shelfId: { $in: req.body.shelfId } };
+        break;
       default:
+        return res.sendError( 'Product not found', 400 );
         break;
     }
     query = { ...query, rfId: req.body.rfId };
@@ -626,9 +711,11 @@ export async function scan( req, res ) {
       ...( planoProductDetails ) ? { ...planoProductDetails._doc } : { planoId: req.body?.planoId, floorId: req.body?.floorId, fixtureId: req.body?.fixtureId, shelfId: req.body?.shelfId, clientId: planoDetails.clientId, storeName: planoDetails.storeName, storeId: planoDetails.storeId, shelfPosition: req.body?.shelfPosition },
       rfId: req.body.rfId,
       compliance: !planoProductDetails ? 'misplaced' : 'proper',
+      date: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
     };
     delete data._id;
-    await planoComplianceService.create( data );
+    query = { ...query, date: new Date( dayjs().format( 'YYYY-MM-DD' ) ) };
+    await planoComplianceService.updateOne( query, data );
     if ( !planoProductDetails ) {
       return res.sendSuccess( false );
     }
