@@ -374,7 +374,7 @@ export async function getStoreDetails( req, res ) {
   }
 }
 
-export async function storeList( req, res ) {
+export async function storeLayout( req, res ) {
   try {
     let idList = req.body.id.map( ( item ) => new mongoose.Types.ObjectId( item ) );
     let query = { _id: { $in: req.body.id } };
@@ -586,7 +586,7 @@ export async function fixtureShelfProduct( req, res ) {
       let productComplianceDetails = await planoComplianceService.find( query );
       let product = [];
       productDetails.forEach( ( item ) => {
-        let data = { ...item._doc, status: 'missing' };
+        let data = { ...item._doc, status: 'missing', rfId: '' };
         let getPosition = productMappingDetails.find( ( ele ) => ele.productId.toString() == item._id.toString() );
         let findCompliance = productComplianceDetails.find( ( ele ) => {
           if ( planoDetails.productResolutionLevel == 'L4' && getPosition ) {
@@ -598,6 +598,7 @@ export async function fixtureShelfProduct( req, res ) {
         if ( findCompliance ) {
           data.status = findCompliance.compliance;
         }
+        data.rfId = getPosition.rfId;
         product.push( data );
       } );
       data.products = product;

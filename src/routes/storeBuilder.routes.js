@@ -12,7 +12,7 @@ storeBuilderRouter
     .post( '/updateFloor', isAllowedSessionHandler, validate( validateDtos.updateFloor ), storeBuilderController.updateFloor )
     .post( '/uploadBulkStore', isAllowedSessionHandler, storeBuilderController.uploadBulkStore )
     .post( '/uploadFile', isAllowedSessionHandler, storeBuilderController.uploadFile )
-    .post( '/storeList', isAllowedSessionHandler, validate( validateDtos.storeList ), storeBuilderController.storeList )
+    .post( '/storeLayout', isAllowedSessionHandler, validate( validateDtos.storeList ), storeBuilderController.storeLayout )
     .post( '/storeDetails', isAllowedSessionHandler, validate( validateDtos.storeDetails ), storeBuilderController.getStoreDetails )
     .delete( '/deleteStoreLayout/:id', isAllowedSessionHandler, validate( validateDtos.deleteStoreLayout ), storeBuilderController.deleteStoreLayout )
     .post( '/removeFile', isAllowedSessionHandler, storeBuilderController.deleteFile )
