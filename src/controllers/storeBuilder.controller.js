@@ -715,7 +715,7 @@ export async function scan( req, res ) {
       date: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
     };
     delete data._id;
-    query = { ...query, date: new Date( dayjs().format( 'YYYY-MM-DD' ) ), shelfPosition: req.body.shelfPosition };
+    query = { ...query, date: new Date( dayjs().format( 'YYYY-MM-DD' ) ), shelfPosition: planoProductDetails?.shelfPosition || req.body.shelfPosition };
     await planoComplianceService.updateOne( query, data );
     if ( !planoProductDetails ) {
       return res.sendSuccess( false );
