@@ -731,14 +731,29 @@ export async function scan( req, res ) {
     query = { ...query, rfId: req.body.rfId };
 
     let planoProductDetails = await planoMappingService.findOne( query );
+    console.log( query, 'query' );
+    // let data = {
+    //   ...( planoProductDetails ) ? { ...planoProductDetails._doc } : { planoId: req.body?.planoId, floorId: req.body?.floorId, fixtureId: req.body?.fixtureId, shelfId: shelfId, clientId: planoDetails.clientId, storeName: planoDetails.storeName, storeId: planoDetails.storeId, shelfPosition: req.body?.shelfPosition },
+    //   rfId: req.body.rfId,
+    //   compliance: !planoProductDetails ? 'misplaced' : 'proper',
+    //   date: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
+    // };
     let data = {
-      ...( planoProductDetails ) ? { ...planoProductDetails._doc } : { planoId: req.body?.planoId, floorId: req.body?.floorId, fixtureId: req.body?.fixtureId, shelfId: shelfId, clientId: planoDetails.clientId, storeName: planoDetails.storeName, storeId: planoDetails.storeId, shelfPosition: req.body?.shelfPosition },
+      planoId: req.body?.planoId,
+      floorId: req.body?.floorId,
+      fixtureId: req.body?.fixtureId,
+      shelfId: shelfId,
+      clientId: planoDetails.clientId,
+      storeName: planoDetails.storeName,
+      storeId: planoDetails.storeId,
+      shelfPosition: req.body?.shelfPosition,
       rfId: req.body.rfId,
       compliance: !planoProductDetails ? 'misplaced' : 'proper',
       date: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
     };
     delete data._id;
-    query = { ...query, date: new Date( dayjs().format( 'YYYY-MM-DD' ) ), shelfPosition: planoProductDetails?.shelfPosition || req.body.shelfPosition };
+    delete query.rfId;
+    query = { ...query, date: new Date( dayjs().format( 'YYYY-MM-DD' ) ), shelfPosition: req.body.shelfPosition };
     await planoComplianceService.updateOne( query, data );
     if ( !planoProductDetails ) {
       return res.sendSuccess( false );
