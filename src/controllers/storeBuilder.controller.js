@@ -634,7 +634,7 @@ export async function scan( req, res ) {
         return res.sendError( 'No data found', 204 );
       }
       if ( shelfDetails.shelfCapacity < req.body.shelfPosition ) {
-        return res.sendError( 'Shelf has extra product', 400 );
+        return res.sendError( 'Shelf capacity exceeded', 400 );
       }
       shelfDetails = await fixtureShelfService.find( { sectionName: shelfDetails?.sectionName } );
       shelfId = req.body.shelfId;
