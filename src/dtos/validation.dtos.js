@@ -52,6 +52,16 @@ export const storeList = {
   body: storeListSchema,
 };
 
+export const fixtureShelfProductSchema = joi.object( {
+  fixtureId: joi.string().required(),
+  floorId: joi.string().required(),
+  planoId: joi.string().required(),
+} );
+
+export const fixtureShelfProduct = {
+  body: fixtureShelfProductSchema,
+};
+
 export const storeDetailSchema = joi.object( {
   storeId: joi.string().required(),
   clientId: joi.string().required(),
