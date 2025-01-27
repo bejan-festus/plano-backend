@@ -12,17 +12,17 @@ storeBuilderRouter
     .post( '/updateFloor', isAllowedSessionHandler, validate( validateDtos.updateFloor ), storeBuilderController.updateFloor )
     .post( '/uploadBulkStore', isAllowedSessionHandler, storeBuilderController.uploadBulkStore )
     .post( '/uploadFile', isAllowedSessionHandler, storeBuilderController.uploadFile )
-    .post( '/storeLayout', validate( validateDtos.storeList ), storeBuilderController.storeFixtures )
+    // .post( '/storeLayout', validate( validateDtos.storeList ), storeBuilderController.storeFixtures )
     .post( '/storeDetails', isAllowedSessionHandler, validate( validateDtos.storeDetails ), storeBuilderController.getStoreDetails )
     .delete( '/deleteStoreLayout/:id', isAllowedSessionHandler, validate( validateDtos.deleteStoreLayout ), storeBuilderController.deleteStoreLayout )
     .post( '/removeFile', isAllowedSessionHandler, storeBuilderController.deleteFile )
     .post( '/deleteFloor', isAllowedSessionHandler, storeBuilderController.deleteFloor )
     .post( '/updateStatus', isAllowedSessionHandler, validate( validateDtos.updateStatus ), storeBuilderController.updateStatus )
-    .post( '/FixtureShelfDetails', storeBuilderController.fixtureShelfProduct )
-    .post( '/scan', storeBuilderController.scan )
-    .post( '/storeLayoutv1', validate( validateDtos.storeList ), storeBuilderController.storeLayout )
+    // .post( '/FixtureShelfDetails', storeBuilderController.fixtureShelfProduct )
+    // .post( '/scan', storeBuilderController.scan )
+    .post( '/storeLayout', validate( validateDtos.storeList ), storeBuilderController.storeLayout )
     .post( '/storeFixtures', validate( validateDtos.storeList ), storeBuilderController.storeFixturesv1 )
-    .post( '/FixtureShelfDetailsv1', validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv1 )
-    .post( '/scanv1', storeBuilderController.scanv1 );
+    .post( '/FixtureShelfDetails', validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv1 )
+    .post( '/scan', storeBuilderController.scanv1 );
 
 
