@@ -577,6 +577,7 @@ export async function storeFixturesv1( req, res ) {
                             return {
                               ...fixture.toObject(),
                               status: complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
+                              productCount: productCount,
                             };
                           } ),
                       );
@@ -606,14 +607,18 @@ export async function storeFixturesv1( req, res ) {
                       return {
                         ...fixture.toObject(),
                         status: complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
+                        productCount: productCount,
                       };
                     } ),
                 );
+
+                const productCount = await planoMappingService.count( { floorId: floor._id } );
 
                 return {
                   ...floor.toObject(),
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
+                  productCount: productCount,
                 };
               } ),
           );
@@ -1213,6 +1218,7 @@ export async function scanv1( req, res ) {
         };
         const misplacedProductMapping = await planoMappingService.findOne( misplacedQuery );
 
+
         if ( !misplacedProductMapping ) {
           const shelf = await fixtureShelfService.findOne( misplacedQuery );
           if ( !shelf ) {
@@ -1220,6 +1226,7 @@ export async function scanv1( req, res ) {
           }
           return res.sendSuccess( { shelfId: shelf.toObject()._id } );
         }
+
 
         const misplacedProductShelf = await fixtureShelfService.findOne( { _id: misplacedProductMapping.toObject().shelfId } );
 
@@ -1232,6 +1239,9 @@ export async function scanv1( req, res ) {
           await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
           return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: true } );
         } else {
+          if ( shelf.toObject()._id.toString() !== misplacedProductShelf.toObject()._id.toString() ) {
+            return res.sendError( 'RFID conflict with section', 400 );
+          }
           const complianceData = { ...misplacedProductMapping.toObject(), planoMappingId: misplacedProductMapping.toObject()._id, compliance: 'misplaced' };
           delete complianceData._id;
 
@@ -1239,6 +1249,7 @@ export async function scanv1( req, res ) {
           return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: false } );
         }
       }
+
 
       const complianceData = { ...productMapping.toObject(), compliance: 'proper' };
       delete complianceData._id;
@@ -1353,14 +1364,13 @@ export async function updateMissing( req, res ) {
                 }
 
                 const mappingCompliance = await planoComplianceService.findOne( {
-                  shelfId: mapping.shelfId,
-                  shelfPosition: mapping.shelfPosition,
+                  planoMappingId: mapping._id,
                   date: currentDate,
                 } );
 
                 if ( !mappingCompliance ) {
                   delete mapping.toObject()._id;
-                  planoComplianceService.create( { ...mapping.toObject(), compliance: 'missing', date: currentDate } );
+                  planoComplianceService.create( { ...mapping.toObject(), planoMappingId: mapping._id, compliance: 'missing', date: currentDate } );
                 }
 
                 return {
