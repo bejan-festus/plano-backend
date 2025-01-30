@@ -42,7 +42,7 @@ export async function createStoreBuilder( req, res ) {
       createdByEmail: req.user.email,
       planoId: planoId._id,
     };
-    for ( let i=1; i<=req.body.floorNumber; i++ ) {
+    for ( let i = 1; i <= req.body.floorNumber; i++ ) {
       data.push( { ...params, floorNumber: i, floorName: `floor ${i}` } );
     }
     await storeBuilderService.insertMany( data );
@@ -90,7 +90,7 @@ export async function updateFloor( req, res ) {
     };
     let data = [];
     let num = getLayoutDetails.floorNumber + req.body.floorNumber;
-    for ( let i=getLayoutDetails.floorNumber + 1; i <= num; i++ ) {
+    for ( let i = getLayoutDetails.floorNumber + 1; i <= num; i++ ) {
       data.push( { ...params, floorNumber: i, floorName: `floor ${i}` } );
     }
     getLayoutDetails.floorNumber = num;
@@ -311,7 +311,7 @@ export async function uploadFile( req, res ) {
     }
     if ( req.files.file ) {
       let bucket = JSON.parse( process.env.BUCKET );
-      let params ={
+      let params = {
         Bucket: bucket.storeBuilder,
         Key: `${getPlanoDetails.clientId}/${getPlanoDetails.storeName}/attachments/`,
         fileName: req.files.file.name,
@@ -320,7 +320,7 @@ export async function uploadFile( req, res ) {
       };
       let fileuploadRes = await fileUpload( params );
       if ( getPlanoDetails ) {
-        let updateRes = await planoService.updateOne( { _id: getPlanoDetails. _id }, { $push: { attachments: fileuploadRes.Key } } );
+        let updateRes = await planoService.updateOne( { _id: getPlanoDetails._id }, { $push: { attachments: fileuploadRes.Key } } );
         if ( updateRes.modifiedCount ) {
           let params = {
             Bucket: bucket.storeBuilder,
@@ -348,7 +348,7 @@ export async function getStoreDetails( req, res ) {
     getStoreDetails = { ...getStoreDetails._doc, cameraBaseImage: '', attachments: [] };
     const camera = await storeService.findCamera( { storeId: req.body.storeId, isUp: true, isActivated: true }, { thumbnailImage: 1 } );
     if ( camera.thumbnailImage ) {
-      const bucket= JSON.parse( process.env.BUCKET );
+      const bucket = JSON.parse( process.env.BUCKET );
       const params = {
         file_path: camera.thumbnailImage,
         Bucket: bucket.baseImage,
@@ -365,7 +365,7 @@ export async function getStoreDetails( req, res ) {
         file_path: attach,
       };
       let getSignedUrl = await signedUrl( params );
-      getStoreDetails.attachments .push( { url: getSignedUrl, name: attach.split( '/' ).pop() } );
+      getStoreDetails.attachments.push( { url: getSignedUrl, name: attach.split( '/' ).pop() } );
     }
     return res.sendSuccess( getStoreDetails );
   } catch ( e ) {
@@ -472,22 +472,26 @@ export async function storeFixtures( req, res ) {
             {
               $group: {
                 _id: '$fixtureId',
-                properCount: { $sum: {
-                  $cond: [
-                    {
-                      $and: [
-                        { $eq: [ '$compliance', 'proper' ] },
-                      ],
-                    }, 1, 0 ],
-                } },
-                misPlacedCount: { $sum: {
-                  $cond: [
-                    {
-                      $and: [
-                        { $ne: [ '$compliance', 'proper' ] },
-                      ],
-                    }, 1, 0 ],
-                } },
+                properCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: [ '$compliance', 'proper' ] },
+                        ],
+                      }, 1, 0 ],
+                  },
+                },
+                misPlacedCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $ne: [ '$compliance', 'proper' ] },
+                        ],
+                      }, 1, 0 ],
+                  },
+                },
               },
             },
           ],
@@ -572,7 +576,7 @@ export async function storeFixturesv1( req, res ) {
 
                             return {
                               ...fixture.toObject(),
-                              status: productCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
+                              status: complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
                             };
                           } ),
                       );
@@ -601,7 +605,7 @@ export async function storeFixturesv1( req, res ) {
 
                       return {
                         ...fixture.toObject(),
-                        status: productCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
+                        status: complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
                       };
                     } ),
                 );
@@ -774,13 +778,87 @@ export async function fixtureShelfProductv1( req, res ) {
     if ( !planogram ) return res.sendError( 'Planogram not found', 204 );
     if ( !fixture ) return res.sendError( 'Fixture not found', 204 );
 
-    const fixtureShelves = await fixtureShelfService.find( {
-      fixtureId: new mongoose.Types.ObjectId( fixtureId ),
-    } );
+    if ( fixture.toObject().productResolutionLevel === 'L1' ) {
+      const productMappings = await planoMappingService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
+      const productIds = productMappings.map( ( mapping ) => mapping.productId );
+      const products = await planoProductService.find( { _id: { $in: productIds } } );
+      const productMap = new Map( products.map( ( product ) => [ product._id.toString(), product.toObject() ] ) );
 
-    if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+      const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
-    if ( planogram.toObject().productResolutionLevel === 'L3' ) {
+      const productDetails = await Promise.all(
+          productMappings.map( async ( mapping ) => {
+            const productData = productMap.get( mapping.productId.toString() ) || {};
+            const mappingCompliance = await planoComplianceService.findOne( {
+              planoMappingId: mapping._id,
+              date: currentDate,
+            } );
+
+            const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
+
+            return { ...mapping.toObject(), ...productData, status };
+          } ),
+      );
+
+      return res.sendSuccess( { ...fixture.toObject(), products: productDetails } );
+    }
+    if ( fixture.toObject().productResolutionLevel === 'L2' || fixture.toObject().productResolutionLevel === 'L4' ) {
+      const fixtureShelves = await fixtureShelfService.find( {
+        fixtureId: new mongoose.Types.ObjectId( fixtureId ),
+      } );
+
+      if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+
+      const shelfProducts = await Promise.all(
+          fixtureShelves.map( async ( shelf ) => {
+            const productMappings = await planoMappingService.find( { shelfId: shelf._id } );
+
+            if ( !productMappings.length ) {
+              return { ...shelf.toObject(), products: [] };
+            }
+
+            const productIds = productMappings.map( ( mapping ) => mapping.productId );
+            const products = await planoProductService.find( { _id: { $in: productIds } } );
+            const productMap = new Map( products.map( ( product ) => [ product._id.toString(), product.toObject() ] ) );
+
+            const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
+
+            const productDetails = await Promise.all(
+                productMappings.map( async ( mapping ) => {
+                  const productData = productMap.get( mapping.productId.toString() );
+                  if ( !productData ) {
+                    return { ...mapping.toObject(), status: '' };
+                  }
+
+                  const mappingCompliance = await planoComplianceService.findOne( {
+                    planoMappingId: mapping._id,
+                    date: currentDate,
+                  } );
+
+                  const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
+
+                  return {
+                    ...mapping.toObject(),
+                    ...productData,
+                    status,
+                  };
+                } ),
+            );
+
+            return {
+              ...shelf.toObject(),
+              products: productDetails,
+            };
+          } ),
+      );
+
+      return res.sendSuccess( { ...fixture.toObject(), shelves: shelfProducts } );
+    } else if ( fixture.toObject().productResolutionLevel === 'L3' ) {
+      const fixtureShelves = await fixtureShelfService.find( {
+        fixtureId: new mongoose.Types.ObjectId( fixtureId ),
+      } );
+
+      if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
       const groupedShelves = await ( async () => {
         const shelfProducts = await Promise.all(
             fixtureShelves.map( async ( shelf ) => {
@@ -804,8 +882,7 @@ export async function fixtureShelfProductv1( req, res ) {
                     }
 
                     const mappingCompliance = await planoComplianceService.findOne( {
-                      shelfId: mapping.shelfId,
-                      shelfPosition: mapping.shelfPosition,
+                      planoMappingId: mapping._id,
                       date: currentDate,
                     } );
 
@@ -836,52 +913,8 @@ export async function fixtureShelfProductv1( req, res ) {
         }, {} );
       } )();
       return res.sendSuccess( { ...fixture.toObject(), categories: groupedShelves } );
-    } else if ( planogram.toObject().productResolutionLevel === 'L4' || planogram.toObject().productResolutionLevel === 'L5' ) {
-      const shelfProducts = await Promise.all(
-          fixtureShelves.map( async ( shelf ) => {
-            const productMappings = await planoMappingService.find( { shelfId: shelf._id } );
-
-            if ( !productMappings.length ) {
-              return { ...shelf.toObject(), products: [] };
-            }
-
-            const productIds = productMappings.map( ( mapping ) => mapping.productId );
-            const products = await planoProductService.find( { _id: { $in: productIds } } );
-            const productMap = new Map( products.map( ( product ) => [ product._id.toString(), product.toObject() ] ) );
-
-            const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
-
-            const productDetails = await Promise.all(
-                productMappings.map( async ( mapping ) => {
-                  const productData = productMap.get( mapping.productId.toString() );
-                  if ( !productData ) {
-                    return { ...mapping.toObject(), status: '' };
-                  }
-
-                  const mappingCompliance = await planoComplianceService.findOne( {
-                    shelfId: mapping.shelfId,
-                    shelfPosition: mapping.shelfPosition,
-                    date: currentDate,
-                  } );
-
-                  const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
-
-                  return {
-                    ...mapping.toObject(),
-                    ...productData,
-                    status,
-                  };
-                } ),
-            );
-
-            return {
-              ...shelf.toObject(),
-              products: productDetails,
-            };
-          } ),
-      );
-
-      return res.sendSuccess( { ...fixture.toObject(), shelves: shelfProducts } );
+    } else {
+      return res.sendError( 'Incorrect resolution level', 400 );
     }
   } catch ( e ) {
     logger.error( { functionName: 'fixtureShelfProductv1', error: e, message: req.body } );
@@ -924,7 +957,7 @@ export async function scan( req, res ) {
       shelfId = req.body.shelfId;
       req.body.shelfId = shelfDetails.map( ( ele ) => ele._id );
     }
-    let productCheck= await planoMappingService.findOne( { rfId: req.body.rfId } );
+    let productCheck = await planoMappingService.findOne( { rfId: req.body.rfId } );
     if ( !productCheck ) {
       return res.sendError( 'Product not found', 400 );
     }
@@ -1026,14 +1059,121 @@ export async function scan( req, res ) {
 
 export async function scanv1( req, res ) {
   try {
-    const planogram = await planoService.findOne(
-        { _id: new mongoose.Types.ObjectId( req.body.planoId ) },
+    const fixture = await storeFixtureService.findOne(
+        { _id: new mongoose.Types.ObjectId( req.body.fixtureId ) },
         { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1 },
     );
 
-    if ( !planogram ) return res.sendError( 'No data found', 204 );
+    if ( !fixture ) return res.sendError( 'No data found', 204 );
 
-    if ( planogram.productResolutionLevel === 'L3' ) {
+    if ( fixture.productResolutionLevel === 'L1' ) {
+      if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
+
+      if ( !req.body.fixtureId ) return res.sendError( 'Fixture id is required', 400 );
+
+      if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
+
+      const mappingQuery = {
+        planoId: req.body.planoId,
+        floorId: req.body.floorId,
+        fixtureId: req.body.fixtureId,
+        rfId: req.body.rfId,
+      };
+
+      const productMapping = await planoMappingService.findOne( mappingQuery );
+
+      const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
+
+      if ( !productMapping ) {
+        const misplacedQuery = {
+          planoId: req.body.planoId,
+          floorId: req.body.floorId,
+          rfId: req.body.rfId,
+        };
+        const misplacedProductMapping = await planoMappingService.findOne( misplacedQuery );
+
+        if ( !misplacedProductMapping ) {
+          return res.sendSuccess( { data: 'missing', status: false } );
+        }
+
+        const complianceData = { ...misplacedProductMapping.toObject(), planoMappingId: misplacedProductMapping.toObject()._id, compliance: 'misplaced' };
+        delete complianceData._id;
+
+        let misplacedProductDetails = await planoProductService.findOne( { _id: misplacedProductMapping.toObject().productId } );
+
+        await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
+        return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: false } );
+      }
+
+      const complianceData = { ...productMapping.toObject(), planoMappingId: productMapping.toObject()._id, compliance: 'proper' };
+      delete complianceData._id;
+
+      let productDetails = await planoProductService.findOne( { _id: mappingQuery.productId } );
+
+      await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
+
+      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, status: true } );
+    } else if ( fixture.productResolutionLevel === 'L2' ) {
+      if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
+
+      if ( !req.body.fixtureId ) return res.sendError( 'Fixture id is required', 400 );
+
+      if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
+
+      if ( !req.body.shelfId && req.body.rfId ) {
+        const shelf = await fixtureShelfService.findOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, rfId: req.body.rfId } );
+        if ( !shelf ) return res.sendError( 'No matching shelf for the rfId', 400 );
+        return res.sendSuccess( { shelfId: shelf.toObject()._id } );
+      }
+
+      if ( !req.body.shelfId ) return res.sendError( 'Shelf id is required', 400 );
+
+      const mappingQuery = {
+        planoId: req.body.planoId,
+        floorId: req.body.floorId,
+        fixtureId: req.body.fixtureId,
+        shelfId: req.body.shelfId,
+        rfId: req.body.rfId,
+      };
+
+      const productMapping = await planoMappingService.findOne( mappingQuery );
+
+      const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
+
+      if ( !productMapping ) {
+        const misplacedQuery = {
+          planoId: req.body.planoId,
+          floorId: req.body.floorId,
+          rfId: req.body.rfId,
+        };
+        const misplacedProductMapping = await planoMappingService.findOne( misplacedQuery );
+
+        if ( !misplacedProductMapping ) {
+          const shelf = await fixtureShelfService.findOne( misplacedQuery );
+          if ( !shelf ) {
+            return res.sendSuccess( { data: 'missing', status: false } );
+          }
+          return res.sendSuccess( { shelfId: shelf.toObject()._id } );
+        }
+
+        const complianceData = { ...misplacedProductMapping.toObject(), planoMappingId: misplacedProductMapping.toObject()._id, compliance: 'misplaced' };
+        delete complianceData._id;
+
+        let misplacedProductDetails = await planoProductService.findOne( { _id: misplacedProductMapping.toObject().productId } );
+
+        await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
+        return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: false } );
+      }
+
+      const complianceData = { ...productMapping.toObject(), planoMappingId: productMapping.toObject()._id, compliance: 'proper' };
+      delete complianceData._id;
+
+      let productDetails = await planoProductService.findOne( { _id: productMapping.toObject().productId } );
+
+      await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
+
+      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, status: true } );
+    } else if ( fixture.productResolutionLevel === 'L3' ) {
       if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
 
       if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
@@ -1043,7 +1183,7 @@ export async function scanv1( req, res ) {
       if ( !req.body.shelfId && req.body.rfId ) {
         const shelf = await fixtureShelfService.findOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, rfId: req.body.rfId } );
         if ( !shelf ) return res.sendError( 'No matching shelf for the rfId', 400 );
-        return res.sendSuccess( shelf.toObject()._id );
+        return res.sendSuccess( { shelfId: shelf.toObject()._id } );
       }
 
       if ( !req.body.shelfId ) return res.sendError( 'Shelf id is required', 400 );
@@ -1074,34 +1214,41 @@ export async function scanv1( req, res ) {
         const misplacedProductMapping = await planoMappingService.findOne( misplacedQuery );
 
         if ( !misplacedProductMapping ) {
-          return res.sendError( 'No product found for the RFID', 400 );
+          const shelf = await fixtureShelfService.findOne( misplacedQuery );
+          if ( !shelf ) {
+            return res.sendSuccess( { data: 'missing', status: false } );
+          }
+          return res.sendSuccess( { shelfId: shelf.toObject()._id } );
         }
+
+        const misplacedProductShelf = await fixtureShelfService.findOne( { _id: misplacedProductMapping.toObject().shelfId } );
 
         let misplacedProductDetails = await planoProductService.findOne( { _id: misplacedProductMapping.toObject().productId } );
 
-        if ( shelf.toObject().sectionName === misplacedProductMapping.toObject().category ) {
-          const complianceData = { ...misplacedProductMapping.toObject(), compliance: 'proper' };
+        if ( shelf.toObject().sectionName === misplacedProductShelf.toObject().sectionName ) {
+          const complianceData = { ...misplacedProductMapping.toObject(), planoMappingId: misplacedProductMapping.toObject()._id, compliance: 'proper' };
           delete complianceData._id;
 
           await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
-          return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject(): {} ) }, status: true } );
+          return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: true } );
         } else {
-          const complianceData = { ...misplacedProductMapping.toObject(), compliance: 'misplaced' };
+          const complianceData = { ...misplacedProductMapping.toObject(), planoMappingId: misplacedProductMapping.toObject()._id, compliance: 'misplaced' };
           delete complianceData._id;
 
           await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
-          return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject(): {} ) }, status: false } );
+          return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: false } );
         }
       }
-
 
       const complianceData = { ...productMapping.toObject(), compliance: 'proper' };
       delete complianceData._id;
 
-      await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
+      let productDetails = await planoProductService.findOne( { _id: productMapping.toObject().productId } );
 
-      return res.sendSuccess( { data: productMapping.toObject(), status: true } );
-    } else if ( planogram.productResolutionLevel === 'L4' || planogram.productResolutionLevel === 'L5' ) {
+      await planoComplianceService.updateOne( { ...mappingQuery, planoMappingId: productMapping.toObject()._id, date: currentDate }, complianceData );
+
+      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, status: true } );
+    } else if ( fixture.productResolutionLevel === 'L4' ) {
       if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
 
       if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
@@ -1128,43 +1275,25 @@ export async function scanv1( req, res ) {
 
       const productMapping = await planoMappingService.findOne( mappingQuery );
 
-      if ( !productMapping ) return res.sendError( 'No product mapped for the spot', 400 );
+      if ( !productMapping ) {
+        shelf = await fixtureShelfService.findOne( misplacedQuery );
+        if ( !shelf ) {
+          return res.sendSuccess( { data: 'missing', status: false } );
+        }
+        return res.sendSuccess( { shelfId: shelf.toObject()._id } );
+      }
 
       const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
       if ( productMapping.toObject().rfId !== req.body.rfId ) {
-        if ( planogram.productResolutionLevel === 'L4' ) {
-          const complianceData = { ...productMapping.toObject(), compliance: 'misplaced' };
-          delete complianceData._id;
+        const complianceData = { ...productMapping.toObject(), planoMappingId: productMapping.toObject()._id, compliance: 'misplaced' };
+        delete complianceData._id;
 
-          await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
-          return res.sendSuccess( false );
-        } else if ( planogram.productResolutionLevel === 'L5' ) {
-          const misplacedQuery = {
-            planoId: req.body.planoId,
-            floorId: req.body.floorId,
-            fixtureId: req.body.fixtureId,
-            rfId: req.body.rfId,
-          };
-          const misplacedProductMapping = await planoMappingService.findOne( misplacedQuery );
-
-          if ( productMapping.toObject()?.category === misplacedProductMapping.toObject()?.category ) {
-            const complianceData = { ...productMapping.toObject(), compliance: 'proper' };
-            delete complianceData._id;
-
-            await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
-            return res.sendSuccess( true );
-          } else {
-            const complianceData = { ...productMapping.toObject(), compliance: 'misplaced' };
-            delete complianceData._id;
-
-            await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
-            return res.sendSuccess( false );
-          }
-        }
+        await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
+        return res.sendSuccess( false );
       }
 
-      const complianceData = { ...productMapping.toObject(), compliance: 'proper' };
+      const complianceData = { ...productMapping.toObject(), planoMappingId: productMapping.toObject()._id, compliance: 'proper' };
       delete complianceData._id;
 
       await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
@@ -1175,6 +1304,82 @@ export async function scanv1( req, res ) {
     }
   } catch ( e ) {
     logger.error( { functionName: 'scanv1', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function updateMissing( req, res ) {
+  try {
+    const { planoId, fixtureId } = req.body;
+
+    const [ planogram, fixture ] = await Promise.all( [
+      planoService.findOne(
+          { _id: new mongoose.Types.ObjectId( planoId ) },
+          { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1 },
+      ),
+      storeFixtureService.findOne( {
+        _id: new mongoose.Types.ObjectId( fixtureId ),
+      } ),
+    ] );
+
+    if ( !planogram ) return res.sendError( 'Planogram not found', 204 );
+    if ( !fixture ) return res.sendError( 'Fixture not found', 204 );
+
+    const fixtureShelves = await fixtureShelfService.find( {
+      fixtureId: new mongoose.Types.ObjectId( fixtureId ),
+    } );
+
+    if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+
+    await Promise.all(
+        fixtureShelves.map( async ( shelf ) => {
+          const productMappings = await planoMappingService.find( { shelfId: shelf._id } );
+
+          if ( !productMappings.length ) {
+            return { ...shelf.toObject(), products: [] };
+          }
+
+          const productIds = productMappings.map( ( mapping ) => mapping.productId );
+          const products = await planoProductService.find( { _id: { $in: productIds } } );
+          const productMap = new Map( products.map( ( product ) => [ product._id.toString(), product.toObject() ] ) );
+
+          const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
+
+          await Promise.all(
+              productMappings.map( async ( mapping ) => {
+                const productData = productMap.get( mapping.productId.toString() );
+                if ( !productData ) {
+                  return { ...mapping.toObject(), status: '' };
+                }
+
+                const mappingCompliance = await planoComplianceService.findOne( {
+                  shelfId: mapping.shelfId,
+                  shelfPosition: mapping.shelfPosition,
+                  date: currentDate,
+                } );
+
+                if ( !mappingCompliance ) {
+                  delete mapping.toObject()._id;
+                  planoComplianceService.create( { ...mapping.toObject(), compliance: 'missing', date: currentDate } );
+                }
+
+                return {
+                  ...mapping.toObject(),
+                  ...productData,
+                };
+              } ),
+          );
+
+
+          return {
+            ...shelf.toObject(),
+          };
+        } ),
+    );
+
+    return res.sendSuccess( 'Updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'fixtureShelfProductv1', error: e, message: req.body } );
     return res.sendError( e, 500 );
   }
 }
