@@ -1064,6 +1064,11 @@ export async function scan( req, res ) {
 
 export async function scanv1( req, res ) {
   try {
+    if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
+
+    if ( !req.body.fixtureId ) return res.sendError( 'Fixture id is required', 400 );
+
+    if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
     const fixture = await storeFixtureService.findOne(
         { _id: new mongoose.Types.ObjectId( req.body.fixtureId ) },
         { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1 },
@@ -1071,13 +1076,10 @@ export async function scanv1( req, res ) {
 
     if ( !fixture ) return res.sendError( 'No data found', 204 );
 
+    const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
+
+
     if ( fixture.productResolutionLevel === 'L1' ) {
-      if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
-
-      if ( !req.body.fixtureId ) return res.sendError( 'Fixture id is required', 400 );
-
-      if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
-
       const mappingQuery = {
         planoId: req.body.planoId,
         floorId: req.body.floorId,
@@ -1086,8 +1088,6 @@ export async function scanv1( req, res ) {
       };
 
       const productMapping = await planoMappingService.findOne( mappingQuery );
-
-      const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
       if ( !productMapping ) {
         const misplacedQuery = {
@@ -1107,7 +1107,22 @@ export async function scanv1( req, res ) {
         let misplacedProductDetails = await planoProductService.findOne( { _id: misplacedProductMapping.toObject().productId } );
 
         await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
-        return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: false } );
+
+        const [ totalProducts, scannedProducts, misplacedProducts, missingProducts ] = await Promise.all( [
+          planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
+          planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate } ),
+          planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'misplaced' } ),
+          planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'missing' } ),
+        ] );
+
+        const metrics = {
+          total: totalProducts,
+          scanned: scannedProducts,
+          misplaced: misplacedProducts,
+          missing: missingProducts,
+        };
+
+        return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, metrics: metrics, status: false } );
       }
 
       const complianceData = { ...productMapping.toObject(), planoMappingId: productMapping.toObject()._id, compliance: 'proper' };
@@ -1117,14 +1132,22 @@ export async function scanv1( req, res ) {
 
       await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
 
-      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, status: true } );
+      const [ totalProducts, scannedProducts, misplacedProducts, missingProducts ] = await Promise.all( [
+        planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'misplaced' } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'missing' } ),
+      ] );
+
+      const metrics = {
+        total: totalProducts,
+        scanned: scannedProducts,
+        misplaced: misplacedProducts,
+        missing: missingProducts,
+      };
+
+      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, metrics: metrics, status: true } );
     } else if ( fixture.productResolutionLevel === 'L2' ) {
-      if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
-
-      if ( !req.body.fixtureId ) return res.sendError( 'Fixture id is required', 400 );
-
-      if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
-
       if ( !req.body.shelfId && req.body.rfId ) {
         const shelf = await fixtureShelfService.findOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, rfId: req.body.rfId } );
         if ( !shelf ) return res.sendError( 'No matching shelf for the rfId', 400 );
@@ -1142,8 +1165,6 @@ export async function scanv1( req, res ) {
       };
 
       const productMapping = await planoMappingService.findOne( mappingQuery );
-
-      const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
       if ( !productMapping ) {
         const misplacedQuery = {
@@ -1167,7 +1188,23 @@ export async function scanv1( req, res ) {
         let misplacedProductDetails = await planoProductService.findOne( { _id: misplacedProductMapping.toObject().productId } );
 
         await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
-        return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: false } );
+
+
+        const [ totalProducts, scannedProducts, misplacedProducts, missingProducts ] = await Promise.all( [
+          planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
+          planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate } ),
+          planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'misplaced' } ),
+          planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'missing' } ),
+        ] );
+
+        const metrics = {
+          total: totalProducts,
+          scanned: scannedProducts,
+          misplaced: misplacedProducts,
+          missing: missingProducts,
+        };
+
+        return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, metrics: metrics, status: false } );
       }
 
       const complianceData = { ...productMapping.toObject(), planoMappingId: productMapping.toObject()._id, compliance: 'proper' };
@@ -1177,14 +1214,22 @@ export async function scanv1( req, res ) {
 
       await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
 
-      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, status: true } );
+      const [ totalProducts, scannedProducts, misplacedProducts, missingProducts ] = await Promise.all( [
+        planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'misplaced' } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'missing' } ),
+      ] );
+
+      const metrics = {
+        total: totalProducts,
+        scanned: scannedProducts,
+        misplaced: misplacedProducts,
+        missing: missingProducts,
+      };
+
+      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, metrics: metrics, status: true } );
     } else if ( fixture.productResolutionLevel === 'L3' ) {
-      if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
-
-      if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
-
-      if ( !req.body.fixtureId ) return res.sendError( 'Fixture id is required', 400 );
-
       if ( !req.body.shelfId && req.body.rfId ) {
         const shelf = await fixtureShelfService.findOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, rfId: req.body.rfId } );
         if ( !shelf ) return res.sendError( 'No matching shelf for the rfId', 400 );
@@ -1202,8 +1247,6 @@ export async function scanv1( req, res ) {
       };
 
       const productMapping = await planoMappingService.findOne( mappingQuery );
-
-      const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
       if ( !productMapping ) {
         const shelf = await fixtureShelfService.findOne( { _id: new mongoose.Types.ObjectId( req.body.shelfId ) } );
@@ -1237,7 +1280,21 @@ export async function scanv1( req, res ) {
           delete complianceData._id;
 
           await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
-          return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: true } );
+
+          const [ totalProducts, scannedProducts, misplacedProducts, missingProducts ] = await Promise.all( [
+            planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
+            planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate } ),
+            planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'misplaced' } ),
+            planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'missing' } ),
+          ] );
+
+          const metrics = {
+            total: totalProducts,
+            scanned: scannedProducts,
+            misplaced: misplacedProducts,
+            missing: missingProducts,
+          };
+          return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, metrics: metrics, status: true } );
         } else {
           if ( shelf.toObject()._id.toString() !== misplacedProductShelf.toObject()._id.toString() ) {
             return res.sendError( 'RFID conflict with section', 400 );
@@ -1246,7 +1303,20 @@ export async function scanv1( req, res ) {
           delete complianceData._id;
 
           await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
-          return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, status: false } );
+          const [ totalProducts, scannedProducts, misplacedProducts, missingProducts ] = await Promise.all( [
+            planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
+            planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate } ),
+            planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'misplaced' } ),
+            planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'missing' } ),
+          ] );
+
+          const metrics = {
+            total: totalProducts,
+            scanned: scannedProducts,
+            misplaced: misplacedProducts,
+            missing: missingProducts,
+          };
+          return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) }, metrics: metrics, status: false } );
         }
       }
 
@@ -1258,14 +1328,23 @@ export async function scanv1( req, res ) {
 
       await planoComplianceService.updateOne( { ...mappingQuery, planoMappingId: productMapping.toObject()._id, date: currentDate }, complianceData );
 
-      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, status: true } );
+      const [ totalProducts, scannedProducts, misplacedProducts, missingProducts ] = await Promise.all( [
+        planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'misplaced' } ),
+        planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'missing' } ),
+      ] );
+
+      const metrics = {
+        total: totalProducts,
+        scanned: scannedProducts,
+        misplaced: misplacedProducts,
+        missing: missingProducts,
+      };
+
+
+      return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, metrics: metrics, status: true } );
     } else if ( fixture.productResolutionLevel === 'L4' ) {
-      if ( !req.body.floorId ) return res.sendError( 'Floor id is required', 400 );
-
-      if ( !req.body.rfId ) return res.sendError( 'RFID is required', 400 );
-
-      if ( !req.body.fixtureId ) return res.sendError( 'Fixture id is required', 400 );
-
       if ( !req.body.shelfId && req.body.rfId ) {
         const shelf = await fixtureShelfService.findOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, rfId: req.body.rfId } );
         if ( !shelf ) return res.sendError( 'No matching shelf for the rfId', 400 );
@@ -1293,8 +1372,6 @@ export async function scanv1( req, res ) {
         }
         return res.sendSuccess( { shelfId: shelf.toObject()._id } );
       }
-
-      const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
       if ( productMapping.toObject().rfId !== req.body.rfId ) {
         const complianceData = { ...productMapping.toObject(), planoMappingId: productMapping.toObject()._id, compliance: 'misplaced' };
