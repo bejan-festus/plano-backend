@@ -1201,8 +1201,10 @@ export async function scanv1( req, res ) {
 
         let misplacedProductDetails = await planoProductService.findOne( { _id: misplacedProductMapping.toObject().productId } );
 
-        await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate }, complianceData );
-
+        const isComplianceProper = await planoComplianceService.count( { ...misplacedQuery, date: currentDate, compliance: 'proper' } );
+        if ( !isComplianceProper ) {
+          await planoComplianceService.updateOne( { ...misplacedQuery, date: currentDate, compliance: { $ne: 'proper' } }, complianceData );
+        }
 
         const [ totalProducts, scannedProducts, misplacedProducts, missingProducts, properProducts ] = await Promise.all( [
           planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
@@ -1339,12 +1341,12 @@ export async function scanv1( req, res ) {
             proper: properProducts,
           };
           const [ shelfProducts, shelfCompliance ] = await Promise.all( [
-            planoMappingService.count( { shelfId: productMapping.toObject().shelfId } ),
-            planoComplianceService.count( { date: currentDate, shelfId: productMapping.toObject().shelfId, compliance: 'proper' } ),
+            planoMappingService.count( { shelfId: misplacedProductMapping.toObject().shelfId } ),
+            planoComplianceService.count( { date: currentDate, shelfId: misplacedProductMapping.toObject().shelfId, compliance: 'proper' } ),
           ] );
 
           const shelfMetrics = {
-            shelfId: productMapping.toObject().shelfId,
+            shelfId: misplacedProductMapping.toObject().shelfId,
             isScanned: shelfCompliance >= shelfProducts/2 ? true : false };
 
           return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) },
@@ -1415,7 +1417,7 @@ export async function scanv1( req, res ) {
       const productMapping = await planoMappingService.findOne( mappingQuery );
 
       if ( !productMapping ) {
-        shelf = await fixtureShelfService.findOne( misplacedQuery );
+        const shelf = await fixtureShelfService.findOne( mappingQuery );
         if ( !shelf ) {
           return res.sendSuccess( { data: null, status: 'missing' } );
         }
@@ -1433,7 +1435,12 @@ export async function scanv1( req, res ) {
 
         let productDetails = await planoProductService.findOne( { _id: productMapping.toObject().productId } );
 
-        await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
+        const isComplianceProper = await planoComplianceService.count( { ...mappingQuery, date: currentDate, compliance: 'proper' } );
+
+        if ( !isComplianceProper ) {
+          await planoComplianceService.updateOne( { ...mappingQuery, date: currentDate }, complianceData );
+        }
+
 
         const [ totalProducts, scannedProducts, misplacedProducts, missingProducts, properProducts ] = await Promise.all( [
           planoMappingService.count( { fixtureId: fixture.toObject()._id } ),
@@ -1441,7 +1448,6 @@ export async function scanv1( req, res ) {
           planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'misplaced' } ),
           planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'missing' } ),
           planoComplianceService.count( { fixtureId: fixture.toObject()._id, date: currentDate, compliance: 'proper' } ),
-
         ] );
 
         const fixtureMetrics = {
