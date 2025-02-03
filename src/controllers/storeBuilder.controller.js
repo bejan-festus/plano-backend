@@ -1160,7 +1160,7 @@ export async function scanv1( req, res ) {
           planoComplianceService.count( { date: currentDate, shelfId: shelf.toObject()._id, compliance: 'proper' } ),
         ] );
         return res.sendSuccess( { shelfId: shelf.toObject()._id, shelfNumber: shelf.toObject().shelfNumber,
-          isScanned: shelfCompliance > shelfProducts/2 ? true : false } );
+          isScanned: shelfCompliance >= shelfProducts/2 ? true : false } );
       }
 
       if ( !req.body.shelfId ) return res.sendError( 'Shelf id is required', 400 );
@@ -1193,7 +1193,7 @@ export async function scanv1( req, res ) {
             planoComplianceService.count( { date: currentDate, shelfId: shelf.toObject()._id, compliance: 'proper' } ),
           ] );
           return res.sendSuccess( { shelfId: shelf.toObject()._id, shelfNumber: shelf.toObject().shelfNumber,
-            isScanned: shelfCompliance > shelfProducts/2 ? true : false } );
+            isScanned: shelfCompliance >= shelfProducts/2 ? true : false } );
         }
 
         const complianceData = { ...misplacedProductMapping.toObject(), planoMappingId: misplacedProductMapping.toObject()._id, compliance: 'misplaced' };
@@ -1255,7 +1255,7 @@ export async function scanv1( req, res ) {
 
       const shelfMetrics = {
         shelfId: productMapping.toObject().shelfId,
-        isScanned: shelfCompliance > shelfProducts/2 ? true : false };
+        isScanned: shelfCompliance >= shelfProducts/2 ? true : false };
 
 
       return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, fixtureMetrics: fixtureMetrics, shelfMetrics: shelfMetrics, status: 'proper' } );
@@ -1268,7 +1268,7 @@ export async function scanv1( req, res ) {
           planoComplianceService.count( { date: currentDate, shelfId: shelf.toObject()._id, compliance: 'proper' } ),
         ] );
         return res.sendSuccess( { shelfId: shelf.toObject()._id, shelfNumber: shelf.toObject().shelfNumber,
-          isScanned: shelfCompliance > shelfProducts/2 ? true : false } );
+          isScanned: shelfCompliance >= shelfProducts/2 ? true : false } );
       }
 
       if ( !req.body.shelfId ) return res.sendError( 'Shelf id is required', 400 );
@@ -1306,8 +1306,9 @@ export async function scanv1( req, res ) {
             planoMappingService.count( { shelfId: shelf.toObject()._id } ),
             planoComplianceService.count( { date: currentDate, shelfId: shelf.toObject()._id, compliance: 'proper' } ),
           ] );
+
           return res.sendSuccess( { shelfId: shelf.toObject()._id, shelfNumber: shelf.toObject().shelfNumber,
-            isScanned: shelfCompliance > shelfProducts/2 ? true : false } );
+            isScanned: shelfCompliance >= shelfProducts/2 ? true : false } );
         }
 
 
@@ -1344,7 +1345,7 @@ export async function scanv1( req, res ) {
 
           const shelfMetrics = {
             shelfId: productMapping.toObject().shelfId,
-            isScanned: shelfCompliance > shelfProducts/2 ? true : false };
+            isScanned: shelfCompliance >= shelfProducts/2 ? true : false };
 
           return res.sendSuccess( { data: { ...misplacedProductMapping.toObject(), ...( misplacedProductDetails ? misplacedProductDetails?.toObject() : {} ) },
             fixtureMetrics: fixtureMetrics, shelfMetrics: shelfMetrics, status: 'proper' } );
@@ -1384,7 +1385,7 @@ export async function scanv1( req, res ) {
 
       const shelfMetrics = {
         shelfId: productMapping.toObject().shelfId,
-        isScanned: shelfCompliance > shelfProducts/2 ? true : false };
+        isScanned: shelfCompliance >= shelfProducts/2 ? true : false };
 
       return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, fixtureMetrics: fixtureMetrics, shelfMetrics: shelfMetrics, status: 'proper' } );
     } else if ( fixture.productResolutionLevel === 'L4' ) {
@@ -1396,7 +1397,7 @@ export async function scanv1( req, res ) {
           planoComplianceService.count( { date: currentDate, shelfId: shelf.toObject()._id, compliance: 'proper' } ),
         ] );
         return res.sendSuccess( { shelfId: shelf.toObject()._id, shelfNumber: shelf.toObject().shelfNumber,
-          isScanned: shelfCompliance > shelfProducts/2 ? true : false } );
+          isScanned: shelfCompliance >= shelfProducts/2 ? true : false } );
       }
 
       if ( !req.body.shelfId ) return res.sendError( 'Shelf id is required', 400 );
@@ -1423,7 +1424,7 @@ export async function scanv1( req, res ) {
           planoComplianceService.count( { date: currentDate, shelfId: shelf.toObject()._id, compliance: 'proper' } ),
         ] );
         return res.sendSuccess( { shelfId: shelf.toObject()._id, shelfNumber: shelf.toObject().shelfNumber,
-          isScanned: shelfCompliance > shelfProducts/2 ? true : false } );
+          isScanned: shelfCompliance >= shelfProducts/2 ? true : false } );
       }
 
       if ( productMapping.toObject().rfId !== req.body.rfId ) {
@@ -1484,7 +1485,7 @@ export async function scanv1( req, res ) {
 
       const shelfMetrics = {
         shelfId: productMapping.toObject().shelfId,
-        isScanned: shelfCompliance > shelfProducts/2 ? true : false };
+        isScanned: shelfCompliance >= shelfProducts/2 ? true : false };
 
       return res.sendSuccess( { data: { ...productMapping.toObject(), ...( productDetails ? productDetails?.toObject() : {} ) }, fixtureMetrics: fixtureMetrics, shelfMetrics: shelfMetrics, status: 'proper' } );
     } else {
