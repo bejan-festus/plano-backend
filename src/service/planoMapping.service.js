@@ -22,3 +22,7 @@ export async function updateOne( query, record ) {
 export async function count( query ) {
   return model.planoMappingModel.countDocuments( query );
 }
+
+export async function create( data ) {
+  return model.planoMappingModel.create( data );
+}
