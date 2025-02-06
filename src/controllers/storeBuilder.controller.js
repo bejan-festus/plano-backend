@@ -582,9 +582,17 @@ export async function storeFixturesv1( req, res ) {
                           } ),
                       );
 
+                      const otherElements = await storeFixtureService.find( {
+                        floorId: floor._id,
+                        associatedElementType: element.elementType,
+                        associatedElementNumber: element.elementNumber,
+                        fixtureType: 'other',
+                      } );
+
                       return {
                         ...element,
                         fixtures: fixturesWithStatus,
+                        otherElements: otherElements,
                       };
                     } ),
                 );
@@ -616,6 +624,8 @@ export async function storeFixturesv1( req, res ) {
 
                 const otherElements = await storeFixtureService.find( {
                   floorId: floor._id,
+                  associatedElementType: { $exists: false },
+                  associatedElementNumber: { $exists: false },
                   fixtureType: 'other',
                 } );
 
