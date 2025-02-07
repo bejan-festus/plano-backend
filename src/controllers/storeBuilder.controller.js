@@ -815,7 +815,7 @@ export async function fixtureShelfProductv1( req, res ) {
               date: currentDate,
             } );
 
-            const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
+            const status = mappingCompliance ? mappingCompliance.compliance : '';
 
             return { ...mapping.toObject(), ...productData, status };
           } ),
@@ -875,7 +875,7 @@ export async function fixtureShelfProductv1( req, res ) {
                     date: currentDate,
                   } );
 
-                  const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
+                  const status = mappingCompliance ? mappingCompliance.compliance : '';
 
                   return {
                     ...mapping.toObject(),
@@ -946,7 +946,7 @@ export async function fixtureShelfProductv1( req, res ) {
                       date: currentDate,
                     } );
 
-                    const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
+                    const status = mappingCompliance ? mappingCompliance.compliance : '';
 
                     return {
                       ...mapping.toObject(),
