@@ -26,6 +26,8 @@ storeBuilderRouter
     .post( '/scan', storeBuilderController.scanv1 )
     .post( '/updateMissing', storeBuilderController.updateMissing )
     .post( '/bulkFixtureUpload', storeBuilderController.bulkFixtureUpload )
-    .post( '/uploadImage', storeBuilderController.uploadImage );
+    .post( '/uploadImage', storeBuilderController.uploadImage )
+    .post( '/storeFixturesTask', storeBuilderController.storeFixturesTask );
+
 
 

@@ -11,6 +11,8 @@ import * as fixtureShelfService from '../service/fixtureShelf.service.js';
 import * as planoProductService from '../service/planoProduct.service.js';
 import * as planoMappingService from '../service/planoMapping.service.js';
 import * as planoComplianceService from '../service/planoCompliance.service.js';
+import * as planoTaskComplianceService from '../service/planoTask.service.js';
+
 dayjs.extend( utc );
 dayjs.extend( customParseFormat );
 
@@ -1896,7 +1898,6 @@ export async function storeFixturesTask( req, res ) {
 
     if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
 
-    const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
     const storeLayout = await Promise.all(
         planograms.map( async ( planogram ) => {
@@ -1922,10 +1923,9 @@ export async function storeFixturesTask( req, res ) {
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
 
-                            const complianceCount = await planoComplianceService.count( {
+                            const complianceCount = await planoTaskComplianceService.count( {
                               fixtureId: fixture._id,
-                              compliance: 'proper',
-                              date: currentDate,
+                              status: 'complete',
                             } );
 
                             const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
@@ -1981,10 +1981,9 @@ export async function storeFixturesTask( req, res ) {
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
 
-                      const complianceCount = await planoComplianceService.count( {
+                      const complianceCount = await planoTaskComplianceService.count( {
                         fixtureId: fixture._id,
-                        compliance: 'proper',
-                        date: currentDate,
+                        status: 'complete',
                       } );
 
                       const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
@@ -2043,7 +2042,7 @@ export async function storeFixturesTask( req, res ) {
 
     return res.sendSuccess( storeLayout );
   } catch ( e ) {
-    logger.error( { functionName: 'storeFixturesv1', error: e, message: req.body } );
+    logger.error( { functionName: 'storeFixturesTask', error: e, message: req.body } );
     return res.sendError( e, 500 );
   }
 }
