@@ -582,9 +582,17 @@ export async function storeFixturesv1( req, res ) {
                           } ),
                       );
 
+                      const otherElements = await storeFixtureService.find( {
+                        floorId: floor._id,
+                        associatedElementType: element.elementType,
+                        associatedElementNumber: element.elementNumber,
+                        fixtureType: 'other',
+                      } );
+
                       return {
                         ...element,
                         fixtures: fixturesWithStatus,
+                        otherElements: otherElements,
                       };
                     } ),
                 );
@@ -616,6 +624,8 @@ export async function storeFixturesv1( req, res ) {
 
                 const otherElements = await storeFixtureService.find( {
                   floorId: floor._id,
+                  associatedElementType: { $exists: false },
+                  associatedElementNumber: { $exists: false },
                   fixtureType: 'other',
                 } );
 
@@ -805,7 +815,7 @@ export async function fixtureShelfProductv1( req, res ) {
               date: currentDate,
             } );
 
-            const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
+            const status = mappingCompliance ? mappingCompliance.compliance : '';
 
             return { ...mapping.toObject(), ...productData, status };
           } ),
@@ -865,7 +875,7 @@ export async function fixtureShelfProductv1( req, res ) {
                     date: currentDate,
                   } );
 
-                  const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
+                  const status = mappingCompliance ? mappingCompliance.compliance : '';
 
                   return {
                     ...mapping.toObject(),
@@ -936,7 +946,7 @@ export async function fixtureShelfProductv1( req, res ) {
                       date: currentDate,
                     } );
 
-                    const status = mappingCompliance ? mappingCompliance.compliance : 'missing';
+                    const status = mappingCompliance ? mappingCompliance.compliance : '';
 
                     return {
                       ...mapping.toObject(),
