@@ -23,3 +23,7 @@ export async function updateOne( query, record ) {
 export async function create( data ) {
   return model.fixtureShelfModel.create( data );
 }
+
+export async function count( data ) {
+  return model.fixtureShelfModel.countDocuments( data );
+}
