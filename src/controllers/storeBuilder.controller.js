@@ -1923,10 +1923,9 @@ export async function storeFixturesTask( req, res ) {
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
 
-                            const complianceCount = await planoTaskComplianceService.count( {
+                            const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
-                              status: 'complete',
-                            } );
+                            }, { status: 1 } );
 
                             const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
 
@@ -1946,7 +1945,7 @@ export async function storeFixturesTask( req, res ) {
 
                             return {
                               ...fixture.toObject(),
-                              status: complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
+                              status: compliance?.status ? compliance.status : '',
                               shelfCount: shelves.length,
                               productCount: productCount,
                               vmCount: vmCount,
@@ -1981,10 +1980,9 @@ export async function storeFixturesTask( req, res ) {
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
 
-                      const complianceCount = await planoTaskComplianceService.count( {
+                      const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
-                        status: 'complete',
-                      } );
+                      }, { status: 1 } );
 
                       const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
 
@@ -2004,12 +2002,11 @@ export async function storeFixturesTask( req, res ) {
 
                       return {
                         ...fixture.toObject(),
-                        status: complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
+                        status: compliance?.status ? compliance.status : '',
                         shelfCount: shelves.shelves,
                         productCount: productCount,
                         vmCount: vmCount,
                         shelfDetails: shelfDetails,
-
                       };
                     } ),
                 );
