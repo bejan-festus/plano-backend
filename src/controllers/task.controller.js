@@ -299,10 +299,16 @@ export async function updateAnswers( req, res ) {
       return res.sendError( 'No data found', 204 );
     }
 
+    req.body.answers.forEach( ( ans ) => {
+      if ( ans.image && ans.image.includes( 'http' ) ) {
+        ans.image = url.split( '.com/' )[1].split( '?' )[0];
+      }
+    } );
+
     let data = {
       fixtureId: req.body.fixtureId,
       answers: req.body.answers,
-      status: req.body.answers?.find( ( ans ) => !ans.answer ) ? 'incomplete' : 'complete',
+      status: req.body.answers?.find( ( ans ) => ans.answer && !ans.answer ) ? 'incomplete' : 'complete',
       planoId: req.body.planoId,
       floorId: req.body.floorId,
       type: req.body.type,
@@ -312,6 +318,34 @@ export async function updateAnswers( req, res ) {
     return res.sendSuccess( 'Fixture details updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateAnswers', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function getFixtureDetails( req, res ) {
+  try {
+    if ( !req.query.fixtureId ) {
+      return res.sendError( 'Fixture id is required' );
+    }
+    let fixtureDetails = await planoTaskService.findOne( { fixtureId: req.query.fixtureId, type: req.query.type } );
+    if ( !fixtureDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    fixtureDetails = await Promise.all( fixtureDetails.answers.map( async ( ans ) => {
+      if ( ans.image ) {
+        let params = {
+          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+          file_path: ans.image,
+        };
+        let imageUrl = await signedUrl( params );
+        ans.image = imageUrl;
+      }
+      return ans;
+    } ) );
+
+    return res.sendSuccess( fixtureDetails );
+  } catch ( e ) {
+    logger.error( { functionName: 'getFixtureDetails', error: 'e' } );
     return res.sendError( e, 500 );
   }
 }

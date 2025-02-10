@@ -9,4 +9,5 @@ taskRouter
     .get( '/taskDetails', taskController.getTaskDetails )
     .post( '/uploadImage', taskController.uploadImage )
     .post( '/updateStatus', taskController.updateStatus )
-    .post( '/updateAnswers', taskController.updateAnswers );
+    .post( '/updateAnswers', taskController.updateAnswers )
+    .get( '/getFixtureDetails', taskController.getFixtureDetails );
