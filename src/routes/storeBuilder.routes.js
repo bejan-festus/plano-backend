@@ -25,6 +25,9 @@ storeBuilderRouter
     .post( '/FixtureShelfDetails', validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv1 )
     .post( '/scan', storeBuilderController.scanv1 )
     .post( '/updateMissing', storeBuilderController.updateMissing )
-    .post( '/bulkFixtureUpload', storeBuilderController.bulkFixtureUpload );
+    .post( '/bulkFixtureUpload', storeBuilderController.bulkFixtureUpload )
+    .post( '/uploadImage', storeBuilderController.uploadImage )
+    .post( '/storeFixturesTask', storeBuilderController.storeFixturesTask );
+
 
 

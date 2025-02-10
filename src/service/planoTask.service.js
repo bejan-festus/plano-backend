@@ -11,3 +11,7 @@ export async function updateOne( query={}, record={} ) {
 export async function findOne( query={}, field={} ) {
   return model.planoTaskCompliance.findOne( query, field );
 }
+
+export async function count( data ) {
+  return model.planoTaskCompliance.countDocuments( data );
+}
