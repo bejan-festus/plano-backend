@@ -6387,51 +6387,51 @@ export async function bulkFixtureUpload( req, res ) {
 
 // Find Duplicate Ids
 
-import fs from 'fs';
+// import fs from 'fs';
 
-async function findDuplicates() {
-  try {
-    const keys1 = await planoMappingService.find( { clientId: '11' }, { rfId: 1, _id: 0 } );
-    const keys2 = await fixtureShelfService.find( { clientId: '11' }, { rfId: 1, _id: 0 } );
+// async function findDuplicates() {
+//   try {
+//     const keys1 = await planoMappingService.find( { clientId: '11' }, { rfId: 1, _id: 0 } );
+//     const keys2 = await fixtureShelfService.find( { clientId: '11' }, { rfId: 1, _id: 0 } );
 
-    const keyArray1 = keys1.map( ( doc ) => doc.toObject().rfId );
-    const keyArray2 = keys2.map( ( doc ) => doc.toObject().rfId );
+//     const keyArray1 = keys1.map( ( doc ) => doc.toObject().rfId );
+//     const keyArray2 = keys2.map( ( doc ) => doc.toObject().rfId );
 
-    const findDuplicatesInArray = ( arr ) => {
-      const countMap = new Map();
-      arr.forEach( ( key ) => countMap.set( key, ( countMap.get( key ) || 0 ) + 1 ) );
-      return [ ...countMap.entries() ].filter( ( [ _, count ] ) => count > 1 ).map( ( [ key ] ) => key );
-    };
+//     const findDuplicatesInArray = ( arr ) => {
+//       const countMap = new Map();
+//       arr.forEach( ( key ) => countMap.set( key, ( countMap.get( key ) || 0 ) + 1 ) );
+//       return [ ...countMap.entries() ].filter( ( [ _, count ] ) => count > 1 ).map( ( [ key ] ) => key );
+//     };
 
-    const duplicatesInCollection1 = findDuplicatesInArray( keyArray1 );
-    const duplicatesInCollection2 = findDuplicatesInArray( keyArray2 );
+//     const duplicatesInCollection1 = findDuplicatesInArray( keyArray1 );
+//     const duplicatesInCollection2 = findDuplicatesInArray( keyArray2 );
 
-    const set1 = new Set( keyArray1 );
-    const set2 = new Set( keyArray2 );
-    const duplicatesAcrossCollections = [ ...set1 ].filter( ( key ) => set2.has( key ) );
+//     const set1 = new Set( keyArray1 );
+//     const set2 = new Set( keyArray2 );
+//     const duplicatesAcrossCollections = [ ...set1 ].filter( ( key ) => set2.has( key ) );
 
-    let output = '';
+//     let output = '';
 
-    if ( duplicatesInCollection1.length > 0 ) {
-      output += `Duplicates within product:\n${duplicatesInCollection1.join( '\n' )}\n\n`;
-    }
-    if ( duplicatesInCollection2.length > 0 ) {
-      output += `Duplicates within shelf:\n${duplicatesInCollection2.join( '\n' )}\n\n`;
-    }
-    if ( duplicatesAcrossCollections.length > 0 ) {
-      output += `Duplicates across product & shelf:\n${duplicatesAcrossCollections.join( '\n' )}\n\n`;
-    }
+//     if ( duplicatesInCollection1.length > 0 ) {
+//       output += `Duplicates within product:\n${duplicatesInCollection1.join( '\n' )}\n\n`;
+//     }
+//     if ( duplicatesInCollection2.length > 0 ) {
+//       output += `Duplicates within shelf:\n${duplicatesInCollection2.join( '\n' )}\n\n`;
+//     }
+//     if ( duplicatesAcrossCollections.length > 0 ) {
+//       output += `Duplicates across product & shelf:\n${duplicatesAcrossCollections.join( '\n' )}\n\n`;
+//     }
 
-    if ( output ) {
-      const filePath = 'duplicates.txt';
-      fs.writeFileSync( filePath, output, 'utf8' );
-      console.log( `Duplicates written to ${filePath}` );
-    } else {
-      console.log( 'No duplicates found.' );
-    }
-  } catch ( error ) {
-    console.error( 'Error:', error );
-  }
-}
+//     if ( output ) {
+//       const filePath = 'duplicates.txt';
+//       fs.writeFileSync( filePath, output, 'utf8' );
+//       console.log( `Duplicates written to ${filePath}` );
+//     } else {
+//       console.log( 'No duplicates found.' );
+//     }
+//   } catch ( error ) {
+//     console.error( 'Error:', error );
+//   }
+// }
 
-// findDuplicates();
+// // findDuplicates();
