@@ -1925,6 +1925,7 @@ export async function storeFixturesTask( req, res ) {
 
                             const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
+                              type: req.body?.type ? req.body.type : 'fixture',
                             }, { status: 1 } );
 
                             const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
@@ -1982,6 +1983,7 @@ export async function storeFixturesTask( req, res ) {
 
                       const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
+                        type: req.body?.type ? req.body.type : 'fixture',
                       }, { status: 1 } );
 
                       const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
