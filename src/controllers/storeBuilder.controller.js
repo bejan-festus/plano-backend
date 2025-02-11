@@ -568,6 +568,15 @@ export async function storeFixturesv1( req, res ) {
 
                       const fixturesWithStatus = await Promise.all(
                           fixtures.map( async ( fixture ) => {
+                            if ( fixture?.imageUrl ) {
+                              let params = {
+                                Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                                file_path: fixture.imageUrl,
+                              };
+                              fixture.imageUrl = await signedUrl( params );
+                            } else {
+                              fixture.imageUrl = '';
+                            }
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
