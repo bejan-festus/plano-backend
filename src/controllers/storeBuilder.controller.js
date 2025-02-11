@@ -948,6 +948,13 @@ export async function fixtureShelfProductv1( req, res ) {
     if ( !planogram ) return res.sendError( 'Planogram not found', 204 );
     if ( !fixture ) return res.sendError( 'Fixture not found', 204 );
 
+    let params = {
+      Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+      file_path: fixture.imageUrl,
+    };
+
+    fixture.imageUrl = await signedUrl( params );
+
     const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
     const getProducts = async ( mappings ) => {
@@ -972,6 +979,15 @@ export async function fixtureShelfProductv1( req, res ) {
     const vmMappings = await planoMappingService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'vm' } );
     const vmIds = vmMappings.map( ( mapping ) => mapping.productId );
     const vms = await planoProductService.find( { _id: { $in: vmIds }, type: 'vm' } );
+    await Promise.all( vms.map( async ( vm ) => {
+      if ( vm?.productImageUrl ) {
+        let params = {
+          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+          file_path: vm?.productImageUrl,
+        };
+        vm.productImageUrl = await signedUrl( params );
+      }
+    } ) );
     const vmMap = new Map( vms.map( ( vm ) => [ vm._id.toString(), vm.toObject() ] ) );
     const vmDetails = vmMappings.map( ( mapping ) => vmMap.get( mapping.productId.toString() ) || {} );
 
