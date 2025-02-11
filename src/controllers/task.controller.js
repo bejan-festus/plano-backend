@@ -287,8 +287,7 @@ export async function updateStatus( req, res ) {
     if ( !taskDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-    taskDetails.checklistStatus = req.body.status;
-    taskDetails.save();
+    await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status } );
     return res.sendSuccess( 'Task status updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'storeLayout', error: e } );
