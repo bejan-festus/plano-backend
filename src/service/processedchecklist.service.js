@@ -8,6 +8,10 @@ export async function findOne( query = {}, field = {} ) {
   return model.taskProcessedModel.findOne( query, field );
 }
 
+export async function updateOne( query = {}, record = {} ) {
+  return model.taskProcessedModel.updateOne( query, { $set: record } );
+}
+
 export async function find( query = {}, field = {} ) {
   return model.taskProcessedModel.find( query, field );
 }
