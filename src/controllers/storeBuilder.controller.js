@@ -541,7 +541,7 @@ export async function storeFixturesv1( req, res ) {
 
     const planograms = await planoService.find(
         { _id: { $in: planoIds } },
-        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1 },
+        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1 },
     );
 
     if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
@@ -1685,8 +1685,7 @@ export async function updateMissing( req, res ) {
 
 export async function bulkFixtureUpload( req, res ) {
   try {
-    console.log( req.body.id );
-    const fixture = await storeFixtureService.findOne( { _id: new mongoose.Types.ObjectId( '' ) } );
+    const fixture = await storeFixtureService.findOne( { _id: new mongoose.Types.ObjectId( req.body.id ) } );
 
     console.log( fixture );
 
@@ -1891,7 +1890,7 @@ export async function storeFixturesTask( req, res ) {
 
     const planograms = await planoService.find(
         { _id: { $in: planoIds } },
-        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1 },
+        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1 },
     );
 
     if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
