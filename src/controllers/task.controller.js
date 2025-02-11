@@ -5,6 +5,7 @@ import * as userService from '../service/user.service.js';
 import dayjs from 'dayjs';
 import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
 import * as planoTaskService from '../service/planoTask.service.js';
+import * as planoService from '../service/planogram.service.js';
 
 async function createUser( data ) {
   try {
@@ -193,6 +194,7 @@ export async function createTask( req, res ) {
         }
         if ( !req.body.userEmail ) {
           await Promise.all( storeDetails.map( async ( store ) => {
+            let planoDetails = await planoService.findOne( { storeId: store.storeId } );
             userDetails = await userService.findOne( { email: store?.spocDetails?.[0]?.email } );
             if ( !userDetails ) {
               let userData = {
@@ -209,6 +211,7 @@ export async function createTask( req, res ) {
             taskData.userId = userDetails._id;
             taskData.userName = userDetails.userName;
             taskData.userEmail = userDetails.email;
+            taskData.planoId = planoDetails?.planoId;
             await processedService.create( taskData );
           } ) );
         }
