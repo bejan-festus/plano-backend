@@ -1,7 +1,7 @@
 import * as storeBuilderService from '../service/storeBuilder.service.js';
 import * as storeService from '../service/store.service.js';
 import * as planoService from '../service/planogram.service.js';
-import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
+import { logger, fileUpload, signedUrl, sendMessageToQueue } from 'tango-app-api-middleware';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 import utc from 'dayjs/plugin/utc.js';
@@ -12,6 +12,8 @@ import * as planoProductService from '../service/planoProduct.service.js';
 import * as planoMappingService from '../service/planoMapping.service.js';
 import * as planoComplianceService from '../service/planoCompliance.service.js';
 import * as planoTaskComplianceService from '../service/planoTask.service.js';
+import path from 'path';
+
 
 dayjs.extend( utc );
 dayjs.extend( customParseFormat );
@@ -636,6 +638,15 @@ export async function storeFixturesv1( req, res ) {
 
                 const centerFixturesWithStatus = await Promise.all(
                     centerFixtures.map( async ( fixture ) => {
+                      if ( fixture?.imageUrl ) {
+                        let params = {
+                          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                          file_path: fixture.imageUrl,
+                        };
+                        fixture.imageUrl = await signedUrl( params );
+                      } else {
+                        fixture.imageUrl = '';
+                      }
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -1916,6 +1927,15 @@ export async function storeFixturesTask( req, res ) {
 
                       const fixturesWithStatus = await Promise.all(
                           fixtures.map( async ( fixture ) => {
+                            if ( fixture?.imageUrl ) {
+                              let params = {
+                                Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                                file_path: fixture.imageUrl,
+                              };
+                              fixture.imageUrl = await signedUrl( params );
+                            } else {
+                              fixture.imageUrl = '';
+                            }
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -1974,6 +1994,15 @@ export async function storeFixturesTask( req, res ) {
 
                 const centerFixturesWithStatus = await Promise.all(
                     centerFixtures.map( async ( fixture ) => {
+                      if ( fixture?.imageUrl ) {
+                        let params = {
+                          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                          file_path: fixture.imageUrl,
+                        };
+                        fixture.imageUrl = await signedUrl( params );
+                      } else {
+                        fixture.imageUrl = '';
+                      }
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -2042,3 +2071,68 @@ export async function storeFixturesTask( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+
+
+export const qrVideoUpload = async ( req, res ) => {
+  try {
+    if ( !req.files?.file ) {
+      return res.sendError( { message: 'Please upload a file' }, 400 );
+    }
+
+    const { file } = req.files;
+    const { fixtureId } = req.body;
+
+    if ( !fixtureId ) {
+      return res.sendError( { message: 'Missing fixtureId' }, 400 );
+    }
+
+    const format = path.extname( file.name ).toLowerCase().replace( '.', '' );
+    file.name = file.name.replace( /\s/g, '' );
+
+    const bucket = JSON.parse( process.env.BUCKET || '{}' );
+    if ( !bucket.storeBuilder ) {
+      return res.sendError( { message: 'Storage bucket not configured' }, 500 );
+    }
+
+    const uploadPath = 'planoQrVideos';
+
+    const params = {
+      fileName: `/${fixtureId}.${format}`,
+      Key: uploadPath,
+      Bucket: bucket.storeBuilder,
+      ContentType: file.mimetype,
+      body: file.data,
+    };
+
+    const fileUrl = await fileUpload( params );
+
+    const message = {
+      'fixtureId': fixtureId,
+      'date': dayjs().format( 'YYYY-MM-DD' ),
+      'bucket': bucket.storeBuilder,
+      'videoPath': fileUrl.Key,
+    };
+
+    const sqs = JSON.parse( process.env.SQS || '{}' );
+    if ( !sqs.url || !sqs.highcountTopic ) {
+      return res.sendError( { message: 'SQS details not configured' }, 500 );
+    }
+
+    let inputData = {
+      Bucket: bucket.storeBuilder,
+      file_path: fileUrl.Key,
+    };
+    const imgUrl = await signedUrl( inputData );
+    if ( !imgUrl ) {
+      return res.sendError( { message: 'Something went Wrong' }, 500 );
+    }
+
+    const sqsPush = await sendMessageToQueue( `${sqs.url}${sqs.qrVideoTopic}`, JSON.stringify( message ) );
+
+    return res.sendSuccess( { message: 'Uploaded successfully', sqsPush } );
+  } catch ( error ) {
+    logger.error( 'uploadFixtureVideo =>', error );
+    return res.sendError( { message: 'Internal Server Error' }, 500 );
+  }
+};
+
