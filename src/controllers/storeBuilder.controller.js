@@ -1927,10 +1927,10 @@ export async function storeFixturesTask( req, res ) {
 
                       const fixturesWithStatus = await Promise.all(
                           fixtures.map( async ( fixture ) => {
-                            if ( fixture?.imageUrl ) {
+                            if ( fixture?.imageUrl || fixture.vmImageUrl ) {
                               let params = {
                                 Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-                                file_path: fixture.imageUrl,
+                                file_path: req.body.type == 'vm' ? fixture.vmImageUrl : fixture.imageUrl,
                               };
                               fixture.imageUrl = await signedUrl( params );
                             } else {
@@ -1994,10 +1994,10 @@ export async function storeFixturesTask( req, res ) {
 
                 const centerFixturesWithStatus = await Promise.all(
                     centerFixtures.map( async ( fixture ) => {
-                      if ( fixture?.imageUrl ) {
+                      if ( fixture?.imageUrl || fixture.vmImageUrl ) {
                         let params = {
                           Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-                          file_path: fixture.imageUrl,
+                          file_path: req.body.type == 'vm' ? fixture.vmImageUrl : fixture.imageUrl,
                         };
                         fixture.imageUrl = await signedUrl( params );
                       } else {
