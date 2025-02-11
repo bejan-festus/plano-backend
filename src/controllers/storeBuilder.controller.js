@@ -1669,8 +1669,7 @@ export async function updateMissing( req, res ) {
 
 export async function bulkFixtureUpload( req, res ) {
   try {
-    console.log( req.body.id );
-    const fixture = await storeFixtureService.findOne( { _id: new mongoose.Types.ObjectId( '' ) } );
+    const fixture = await storeFixtureService.findOne( { _id: new mongoose.Types.ObjectId( req.body.id ) } );
 
     console.log( fixture );
 
