@@ -232,7 +232,6 @@ export async function getTaskDetails( req, res ) {
       return res.sendError( 'Store id is required', 400 );
     }
     let date = req.query?.date || dayjs().format( 'YYYY-MM-DD' );
-    console.log( { store_id: req.query.storeId, date_string: date, isPlano: true, checklistStatus: 'open' } );
     let getDetails = await processedService.find( { store_id: req.query.storeId, date_string: date, isPlano: true, checklistStatus: 'open' }, { checkListName: 1 } );
     return res.sendSuccess( getDetails );
   } catch ( e ) {
