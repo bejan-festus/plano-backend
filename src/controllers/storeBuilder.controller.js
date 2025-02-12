@@ -2138,11 +2138,53 @@ export const qrVideoUpload = async ( req, res ) => {
 
 export const fixtureQrUpdate = async ( req, res ) => {
   try {
-    const { fixtureId, bucket, videoPath, date, productQr } = req.body;
+    const { fixtureId, date, productQr } = req.body;
 
-    const productMappings = await storeFixtureService.find( { fixtureId: fixtureId, type: 'product' } );
+    const fixture = await storeFixtureService.findOne( { _id: new mongoose.Types.ObjectId( fixtureId ) }, { _id: 1 } );
 
-    console.log( productMappings );
+    if ( !fixture ) {
+      return res.sendError( { message: 'Invalid fixture Id' }, 400 );
+    }
+
+    const productMappings = await planoMappingService.find( { fixtureId: fixture.toObject()._id, type: 'product' } );
+
+    if ( !productMappings.length ) {
+      return res.sendError( { message: 'No mapping found for fixture' }, 400 );
+    }
+
+    const currentDate = new Date( date );
+
+    const updateStatus = await Promise.all(
+        productMappings.map( async ( mapping ) => {
+          const mappingData = mapping.toObject();
+
+          if ( productQr.includes( mappingData.rfId ) ) {
+            const complianceData = { ...mappingData, planoMappingId: mappingData._id, compliance: 'proper' };
+
+            delete complianceData._id;
+
+            await planoComplianceService.updateOne( { fixtureId: fixture.toObject()._id, rfId: mappingData.rfId, date: currentDate }, complianceData );
+
+            return {
+              result: 'proper',
+              id: mappingData.rfId,
+            };
+          } else {
+            const complianceData = { ...mappingData, planoMappingId: mappingData._id, compliance: 'missing' };
+
+            delete complianceData._id;
+
+            await planoComplianceService.updateOne( { fixtureId: fixture.toObject()._id, rfId: mappingData.rfId, date: currentDate }, complianceData );
+
+            return {
+              result: 'missing',
+              id: mappingData.rfId,
+            };
+          }
+        } ),
+    );
+
+    return res.sendSuccess( updateStatus );
   } catch ( error ) {
     logger.error( 'uploadFixtureVideo =>', error );
     return res.sendError( { message: 'Internal Server Error' }, 500 );

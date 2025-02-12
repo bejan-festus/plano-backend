@@ -29,5 +29,5 @@ storeBuilderRouter
     .post( '/uploadImage', storeBuilderController.uploadImage )
     .post( '/storeFixturesTask', storeBuilderController.storeFixturesTask )
     .post( '/qrVideoUpload', storeBuilderController.qrVideoUpload )
-    .post( '/fixtureQrUpdate', storeBuilderController.qrVideoUpload );
+    .post( '/fixtureQrUpdate', storeBuilderController.fixtureQrUpdate );
 
