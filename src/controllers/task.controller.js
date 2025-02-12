@@ -115,6 +115,7 @@ export async function createTask( req, res ) {
           date_string: dayjs().format( 'YYYY-MM-DD' ),
           sourceCheckList_id: task._id,
           checkListName: task.checkListName,
+          checkListId: task._id,
           scheduleStartTime: '12:00 AM',
           scheduleEndTime: '11:59 PM',
           scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(),
@@ -228,10 +229,10 @@ export async function createTask( req, res ) {
 export async function getTaskDetails( req, res ) {
   try {
     if ( !req.query.storeId ) {
-      return res.sendError( 'Store id is required' );
+      return res.sendError( 'Store id is required', 400 );
     }
     let date = req.query?.date || dayjs().format( 'YYYY-MM-DD' );
-    let getDetails = await processedService.find( { store_id: req.query.storeId, date_string: date, isPlano: true, checklistStatus: 'open' }, { checkListName: 1 } );
+    let getDetails = await processedService.find( { store_id: req.query.storeId, date_string: date, isPlano: true, checklistStatus: 'open' }, { checkListName: 1, taskType: '$type' } );
     return res.sendSuccess( getDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
@@ -281,7 +282,7 @@ export async function updateStatus( req, res ) {
       return res.sendError( 'No data found', 204 );
     }
     if ( !req.body.status ) {
-      return res.sendError( 'Status is required' );
+      return res.sendError( 'Status is required', 400 );
     }
     let taskDetails = await processedService.findOne( { _id: req.body.taskId } );
     if ( !taskDetails ) {
@@ -327,7 +328,7 @@ export async function updateAnswers( req, res ) {
 export async function getFixtureDetails( req, res ) {
   try {
     if ( !req.query.fixtureId ) {
-      return res.sendError( 'Fixture id is required' );
+      return res.sendError( 'Fixture id is required', 400 );
     }
     let fixtureDetails = await planoTaskService.findOne( { fixtureId: req.query.fixtureId, type: req.query.type } );
     if ( !fixtureDetails ) {
