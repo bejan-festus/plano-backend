@@ -2136,3 +2136,16 @@ export const qrVideoUpload = async ( req, res ) => {
   }
 };
 
+export const fixtureQrUpdate = async ( req, res ) => {
+  try {
+    const { fixtureId, bucket, videoPath, date, productQr } = req.body;
+
+    const productMappings = await storeFixtureService.find( { fixtureId: fixtureId, type: 'product' } );
+
+    console.log( productMappings );
+  } catch ( error ) {
+    logger.error( 'uploadFixtureVideo =>', error );
+    return res.sendError( { message: 'Internal Server Error' }, 500 );
+  }
+};
+
