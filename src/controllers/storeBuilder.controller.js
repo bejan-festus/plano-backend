@@ -541,10 +541,17 @@ export async function storeFixtures( req, res ) {
 
 export async function storeFixturesv1( req, res ) {
   try {
-    const planoIds = req.body.id.map( ( id ) => new mongoose.Types.ObjectId( id ) );
+    const planoIds = req.body.id
+        .filter( ( id ) => mongoose.Types.ObjectId.isValid( id ) )
+        .map( ( id ) => new mongoose.Types.ObjectId( id ) );
 
     const planograms = await planoService.find(
-        { _id: { $in: planoIds } },
+        {
+          $or: [
+            { _id: { $in: planoIds } },
+            { storeId: { $in: req.body.id } },
+          ],
+        },
         { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1 },
     );
 
@@ -1901,10 +1908,17 @@ export const uploadImage = async ( req, res ) => {
 
 export async function storeFixturesTask( req, res ) {
   try {
-    const planoIds = req.body.id.map( ( id ) => new mongoose.Types.ObjectId( id ) );
+    const planoIds = req.body.id
+        .filter( ( id ) => mongoose.Types.ObjectId.isValid( id ) )
+        .map( ( id ) => new mongoose.Types.ObjectId( id ) );
 
     const planograms = await planoService.find(
-        { _id: { $in: planoIds } },
+        {
+          $or: [
+            { _id: { $in: planoIds } },
+            { storeId: { $in: req.body.id } },
+          ],
+        },
         { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1 },
     );
 
@@ -2106,7 +2120,7 @@ export const qrFileUpload = async ( req, res ) => {
     let uploadPath;
 
     if ( type === 'video' ) {
-      uploadPath = `planoQrVideos/${dayjs().format( 'YYYY-MM-DD' )}/${fixture.toObject().storeId}`;
+      uploadPath = `planoQrFixtureVideos/${dayjs().format( 'YYYY-MM-DD' )}/${fixture.toObject().storeId}`;
     } else if ( type === 'image' ) {
       uploadPath = `planoQrFixtureImages/${dayjs().format( 'YYYY-MM-DD' )}/${fixture.toObject().storeId}`;
     }
@@ -2121,7 +2135,13 @@ export const qrFileUpload = async ( req, res ) => {
 
     const fileUrl = await fileUpload( params );
 
-    res.sendSuccess( fileUrl.Key );
+    const signedParams = {
+      Bucket: bucket.storeBuilder,
+      file_path: fileUrl.Key,
+    };
+    const signedKey = await signedUrl( signedParams );
+
+    res.sendSuccess( signedKey );
   } catch ( error ) {
     logger.error( 'fixtureQrUpdate =>', error );
     return res.sendError( { message: 'Internal Server Error' }, 500 );
@@ -2179,14 +2199,15 @@ export const updateQrCvProcessRequest = async ( req, res ) => {
       date: currentDate,
       status: 'initiated',
       fixtureImage: {
-        filePath: imagePath,
+        filePath: imagePath ? imagePath.match( /planoQrFixtureImages\/[^?]+/ )?.[0] : undefined,
         comment: imageComment,
       },
       fixtureVideo: {
-        filePath: videoPath,
+        filePath: videoPath ? videoPath.match( /planoQrFixtureVideos\/[^?]+/ )?.[0] : undefined,
         comment: videoComment,
       },
     };
+
 
     await planoQrConversionRequestService.upsertOne( { fixtureId: fixtureData?._id, date: currentDate }, data );
 
