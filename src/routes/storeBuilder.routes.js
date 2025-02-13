@@ -28,6 +28,6 @@ storeBuilderRouter
     .post( '/bulkFixtureUpload', storeBuilderController.bulkFixtureUpload )
     .post( '/uploadImage', storeBuilderController.uploadImage )
     .post( '/storeFixturesTask', storeBuilderController.storeFixturesTask )
-    .post( '/qrVideoUpload', storeBuilderController.qrVideoUpload );
-
+    .post( '/qrVideoUpload', storeBuilderController.qrVideoUpload )
+    .post( '/fixtureQrUpdate', storeBuilderController.fixtureQrUpdate );
 

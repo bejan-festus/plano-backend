@@ -1005,12 +1005,13 @@ export async function fixtureShelfProductv1( req, res ) {
     if ( fixture.toObject().productResolutionLevel === 'L1' ) {
       const productMappings = await planoMappingService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const productDetails = await getProducts( productMappings );
-      return res.sendSuccess( { ...fixture.toObject(), products: productDetails, vms: vmDetails } );
+      return res.sendSuccess( { ...fixture.toObject(), products: productDetails, vms: vmDetails, productCount: productMappings.length } );
     }
 
     if ( [ 'L2', 'L4' ].includes( fixture.toObject().productResolutionLevel ) ) {
       const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
       if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+      const productCount = await planoMappingService.count( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const shelfProducts = await Promise.all(
           fixtureShelves.map( async ( shelf ) => {
             const productMappings = await planoMappingService.find( { shelfId: shelf._id, type: 'product' } );
@@ -1018,12 +1019,13 @@ export async function fixtureShelfProductv1( req, res ) {
             return { ...shelf.toObject(), products: productDetails };
           } ),
       );
-      return res.sendSuccess( { ...fixture.toObject(), shelves: shelfProducts, vms: vmDetails } );
+      return res.sendSuccess( { ...fixture.toObject(), shelves: shelfProducts, vms: vmDetails, productCount: productCount } );
     }
 
     if ( fixture.toObject().productResolutionLevel === 'L3' ) {
       const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
       if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+      const productCount = await planoMappingService.count( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const groupedShelves = fixtureShelves.reduce( async ( accPromise, shelf ) => {
         const acc = await accPromise;
         const productMappings = await planoMappingService.find( { shelfId: shelf._id, type: 'product' } );
@@ -1033,7 +1035,7 @@ export async function fixtureShelfProductv1( req, res ) {
         acc[sectionName].push( { ...shelf.toObject(), products: productDetails } );
         return acc;
       }, Promise.resolve( {} ) );
-      return res.sendSuccess( { ...fixture.toObject(), categories: await groupedShelves, vms: vmDetails } );
+      return res.sendSuccess( { ...fixture.toObject(), categories: await groupedShelves, vms: vmDetails, productCount: productCount } );
     }
 
     return res.sendError( 'Incorrect resolution level', 400 );
@@ -2086,6 +2088,12 @@ export const qrVideoUpload = async ( req, res ) => {
       return res.sendError( { message: 'Missing fixtureId' }, 400 );
     }
 
+    const fixture = await storeFixtureService.findOne( { _id: fixtureId } );
+
+    if ( !fixture ) {
+      return res.sendError( { message: 'Fixture not found' }, 400 );
+    }
+
     const format = path.extname( file.name ).toLowerCase().replace( '.', '' );
     file.name = file.name.replace( /\s/g, '' );
 
@@ -2094,7 +2102,7 @@ export const qrVideoUpload = async ( req, res ) => {
       return res.sendError( { message: 'Storage bucket not configured' }, 500 );
     }
 
-    const uploadPath = 'planoQrVideos';
+    const uploadPath = `planoQrVideos/${dayjs().format( 'YYYY-MM-DD' )}/${fixture.toObject().storeId}`;
 
     const params = {
       fileName: `/${fixtureId}.${format}`,
@@ -2114,17 +2122,8 @@ export const qrVideoUpload = async ( req, res ) => {
     };
 
     const sqs = JSON.parse( process.env.SQS || '{}' );
-    if ( !sqs.url || !sqs.highcountTopic ) {
+    if ( !sqs.url || !sqs.qrVideoTopic ) {
       return res.sendError( { message: 'SQS details not configured' }, 500 );
-    }
-
-    let inputData = {
-      Bucket: bucket.storeBuilder,
-      file_path: fileUrl.Key,
-    };
-    const imgUrl = await signedUrl( inputData );
-    if ( !imgUrl ) {
-      return res.sendError( { message: 'Something went Wrong' }, 500 );
     }
 
     const sqsPush = await sendMessageToQueue( `${sqs.url}${sqs.qrVideoTopic}`, JSON.stringify( message ) );
@@ -2132,6 +2131,61 @@ export const qrVideoUpload = async ( req, res ) => {
     return res.sendSuccess( { message: 'Uploaded successfully', sqsPush } );
   } catch ( error ) {
     logger.error( 'uploadFixtureVideo =>', error );
+    return res.sendError( { message: 'Internal Server Error' }, 500 );
+  }
+};
+
+export const fixtureQrUpdate = async ( req, res ) => {
+  try {
+    const { fixtureId, date, productQr } = req.body;
+
+    const fixture = await storeFixtureService.findOne( { _id: new mongoose.Types.ObjectId( fixtureId ) }, { _id: 1 } );
+
+    if ( !fixture ) {
+      return res.sendError( { message: 'Invalid fixture Id' }, 400 );
+    }
+
+    const productMappings = await planoMappingService.find( { fixtureId: fixture.toObject()._id, type: 'product' } );
+
+    if ( !productMappings.length ) {
+      return res.sendError( { message: 'No mapping found for fixture' }, 400 );
+    }
+
+    const currentDate = new Date( date );
+
+    const updateStatus = await Promise.all(
+        productMappings.map( async ( mapping ) => {
+          const mappingData = mapping.toObject();
+
+          if ( productQr.includes( mappingData.rfId ) ) {
+            const complianceData = { ...mappingData, planoMappingId: mappingData._id, compliance: 'proper' };
+
+            delete complianceData._id;
+
+            await planoComplianceService.updateOne( { fixtureId: fixture.toObject()._id, rfId: mappingData.rfId, date: currentDate }, complianceData );
+
+            return {
+              result: 'proper',
+              id: mappingData.rfId,
+            };
+          } else {
+            const complianceData = { ...mappingData, planoMappingId: mappingData._id, compliance: 'missing' };
+
+            delete complianceData._id;
+
+            await planoComplianceService.updateOne( { fixtureId: fixture.toObject()._id, rfId: mappingData.rfId, date: currentDate }, complianceData );
+
+            return {
+              result: 'missing',
+              id: mappingData.rfId,
+            };
+          }
+        } ),
+    );
+
+    return res.sendSuccess( updateStatus );
+  } catch ( error ) {
+    logger.error( 'fixtureQrUpdate =>', error );
     return res.sendError( { message: 'Internal Server Error' }, 500 );
   }
 };
