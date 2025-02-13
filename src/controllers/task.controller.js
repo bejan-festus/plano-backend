@@ -312,7 +312,7 @@ export async function updateAnswers( req, res ) {
     let data = {
       fixtureId: req.body.fixtureId,
       answers: req.body.answers,
-      status: req.body.answers?.find( ( ans ) => ans.answer && !ans.answer ) ? 'incomplete' : 'complete',
+      status: req.body.answers?.find( ( ans ) => typeof ans.value == 'boolean' && ans?.value == false ) ? 'incomplete' : 'complete',
       planoId: req.body.planoId,
       floorId: req.body.floorId,
       type: req.body.type,
