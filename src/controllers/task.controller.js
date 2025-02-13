@@ -254,7 +254,7 @@ export async function uploadImage( req, res ) {
 
     let params = {
       Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-      Key: `${req.body.taskId}/${req.body.qno}/${dayjs().format()}`,
+      Key: `${req.body.taskId}/${req.body.qno}/${Date.now()}/`,
       fileName: req.files.file.name,
       ContentType: req.files.file.mimeType,
       body: req.files.file.data,
@@ -304,7 +304,8 @@ export async function updateAnswers( req, res ) {
 
     req.body.answers.forEach( ( ans ) => {
       if ( ans.image && ans.image.includes( 'http' ) ) {
-        ans.image = url.split( '.com/' )[1].split( '?' )[0];
+        ans.image = ans.image.split( '.com/' )[1].split( '?' )[0];
+        ans.image = decodeURIComponent( ans.image );
       }
     } );
 
