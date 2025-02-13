@@ -614,9 +614,19 @@ export async function storeFixturesv1( req, res ) {
                                 } ),
                             );
 
+                            let fixtureStatus;
+
+                            const cvProcessStatus = await planoQrConversionRequestService.count( { fixtureId: fixture._id, date: currentDate, status: 'initiated' } );
+
+                            if ( cvProcessStatus ) {
+                              fixtureStatus = 'inprogress';
+                            } else {
+                              fixtureStatus = complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
+                            }
+
                             return {
                               ...fixture.toObject(),
-                              status: complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
+                              status: fixtureStatus,
                               shelfCount: shelves.length,
                               productCount: productCount,
                               vmCount: vmCount,
@@ -682,9 +692,19 @@ export async function storeFixturesv1( req, res ) {
                           } ),
                       );
 
+                      let fixtureStatus;
+
+                      const cvProcessStatus = await planoQrConversionRequestService.count( { fixtureId: fixture._id, date: currentDate, status: 'initiated' } );
+
+                      if ( cvProcessStatus ) {
+                        fixtureStatus = 'inprogress';
+                      } else {
+                        fixtureStatus = complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
+                      }
+
                       return {
                         ...fixture.toObject(),
-                        status: complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete',
+                        status: fixtureStatus,
                         shelfCount: shelves.shelves,
                         productCount: productCount,
                         vmCount: vmCount,
@@ -2207,7 +2227,6 @@ export const updateQrCvProcessRequest = async ( req, res ) => {
         comment: videoComment,
       },
     };
-
 
     await planoQrConversionRequestService.upsertOne( { fixtureId: fixtureData?._id, date: currentDate }, data );
 
