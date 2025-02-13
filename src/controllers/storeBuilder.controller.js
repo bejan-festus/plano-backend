@@ -12,6 +12,8 @@ import * as planoProductService from '../service/planoProduct.service.js';
 import * as planoMappingService from '../service/planoMapping.service.js';
 import * as planoComplianceService from '../service/planoCompliance.service.js';
 import * as planoTaskComplianceService from '../service/planoTask.service.js';
+import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
+
 import path from 'path';
 
 
@@ -2074,15 +2076,14 @@ export async function storeFixturesTask( req, res ) {
   }
 }
 
-
-export const qrVideoUpload = async ( req, res ) => {
+export const qrFileUpload = async ( req, res ) => {
   try {
     if ( !req.files?.file ) {
       return res.sendError( { message: 'Please upload a file' }, 400 );
     }
 
     const { file } = req.files;
-    const { fixtureId } = req.body;
+    const { fixtureId, type } = req.body;
 
     if ( !fixtureId ) {
       return res.sendError( { message: 'Missing fixtureId' }, 400 );
@@ -2102,7 +2103,13 @@ export const qrVideoUpload = async ( req, res ) => {
       return res.sendError( { message: 'Storage bucket not configured' }, 500 );
     }
 
-    const uploadPath = `planoQrVideos/${dayjs().format( 'YYYY-MM-DD' )}/${fixture.toObject().storeId}`;
+    let uploadPath;
+
+    if ( type === 'video' ) {
+      uploadPath = `planoQrVideos/${dayjs().format( 'YYYY-MM-DD' )}/${fixture.toObject().storeId}`;
+    } else if ( type === 'image' ) {
+      uploadPath = `planoQrFixtureImages/${dayjs().format( 'YYYY-MM-DD' )}/${fixture.toObject().storeId}`;
+    }
 
     const params = {
       fileName: `/${fixtureId}.${format}`,
@@ -2114,11 +2121,37 @@ export const qrVideoUpload = async ( req, res ) => {
 
     const fileUrl = await fileUpload( params );
 
+    res.sendSuccess( fileUrl.Key );
+  } catch ( error ) {
+    logger.error( 'fixtureQrUpdate =>', error );
+    return res.sendError( { message: 'Internal Server Error' }, 500 );
+  }
+};
+
+export const updateQrCvProcessRequest = async ( req, res ) => {
+  try {
+    const { fixtureId, videoPath, imagePath, videoComment, imageComment } = req.body;
+
+    if ( !fixtureId ) {
+      return res.sendError( { message: 'Missing fixtureId' }, 400 );
+    }
+
+    const fixture = await storeFixtureService.findOne( { _id: fixtureId } );
+
+    if ( !fixture ) {
+      return res.sendError( { message: 'Fixture not found' }, 400 );
+    }
+
+    const bucket = JSON.parse( process.env.BUCKET || '{}' );
+    if ( !bucket.storeBuilder ) {
+      return res.sendError( { message: 'Storage bucket not configured' }, 500 );
+    }
+
     const message = {
       'fixtureId': fixtureId,
       'date': dayjs().format( 'YYYY-MM-DD' ),
       'bucket': bucket.storeBuilder,
-      'videoPath': fileUrl.Key,
+      'videoPath': videoPath,
     };
 
     const sqs = JSON.parse( process.env.SQS || '{}' );
@@ -2128,7 +2161,88 @@ export const qrVideoUpload = async ( req, res ) => {
 
     const sqsPush = await sendMessageToQueue( `${sqs.url}${sqs.qrVideoTopic}`, JSON.stringify( message ) );
 
-    return res.sendSuccess( { message: 'Uploaded successfully', sqsPush } );
+    if ( !sqsPush?.MessageId ) {
+      return res.sendError( { message: 'Failed to send SQS message' }, 500 );
+    }
+
+    const fixtureData = fixture.toObject();
+
+    const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
+
+    const data = {
+      clientId: fixtureData?.clientId,
+      storeName: fixtureData?.storeName,
+      storeId: fixtureData?.storeId,
+      planoId: fixtureData?.planoId,
+      floorId: fixtureData?.floorId,
+      fixtureId: fixtureData?._id,
+      date: currentDate,
+      status: 'initiated',
+      fixtureImage: {
+        filePath: imagePath,
+        comment: imageComment,
+      },
+      fixtureVideo: {
+        filePath: videoPath,
+        comment: videoComment,
+      },
+    };
+
+    await planoQrConversionRequestService.upsertOne( { fixtureId: fixtureData?._id, date: currentDate }, data );
+
+    return res.sendSuccess( { message: 'Updated successfully', data } );
+  } catch ( error ) {
+    logger.error( 'uploadFixtureVideo =>', error );
+    return res.sendError( { message: 'Internal Server Error' }, 500 );
+  }
+};
+
+export const getQrCvProcessRequest = async ( req, res ) => {
+  try {
+    const { fixtureId } = req.body;
+
+    if ( !fixtureId ) {
+      return res.sendError( { message: 'Missing fixtureId' }, 400 );
+    }
+
+    const fixture = await storeFixtureService.findOne( { _id: fixtureId } );
+
+    if ( !fixture ) {
+      return res.sendError( { message: 'Fixture not found' }, 400 );
+    }
+
+    const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
+
+    const planoCvReq = await planoQrConversionRequestService.findOne( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), date: currentDate } );
+
+    if ( !planoCvReq ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    const bucket = JSON.parse( process.env.BUCKET || '{}' );
+    if ( !bucket.storeBuilder ) {
+      return res.sendError( { message: 'Storage bucket not configured' }, 500 );
+    }
+
+    let planoCvReqData = planoCvReq.toObject();
+
+    if ( planoCvReqData?.fixtureImage?.filePath ) {
+      const params = {
+        Bucket: bucket.storeBuilder,
+        file_path: planoCvReqData.fixtureImage.filePath,
+      };
+      planoCvReqData.fixtureImage.filePath = await signedUrl( params );
+    }
+
+    if ( planoCvReqData?.fixtureVideo?.filePath ) {
+      const params = {
+        Bucket: bucket.storeBuilder,
+        file_path: planoCvReqData.fixtureVideo.filePath,
+      };
+      planoCvReqData.fixtureVideo.filePath = await signedUrl( params );
+    }
+
+    return res.sendSuccess( planoCvReqData );
   } catch ( error ) {
     logger.error( 'uploadFixtureVideo =>', error );
     return res.sendError( { message: 'Internal Server Error' }, 500 );
@@ -2183,10 +2297,13 @@ export const fixtureQrUpdate = async ( req, res ) => {
         } ),
     );
 
+    await planoQrConversionRequestService.updateOne( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), date: currentDate }, { status: 'data-received' } );
+
     return res.sendSuccess( updateStatus );
   } catch ( error ) {
     logger.error( 'fixtureQrUpdate =>', error );
     return res.sendError( { message: 'Internal Server Error' }, 500 );
   }
 };
+
 
