@@ -2191,7 +2191,7 @@ export const updateQrCvProcessRequest = async ( req, res ) => {
       'fixtureId': fixtureId,
       'date': dayjs().format( 'YYYY-MM-DD' ),
       'bucket': bucket.storeBuilder,
-      'videoPath': videoPath,
+      'videoPath': videoPath ? videoPath.match( /planoQrFixtureVideos\/[^?]+/ )?.[0] : undefined,
     };
 
     const sqs = JSON.parse( process.env.SQS || '{}' );
