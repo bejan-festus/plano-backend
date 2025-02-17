@@ -1004,7 +1004,7 @@ export async function fixtureShelfProductv1( req, res ) {
 
       return await Promise.all(
           mappings.map( async ( mapping ) => {
-            const productData = productMap.get( mapping.productId.toString() ) || {};
+            const productData = productMap.get( mapping?.productId?.toString() ) || {};
             delete productData._id;
             const mappingCompliance = await planoComplianceService.findOne( {
               planoMappingId: mapping._id,
@@ -1746,12 +1746,13 @@ export async function bulkFixtureUpload( req, res ) {
         'shelfCapacity': 2,
         'shelfType': 'middle',
         'sectionName': req.body.data[i].sectionName,
-        'rfId': req.body.data[i].rfId,
       };
 
       const createdShelf = await fixtureShelfService.create( shelfData );
 
       for ( let j = 0; j < req.body.data[i].products.length; j++ ) {
+        const product = await planoProductService.findOne( { itemcode: req.body.data[i].products[j].rfId } );
+
         const productMapping = {
           'clientId': fixtureDoc.clientId,
           'storeName': fixtureDoc.storeName,
@@ -1762,7 +1763,7 @@ export async function bulkFixtureUpload( req, res ) {
           'fixtureId': fixtureDoc._id,
           'shelfId': createdShelf._id,
           'shelfPosition': j+1,
-          'productId': new mongoose.Types.ObjectId( '67a1e8070c8643358225140c' ),
+          'productId': product ? product.toObject()._id : undefined,
           'rfId': req.body.data[i].products[j].rfId,
           'category': 'middle',
         };
@@ -1801,31 +1802,32 @@ export async function bulkFixtureUpload( req, res ) {
 
 // const data = [
 //   {
-//     'facility_code': 'LKST98',
-//     'product_id': 207042,
-//     'brand': 'John Jacobs',
-//     'category': 'sunglasses',
-//     'zone': 'South',
-//     'tlp_status': 'YES',
-//     'lf_nonlf': 'LF',
-//     'kpi': 'SOH',
-//     'qty': 1,
-//     'created_at': '1/31/2025',
-//     'store_type': 'COCO',
-//     'status': 'Active',
-//     'PLC': 'Singapore Ex',
-//     'itemcode': 'JJJ015799816',
-//   },
-// ];
+//    "facility_code": "LKST98",
+//    "product_id": 217622,
+//    "brand": "Lenskart READERS",
+//    "category": "Non-Power Reading",
+//    "zone": "South",
+//    "tlp_status": "N",
+//    "lf_nonlf": "LF",
+//    "kpi": "SOH",
+//    "qty": 1,
+//    "created_at": "01\/31\/2025",
+//    "store_type": "COCO",
+//    "status": "Active",
+//    "PLC": "New Launches",
+//    "itemcode": "CCC086062840"
+//   }
+//  ]
 
 // const cleanData = ( data ) => {
-//   return data.map( ( { product_id, brand, category, itemcode } ) => ( {
+//   return data.map( ( { product_id, brand, category, itemcode, facility_code } ) => ( {
 //     productId: String( product_id ),
 //     productBrand: brand,
 //     productType: category,
 //     clientId: '11',
-//     type: 'new',
+//     storeName: facility_code,
 //     itemcode,
+//     type:'product'
 //   } ) );
 // };
 
