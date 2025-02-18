@@ -2339,7 +2339,7 @@ export const fixtureQrUpdate = async ( req, res ) => {
         } ),
     );
 
-    await planoQrConversionRequestService.updateOne( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), date: currentDate }, { status: 'data-received' } );
+    await planoQrConversionRequestService.updateOne( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), date: currentDate }, { status: 'data-received', receivedQr: productQr } );
 
     return res.sendSuccess( updateStatus );
   } catch ( error ) {
