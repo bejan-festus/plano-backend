@@ -621,7 +621,12 @@ export async function storeFixturesv1( req, res ) {
                             if ( cvProcessStatus ) {
                               fixtureStatus = 'inprogress';
                             } else {
-                              fixtureStatus = complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
+                              const missingCount = await planoComplianceService.count( {
+                                fixtureId: fixture._id,
+                                compliance: 'missing',
+                                date: currentDate,
+                              } );
+                              fixtureStatus = complianceCount === 0 && !missingCount ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
                             }
 
                             return {
@@ -699,7 +704,12 @@ export async function storeFixturesv1( req, res ) {
                       if ( cvProcessStatus ) {
                         fixtureStatus = 'inprogress';
                       } else {
-                        fixtureStatus = complianceCount === 0 ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
+                        const missingCount = await planoComplianceService.count( {
+                          fixtureId: fixture._id,
+                          compliance: 'missing',
+                          date: currentDate,
+                        } );
+                        fixtureStatus = complianceCount === 0 && !missingCount ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
                       }
 
                       return {
