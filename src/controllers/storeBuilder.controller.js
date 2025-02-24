@@ -182224,9 +182224,13 @@ const mmToFeet = 305;
 async function addFixtureData() {
 const constantFixtureLength = 1220;
 const constantDetailedFixtureLength = 1220;
+const constantDetailedFloorFixtureLength = 1524;
+
 
 const constantFixtureWidth = 610;
 const constantDetailedFixtureWidth = 1524;
+const constantDetailedFloorFixtureWidth = 1220;
+
 
 const mmToFeet = 305;
   const layoutList = await storeBuilderService.find({});
@@ -182267,8 +182271,8 @@ const mmToFeet = 305;
     const startingX = (totalDistanceFeetX / 2) - (Math.floor(maxFixturesPerRow / 2) * (constantFixtureLength / mmToFeet));
     const startingY = (totalDistanceFeetY / 2) - (centerRow * (constantFixtureWidth / mmToFeet));
     
-    const detailedStartingX = (totalDetailedDistanceFeetX / 2) - (Math.floor(maxFixturesPerRow / 2) * (constantDetailedFixtureLength / mmToFeet));
-    const detailedStartingY = (totalDetailedDistanceFeetY / 2) - (centerRow * (constantDetailedFixtureWidth / mmToFeet));
+    const detailedStartingX = (totalDetailedDistanceFeetX / 2) - (Math.floor(maxFixturesPerRow / 2) * (constantDetailedFloorFixtureLength / mmToFeet));
+    const detailedStartingY = (totalDetailedDistanceFeetY / 2) - (centerRow * (constantDetailedFloorFixtureWidth / mmToFeet));
 
     let fixtureCounter = 1;
 
@@ -182379,7 +182383,6 @@ const mmToFeet = 305;
 
       console.log(fixtureData)
 
-
     })
 
     
@@ -182391,8 +182394,8 @@ const mmToFeet = 305;
       const xPos = Math.round(startingX + colIndex * (constantFixtureLength / mmToFeet)) ;
       const yPos = Math.round(startingY + rowIndex * (constantFixtureWidth / mmToFeet));
     
-      const detailedXPos = Math.round(detailedStartingX + colIndex * (constantDetailedFixtureLength / mmToFeet));
-      const detailedYPos = Math.round(detailedStartingY + rowIndex * (constantDetailedFixtureWidth / mmToFeet));
+      const detailedXPos = Math.round(detailedStartingX + colIndex * (constantDetailedFloorFixtureLength / mmToFeet));
+      const detailedYPos = Math.round(detailedStartingY + rowIndex * (constantDetailedFloorFixtureWidth / mmToFeet));
     
       const fixtureData = {
         "clientId": layoutDoc.clientId,
@@ -182422,11 +182425,11 @@ const mmToFeet = 305;
         },
         "fixtureNumber": fixtureCounter++,
         "detailedFixtureLength": {
-          "value": constantDetailedFixtureLength,
+          "value": constantDetailedFloorFixtureLength,
           "unit": "mm"
         },
         "detailedFixtureWidth": {
-          "value": constantDetailedFixtureWidth,
+          "value": constantDetailedFloorFixtureWidth,
           "unit": "mm"
         },
         "relativeDetailedPosition": {
