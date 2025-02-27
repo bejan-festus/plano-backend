@@ -110,7 +110,7 @@ export async function createPlano( req, res ) {
     }
 
     const workbook = xlsx.read( req.files.file.data, { type: 'buffer' } );
-    const sheetName = 'Layout,Fixture&VM Mapping (1705';
+    const sheetName = 'Layout,Fixture&VM';
     if ( !workbook.Sheets[sheetName] ) {
       return res.sendError( `Sheet "${sheetName}" not found`, 400 );
     }
@@ -161,7 +161,7 @@ export async function createFloors( req, res ) {
     }
 
     const workbook = xlsx.read( req.files.file.data, { type: 'buffer' } );
-    const sheetName = 'Layout,Fixture&VM Mapping (1705';
+    const sheetName = 'Layout,Fixture&VM';
     if ( !workbook.Sheets[sheetName] ) {
       return res.sendError( `Sheet "${sheetName}" not found`, 400 );
     }
@@ -193,12 +193,12 @@ export async function createFloors( req, res ) {
       }
 
       const categories = groupedData[fixtureId]['categories'];
-      const existingCategory = categories.find( ( cat ) => cat['Zone'] === item['Zone '] );
+      const existingCategory = categories.find( ( cat ) => cat['Zone'] === item['Section Allocation '] );
 
       if ( !existingCategory ) {
         categories.push( {
-          'Allocation': item['Allocation'],
-          'Zone': item['Zone '],
+          'Allocation': item['Shelf Allocation'],
+          'Zone': item['Section Allocation '],
         } );
       }
     } );
@@ -327,7 +327,7 @@ export async function createFixturesShelves( req, res ) {
     }
 
     const workbook = xlsx.read( req.files.file.data, { type: 'buffer' } );
-    const sheetName = 'Layout,Fixture&VM Mapping (1705';
+    const sheetName = 'Layout,Fixture&VM';
     if ( !workbook.Sheets[sheetName] ) {
       return res.sendError( `Sheet "${sheetName}" not found`, 400 );
     }
@@ -343,7 +343,7 @@ export async function createFixturesShelves( req, res ) {
         groupedData[fixtureId] = {
           'Store ID': item['Store ID'],
           'Store Fixture ID': fixtureId,
-          'Fixture ID': item['Fixture ID ( for Template ref  only)'],
+          'Fixture ID': item['Fixture ID ( For ref only)'],
           'Fixture Category': item['Fixture Category'],
           'Fixture Size (feet)': item['Fixture Size (feet)'],
           'Fixture Count': item['Fixture Count'],
@@ -359,12 +359,12 @@ export async function createFixturesShelves( req, res ) {
       }
 
       const categories = groupedData[fixtureId]['categories'];
-      const existingCategory = categories.find( ( cat ) => cat['Zone'] === item['Zone '] );
+      const existingCategory = categories.find( ( cat ) => cat['Zone'] === item['Section Allocation '] );
 
       if ( !existingCategory ) {
         categories.push( {
-          'Allocation': item['Allocation'],
-          'Zone': item['Zone '],
+          'Allocation': item['Shelf Allocation'],
+          'Zone': item['Section Allocation '],
         } );
       }
     } );
@@ -481,10 +481,10 @@ export async function createFixturesShelves( req, res ) {
 
         const createdFixture = await storeFixtureService.create( fixtureData );
 
-        console.log( 'Fixture Data', fixtureData );
+        // console.log( 'Fixture Data', fixtureData );
 
 
-        const vms = fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() );
+        const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
         for ( let i = 0; i < vms?.length; i++ ) {
           const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
@@ -513,6 +513,7 @@ export async function createFixturesShelves( req, res ) {
 
           for ( const section of fixtureConfig.sections ) {
             const storeCategory = fixture.categories.find( ( cat ) => cat.Zone === section.sectionId );
+
             for ( let j = 0; j < section.sectionShelves; j++ ) {
               if ( shelfIndex >= fixtureConfig.shelfCount ) break;
 
@@ -527,13 +528,14 @@ export async function createFixturesShelves( req, res ) {
                 'shelfNumber': shelfIndex + 1,
                 'shelfOrder': 'LTR',
                 'shelfCapacity': fixtureConfig.productPerShelf,
-                'sectionName': storeCategory ? storeCategory.Allocation : 'Unknown',
+                'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
                 'sectionZone': section.sectionId,
               };
 
+
               const createdShelf = await fixtureShelfService.create( shelfData );
 
-              console.log( 'Shelf Data:', createdShelf );
+              // console.log( 'Shelf Data:', createdShelf );
 
               shelfIndex++;
             }
@@ -595,9 +597,9 @@ export async function createFixturesShelves( req, res ) {
 
         const createdFixture = await storeFixtureService.create( fixtureData );
 
-        console.log( 'Fixture Data', fixtureData );
+        // console.log( 'Fixture Data', fixtureData );
 
-        const vms = fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() );
+        const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
         for ( let i = 0; i < vms?.length; i++ ) {
           const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
@@ -638,13 +640,13 @@ export async function createFixturesShelves( req, res ) {
                 'shelfNumber': shelfIndex + 1,
                 'shelfOrder': 'LTR',
                 'shelfCapacity': fixtureConfig.productPerShelf,
-                'sectionName': storeCategory ? storeCategory.Allocation : 'Unknown',
+                'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
                 'sectionZone': section.sectionId,
               };
 
               const createdShelf = await fixtureShelfService.create( shelfData );
 
-              console.log( 'Shelf Data:', createdShelf );
+              // console.log( 'Shelf Data:', createdShelf );
 
               shelfIndex++;
             }
@@ -712,9 +714,9 @@ export async function createFixturesShelves( req, res ) {
         };
 
         const createdFixture = await storeFixtureService.create( fixtureData );
-        console.log( 'Fixture Data', fixtureData );
+        // console.log( 'Fixture Data', fixtureData );
 
-        const vms = fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() );
+        const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
         for ( let i = 0; i < vms?.length; i++ ) {
           const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
@@ -756,13 +758,13 @@ export async function createFixturesShelves( req, res ) {
                 'shelfNumber': shelfIndex + 1,
                 'shelfOrder': 'LTR',
                 'shelfCapacity': fixtureConfig.productPerShelf,
-                'sectionName': storeCategory ? storeCategory.Allocation : 'Unknown',
+                'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
                 'sectionZone': section.sectionId,
               };
 
               const createdShelf = await fixtureShelfService.create( shelfData );
 
-              console.log( 'Shelf Data:', createdShelf );
+              // console.log( 'Shelf Data:', createdShelf );
 
               shelfIndex++;
             }
