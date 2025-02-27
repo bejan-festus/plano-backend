@@ -1,7 +1,7 @@
 import express from 'express';
-import { isAllowedSessionHandler, validate } from 'tango-app-api-middleware';
+import { validate } from 'tango-app-api-middleware';
 import * as storeBuilderController from '../controllers/storeBuilder.controller.js';
-import * as scriptController from '../controllers/script.controller.js';
+// import * as scriptController from '../controllers/script.controller.js';
 import * as validateDtos from '../dtos/validation.dtos.js';
 
 

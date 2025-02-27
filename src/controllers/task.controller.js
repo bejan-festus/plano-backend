@@ -106,117 +106,123 @@ export async function createTask( req, res ) {
     if ( !taskDetails.length ) {
       return res.sendError( 'No data found', 204 );
     }
+    let endDate = dayjs().add( req.body.days, 'day' ).format( 'YYYY-MM-DD' );
     await Promise.all( taskDetails.map( async ( task ) => {
-      let processedList = await processedService.findOne( { sourceCheckList_id: task._id, checklistStatus: 'submit' } );
-      if ( !processedList ) {
-        let data = {
-          client_id: req.body.clientId,
-          date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
-          date_string: dayjs().format( 'YYYY-MM-DD' ),
-          sourceCheckList_id: task._id,
-          checkListName: task.checkListName,
-          checkListId: task._id,
-          scheduleStartTime: '12:00 AM',
-          scheduleEndTime: '11:59 PM',
-          scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(),
-          scheduleEndTime_iso: dayjs.utc( '11:59 PM', 'hh:mm A' ).format(),
-          allowedOverTime: false,
-          allowedStoreLocation: false,
-          createdBy: task.createdBy,
-          createdByName: task.createdByName,
-          questionAnswers: [],
-          isdeleted: false,
-          questionCount: 0,
-          storeCount: 0,
-          locationCount: 0,
-          checkListType: 'task',
-          country: '',
-          store_id: '',
-          storeName: '',
-          userId: '',
-          userName: '',
-          userEmail: '',
-          checklistStatus: 'open',
-          timeFlagStatus: true,
-          timeFlag: 0,
-          questionFlag: 0,
-          mobileDetectionFlag: 0,
-          storeOpenCloseFlag: 0,
-          reinitiateStatus: false,
-          markasread: false,
-          uniformDetectionFlag: 0,
-          scheduleRepeatedType: 'daily',
-          approvalStatus: false,
-          approvalEnable: false,
-          redoStatus: false,
-          isPlano: true,
-        };
+      let data = {
+        client_id: req.body.clientId,
+        date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
+        date_string: dayjs().format( 'YYYY-MM-DD' ),
+        sourceCheckList_id: task._id,
+        checkListName: task.checkListName,
+        checkListId: task._id,
+        scheduleStartTime: '12:00 AM',
+        scheduleEndTime: '11:59 PM',
+        scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(),
+        scheduleEndTime_iso: dayjs( endDate ).utc( '11:59 PM', 'hh:mm A' ).format(),
+        allowedOverTime: false,
+        allowedStoreLocation: false,
+        createdBy: task.createdBy,
+        createdByName: task.createdByName,
+        questionAnswers: [],
+        isdeleted: false,
+        questionCount: 0,
+        storeCount: 0,
+        locationCount: 0,
+        checkListType: 'task',
+        country: '',
+        store_id: '',
+        storeName: '',
+        userId: '',
+        userName: '',
+        userEmail: '',
+        checklistStatus: 'open',
+        timeFlagStatus: true,
+        timeFlag: 0,
+        questionFlag: 0,
+        mobileDetectionFlag: 0,
+        storeOpenCloseFlag: 0,
+        reinitiateStatus: false,
+        markasread: false,
+        uniformDetectionFlag: 0,
+        scheduleRepeatedType: 'daily',
+        approvalStatus: false,
+        approvalEnable: false,
+        redoStatus: false,
+        isPlano: true,
+        type: task.checkListName == 'Product Verification' ? 'product' : task.checkListName == 'Fixture Verification' ? 'fixture' : 'vm',
+      };
+      let query = [
+        {
+          $addFields: {
+            store: { $toLower: '$storeName' },
+          },
+        },
+        {
+          $match: {
+            clientId: req.body.clientId,
+            store: { $in: storeList },
+          },
+        },
+      ];
+
+      let storeDetails = await storeService.aggregate( query );
+      if ( req.body.userEmail ) {
         let query = [
           {
             $addFields: {
-              store: { $toLower: '$storeName' },
+              emailLower: { $toLower: '$email' },
             },
           },
           {
             $match: {
               clientId: req.body.clientId,
-              store: { $in: storeList },
+              emailLower: req.body.userEmail,
             },
           },
         ];
-
-        let storeDetails = await storeService.aggregate( query );
-        if ( req.body.userEmail ) {
-          let query = [
-            {
-              $addFields: {
-                emailLower: { $toLower: '$email' },
-              },
-            },
-            {
-              $match: {
-                clientId: req.body.clientId,
-                emailLower: req.body.userEmail,
-              },
-            },
-          ];
-          userDetails = await userService.aggregate( query );
-          if ( !userDetails.length ) {
-            let userData = {
-              clientId: req.body.clientId,
-              mobileNumber: '',
-              email: req.body.userEmail,
-              userName: req.body.userEmail.split( '@' )[0],
-            };
-            userDetails = await createUser( userData );
-          } else {
-            userDetails = userDetails[0];
-          }
-        }
-        if ( !req.body.userEmail ) {
-          await Promise.all( storeDetails.map( async ( store ) => {
-            let planoDetails = await planoService.findOne( { storeId: store.storeId } );
-            userDetails = await userService.findOne( { email: store?.spocDetails?.[0]?.email } );
-            if ( !userDetails ) {
-              let userData = {
-                clientId: req.body.clientId,
-                mobileNumber: store?.spocDetails?.[0]?.contact,
-                email: store?.spocDetails?.[0]?.email,
-                userName: store?.spocDetails?.[0]?.name,
-              };
-              userDetails = await createUser( userData );
-            }
-            let taskData = { ...data };
-            taskData.store_id = store.storeId;
-            taskData.storeName = store.storeName;
-            taskData.userId = userDetails._id;
-            taskData.userName = userDetails.userName;
-            taskData.userEmail = userDetails.email;
-            taskData.planoId = planoDetails?.planoId;
-            await processedService.create( taskData );
-          } ) );
+        userDetails = await userService.aggregate( query );
+        if ( !userDetails.length ) {
+          let userData = {
+            clientId: req.body.clientId,
+            mobileNumber: '',
+            email: req.body.userEmail,
+            userName: req.body.userEmail.split( '@' )[0],
+          };
+          userDetails = await createUser( userData );
+        } else {
+          userDetails = userDetails[0];
         }
       }
+
+      await Promise.all( storeDetails.map( async ( store ) => {
+        let planoDetails = await planoService.findOne( { storeId: store.storeId } );
+        console.log( planoDetails, store.storeId, 'details' );
+        if ( !req.body.userEmail ) {
+          userDetails = await userService.findOne( { email: store?.spocDetails?.[0]?.email } );
+          if ( !userDetails ) {
+            let userData = {
+              clientId: req.body.clientId,
+              mobileNumber: store?.spocDetails?.[0]?.contact,
+              email: store?.spocDetails?.[0]?.email,
+              userName: store?.spocDetails?.[0]?.name,
+            };
+            userDetails = await createUser( userData );
+          }
+        }
+        let taskData = { ...data };
+        taskData.store_id = store.storeId;
+        taskData.storeName = store.storeName;
+        taskData.userId = userDetails._id;
+        taskData.userName = userDetails.userName;
+        taskData.userEmail = userDetails.email;
+        taskData.planoId = planoDetails?._id;
+        for ( let i=0; i<req.body.days; i++ ) {
+          let currDate = dayjs().add( i, 'day' );
+          let insertData = { ...taskData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 12:00 AM`, 'YYYY-MM-DD hh:mm A' ).format() };
+          let response = await processedService.updateOne( { date_string: currDate.format( 'YYYY-MM-DD' ), store_id: insertData.store_id, userEmail: insertData.userEmail, planoId: insertData.planoId, sourceCheckList_id: task._id }, insertData );
+          console.log( insertData.store_id, response );
+        }
+      } ) );
     } ) );
 
     return res.sendSuccess( 'Task created successfully' );
@@ -289,6 +295,9 @@ export async function updateStatus( req, res ) {
       return res.sendError( 'No data found', 204 );
     }
     await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status } );
+    if ( req.body.status == 'submit' ) {
+      await processedService.deleteMany( { _id: req.body.taskId, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } } );
+    }
     return res.sendSuccess( 'Task status updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'storeLayout', error: e } );
