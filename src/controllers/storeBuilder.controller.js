@@ -598,7 +598,7 @@ export async function storeFixturesv1( req, res ) {
                               date: currentDate,
                             } );
 
-                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1,sectionName:1, sectionZone:1  } );
+                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1 } );
 
                             const shelfDetails = await Promise.all(
                                 shelves.map( async ( shelf ) => {
@@ -629,16 +629,15 @@ export async function storeFixturesv1( req, res ) {
                               fixtureStatus = complianceCount === 0 && !missingCount ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
                             }
 
-                            const vms = await planoMappingService.find({ fixtureId: fixture._id, type: 'vm' });
+                            const vms = await planoMappingService.find( { fixtureId: fixture._id, type: 'vm' } );
 
-                            const vmDetails = await Promise.all(vms.map(async (vm)=>{
-                              const vmTemplate = await planoProductService.findOne({_id:vm.toObject().productId})
+                            const vmDetails = await Promise.all( vms.map( async ( vm ) => {
+                              const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
                               return {
                                 ...vm.toObject(),
-                                ...vmTemplate?.toObject()
-                              }
-
-                            }))
+                                ...vmTemplate?.toObject(),
+                              };
+                            } ) );
 
                             return {
                               ...fixture.toObject(),
@@ -647,7 +646,7 @@ export async function storeFixturesv1( req, res ) {
                               productCount: productCount,
                               vmCount: vmCount,
                               shelfDetails: shelfDetails,
-                              vms:vmDetails
+                              vms: vmDetails,
                             };
                           } ),
                       );
@@ -693,7 +692,7 @@ export async function storeFixturesv1( req, res ) {
                         date: currentDate,
                       } );
 
-                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1,sectionName:1, sectionZone:1 } );
+                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {
@@ -724,17 +723,16 @@ export async function storeFixturesv1( req, res ) {
                         fixtureStatus = complianceCount === 0 && !missingCount ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
                       }
 
-                      const vms = await planoMappingService.find({ fixtureId: fixture._id, type: 'vm' });
+                      const vms = await planoMappingService.find( { fixtureId: fixture._id, type: 'vm' } );
 
-                            const vmDetails = await Promise.all(vms.map(async (vm)=>{
-                              const vmTemplate = await planoProductService.findOne({_id:vm.toObject().productId})
+                      const vmDetails = await Promise.all( vms.map( async ( vm ) => {
+                        const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
 
-                              return {
-                                ...vm.toObject(),
-                                ...vmTemplate?.toObject()
-                              }
-
-                            }))
+                        return {
+                          ...vm.toObject(),
+                          ...vmTemplate?.toObject(),
+                        };
+                      } ) );
 
                       return {
                         ...fixture.toObject(),
@@ -743,7 +741,7 @@ export async function storeFixturesv1( req, res ) {
                         productCount: productCount,
                         vmCount: vmCount,
                         shelfDetails: shelfDetails,
-                        vms:vmDetails
+                        vms: vmDetails,
                       };
                     } ),
                 );
