@@ -24,3 +24,7 @@ export async function aggregate( query ) {
 export async function updateOne( query, record ) {
   return model.planoProductModel.updateOne( query, { $set: record } );
 }
+
+export async function create( data ) {
+  return model.planoProductModel.create( data );
+}

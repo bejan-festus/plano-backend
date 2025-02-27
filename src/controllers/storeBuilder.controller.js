@@ -552,7 +552,7 @@ export async function storeFixturesv1( req, res ) {
             { storeId: { $in: req.body.id } },
           ],
         },
-        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1 },
+        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1 },
     );
 
     if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
@@ -598,7 +598,7 @@ export async function storeFixturesv1( req, res ) {
                               date: currentDate,
                             } );
 
-                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
+                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1 } );
 
                             const shelfDetails = await Promise.all(
                                 shelves.map( async ( shelf ) => {
@@ -629,6 +629,16 @@ export async function storeFixturesv1( req, res ) {
                               fixtureStatus = complianceCount === 0 && !missingCount ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
                             }
 
+                            const vms = await planoMappingService.find( { fixtureId: fixture._id, type: 'vm' } );
+
+                            const vmDetails = await Promise.all( vms.map( async ( vm ) => {
+                              const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
+                              return {
+                                ...vm.toObject(),
+                                ...vmTemplate?.toObject(),
+                              };
+                            } ) );
+
                             return {
                               ...fixture.toObject(),
                               status: fixtureStatus,
@@ -636,6 +646,7 @@ export async function storeFixturesv1( req, res ) {
                               productCount: productCount,
                               vmCount: vmCount,
                               shelfDetails: shelfDetails,
+                              vms: vmDetails,
                             };
                           } ),
                       );
@@ -681,7 +692,7 @@ export async function storeFixturesv1( req, res ) {
                         date: currentDate,
                       } );
 
-                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
+                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {
@@ -712,6 +723,17 @@ export async function storeFixturesv1( req, res ) {
                         fixtureStatus = complianceCount === 0 && !missingCount ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
                       }
 
+                      const vms = await planoMappingService.find( { fixtureId: fixture._id, type: 'vm' } );
+
+                      const vmDetails = await Promise.all( vms.map( async ( vm ) => {
+                        const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
+
+                        return {
+                          ...vm.toObject(),
+                          ...vmTemplate?.toObject(),
+                        };
+                      } ) );
+
                       return {
                         ...fixture.toObject(),
                         status: fixtureStatus,
@@ -719,7 +741,7 @@ export async function storeFixturesv1( req, res ) {
                         productCount: productCount,
                         vmCount: vmCount,
                         shelfDetails: shelfDetails,
-
+                        vms: vmDetails,
                       };
                     } ),
                 );
@@ -2358,4 +2380,69 @@ export const fixtureQrUpdate = async ( req, res ) => {
   }
 };
 
+export const updateDetailedDistance = async ( req, res ) => {
+  try {
+    const { floorId, elementNumber, elementType, detailedDistance } = req.body;
 
+    if ( !floorId || elementNumber === undefined || !elementType || detailedDistance === undefined ) {
+      return res.sendError( 'Missing required fields', 400 );
+    }
+
+    const floorData = await storeBuilderService.findOne( { '_id': new mongoose.Types.ObjectId( floorId ) } );
+
+    const layoutPolygon = floorData.toObject().layoutPolygon.map( ( element ) => {
+      if ( element.elementType === elementType && element.elementNumber === elementNumber ) {
+        return {
+          ...element,
+          detailedDistance: detailedDistance,
+        };
+      } else {
+        return { ...element };
+      }
+    } );
+
+    const updateFloor = await storeBuilderService.updateOne( { '_id': new mongoose.Types.ObjectId( floorId ) }, { layoutPolygon: layoutPolygon } );
+
+
+    if ( !updateFloor.modifiedCount ) {
+      return res.sendError( 'Floor layout or element not found', 400 );
+    }
+
+    return res.sendSuccess( { message: 'Detailed distance updated successfully', updateFloor } );
+  } catch ( error ) {
+    logger.error( 'updateDetailedDistance =>', error );
+    return res.sendError( 'Internal Server Error', 500 );
+  }
+};
+
+export const upsertFixtures = async ( req, res ) => {
+  try {
+    const { fixtureId, planoId, floorId, data } = req.body;
+
+    if ( !planoId || !floorId || !data ) {
+      return res.sendError( 'Missing required fields', 400 );
+    }
+
+    const updateData = {
+      planoId: new mongoose.Types.ObjectId( planoId ),
+      floorId: new mongoose.Types.ObjectId( floorId ),
+      ...data,
+    };
+
+    let fixture;
+    if ( fixtureId ) {
+      fixture = await storeFixtureService.findOneAndUpdate(
+          { _id: fixtureId },
+          { $set: updateData },
+          { new: true, upsert: true },
+      );
+    } else {
+      fixture = await storeFixtureService.create( updateData );
+    }
+
+    return res.sendSuccess( { message: 'Fixture upserted successfully', fixture } );
+  } catch ( error ) {
+    logger.error( 'upsertFixtures =>', error );
+    return res.sendError( 'Internal Server Error', 500 );
+  }
+};
