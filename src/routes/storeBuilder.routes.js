@@ -1,7 +1,9 @@
 import express from 'express';
 import { isAllowedSessionHandler, validate } from 'tango-app-api-middleware';
 import * as storeBuilderController from '../controllers/storeBuilder.controller.js';
+import * as scriptController from '../controllers/script.controller.js';
 import * as validateDtos from '../dtos/validation.dtos.js';
+
 
 export const storeBuilderRouter = express.Router();
 
@@ -33,5 +35,6 @@ storeBuilderRouter
     .post( '/getQrCvProcessRequest', storeBuilderController.getQrCvProcessRequest )
     .post( '/fixtureQrUpdate', storeBuilderController.fixtureQrUpdate )
     .post( '/updateDeatailedDistance', storeBuilderController.updateDetailedDistance )
-    .post( '/upsertFixture', storeBuilderController.upsertFixtures );
+    .post( '/upsertFixture', storeBuilderController.upsertFixtures )
+    .post( '/test', scriptController.test );
 
