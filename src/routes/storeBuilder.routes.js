@@ -35,6 +35,4 @@ storeBuilderRouter
     .post( '/getQrCvProcessRequest', storeBuilderController.getQrCvProcessRequest )
     .post( '/fixtureQrUpdate', storeBuilderController.fixtureQrUpdate )
     .post( '/updateDeatailedDistance', storeBuilderController.updateDetailedDistance )
-    .post( '/upsertFixture', storeBuilderController.upsertFixtures )
-    .post( '/test', scriptController.test );
-
+    .post( '/upsertFixture', storeBuilderController.upsertFixtures );
