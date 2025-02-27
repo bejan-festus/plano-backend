@@ -9,7 +9,7 @@ export async function findOne( query = {}, field = {} ) {
 }
 
 export async function updateOne( query = {}, record = {} ) {
-  return model.taskProcessedModel.updateOne( query, { $set: record } );
+  return model.taskProcessedModel.updateOne( query, { $set: record }, { upsert: true } );
 }
 
 export async function find( query = {}, field = {} ) {

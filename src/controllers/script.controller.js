@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs';
+// import { writeFileSync } from 'fs';
 import xlsx from 'xlsx';
 import { logger } from 'tango-app-api-middleware';
 import * as storeBuilderService from '../service/storeBuilder.service.js';
@@ -8,9 +8,9 @@ import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as fixtureShelfService from '../service/fixtureShelf.service.js';
 import * as planoProductService from '../service/planoProduct.service.js';
 import * as planoMappingService from '../service/planoMapping.service.js';
-import * as planoComplianceService from '../service/planoCompliance.service.js';
-import * as planoTaskComplianceService from '../service/planoTask.service.js';
-import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
+// import * as planoComplianceService from '../service/planoCompliance.service.js';
+// import * as planoTaskComplianceService from '../service/planoTask.service.js';
+// import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import mongoose from 'mongoose';
 
@@ -533,7 +533,7 @@ export async function createFixturesShelves( req, res ) {
               };
 
 
-              const createdShelf = await fixtureShelfService.create( shelfData );
+              await fixtureShelfService.create( shelfData );
 
               // console.log( 'Shelf Data:', createdShelf );
 
@@ -644,7 +644,7 @@ export async function createFixturesShelves( req, res ) {
                 'sectionZone': section.sectionId,
               };
 
-              const createdShelf = await fixtureShelfService.create( shelfData );
+              await fixtureShelfService.create( shelfData );
 
               // console.log( 'Shelf Data:', createdShelf );
 
@@ -762,7 +762,7 @@ export async function createFixturesShelves( req, res ) {
                 'sectionZone': section.sectionId,
               };
 
-              const createdShelf = await fixtureShelfService.create( shelfData );
+              await fixtureShelfService.create( shelfData );
 
               // console.log( 'Shelf Data:', createdShelf );
 
