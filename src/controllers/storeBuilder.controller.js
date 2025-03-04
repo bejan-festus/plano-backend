@@ -598,7 +598,7 @@ export async function storeFixturesv1( req, res ) {
                               date: currentDate,
                             } );
 
-                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1 } );
+                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
 
                             const shelfDetails = await Promise.all(
                                 shelves.map( async ( shelf ) => {
@@ -692,7 +692,7 @@ export async function storeFixturesv1( req, res ) {
                         date: currentDate,
                       } );
 
-                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1 } );
+                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {
@@ -2017,7 +2017,7 @@ export async function storeFixturesTask( req, res ) {
                               type: req.body?.type ? req.body.type : 'fixture',
                             }, { status: 1 } );
 
-                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
+                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
 
                             const shelfDetails = await Promise.all(
                                 shelves.map( async ( shelf ) => {
@@ -2084,7 +2084,7 @@ export async function storeFixturesTask( req, res ) {
                         type: req.body?.type ? req.body.type : 'fixture',
                       }, { status: 1 } );
 
-                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1 } );
+                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {

@@ -154,172 +154,6 @@ export async function createPlano( req, res ) {
   }
 }
 
-// export async function createFloors(req, res) {
-//   try {
-//     if (!req.files.file) {
-//       return res.sendError('Invalid or missing Excel file', 400);
-//     }
-
-//     const workbook = xlsx.read(req.files.file.data, { type: 'buffer' });
-//     const sheetName = 'Layout,Fixture&VM';
-//     if (!workbook.Sheets[sheetName]) {
-//       return res.sendError(`Sheet "${sheetName}" not found`, 400);
-//     }
-
-//     const rawData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-//     const groupedData = {};
-
-//     rawData.forEach((item) => {
-//       const fixtureId = item['Store Fixture ID'];
-
-//       if (!groupedData[fixtureId]) {
-//         groupedData[fixtureId] = {
-//           'Store ID': item['Store ID'],
-//           'Store Fixture ID': fixtureId,
-//           'Fixture ID': item['Fixture ID ( For ref only)'],
-//           'Fixture Category': item['Fixture Category'],
-//           'Fixture Size (feet)': item['Fixture Size (feet)'],
-//           'Fixture Count': item['Fixture Count'],
-//           'Effective Fixture Count': item['Effective Fixture Count'],
-//           'Capacity': item['Capacity'],
-//           'Store Fixture Locator': item['Store Fixture Locator'],
-//           'Wall': item['Wall'],
-//           'Brand-Category': item['Brand-Category'],
-//           'Brand - Sub Category': item['Brand - Sub Category'],
-//           'VM Template ID': item['VM Template ID '],
-//           'categories': [],
-//         };
-//       }
-
-//       const categories = groupedData[fixtureId]['categories'];
-//       const existingCategory = categories.find((cat) => cat['Zone'] === item['Section Allocation ']);
-
-//       if (!existingCategory) {
-//         categories.push({
-//           'Allocation': item['Shelf Allocation'],
-//           'Zone': item['Section Allocation '],
-//         });
-//       }
-//     });
-
-//     const raw = Object.values(groupedData);
-
-//     const constantFixtureLength = 1220;
-//     const constantDetailedFixtureLength = 1220;
-//     const constantFixtureWidth = 610;
-//     const constantDetailedFixtureWidth = 1524;
-//     const mmToFeet = 305;
-
-//     const storeList = await planoService.find({});
-
-//     await Promise.all(storeList.map(async (store) => {
-//       const planoDoc = store.toObject();
-//       const leftWalls = raw.filter((entry) => entry['Store ID'] === planoDoc.storeName && entry.Wall === 'Left');
-//       const leftWallCount = leftWalls.length;
-
-//       const totalLeftDistanceFeet = Math.round((leftWallCount * (constantFixtureLength / mmToFeet)));
-//       const totalLeftDetailedDistanceFeet = Math.round((leftWallCount * (constantDetailedFixtureLength / mmToFeet)));
-
-//       const rightWalls = raw.filter((entry) => entry['Store ID'] === planoDoc.storeName && entry.Wall === 'Right');
-//       const rightWallCount = rightWalls.length;
-
-//       const totalRightDistanceFeet = Math.round((rightWallCount * (constantFixtureLength / mmToFeet)));
-//       const totalRightDetailedDistanceFeet = Math.round((rightWallCount * (constantDetailedFixtureLength / mmToFeet)));
-
-//       const totalDistanceFeet = Math.max(totalLeftDistanceFeet, totalRightDistanceFeet);
-//       const totalDetailedDistanceFeet = Math.max(totalLeftDetailedDistanceFeet, totalRightDetailedDistanceFeet);
-
-//       const floorFixtures = raw.filter((entry) => entry['Store ID'] === planoDoc.storeName && entry.Wall === 'Centre');
-//       const floorFixtureLength = floorFixtures.length;
-//       const maxFixturesPerRow = floorFixtureLength > 4 ? 3 : 2;
-//       const totalRows = Math.ceil(floorFixtureLength / maxFixturesPerRow);
-
-//       const yDistance = Math.round(((totalRows + 6) * (constantFixtureWidth / mmToFeet)));
-//       const detailedyDistance = Math.round(((totalRows + 4) * (constantDetailedFixtureWidth / mmToFeet)));
-
-//       const floorInsertData = {
-//         storeName: planoDoc.storeName,
-//         storeId: planoDoc.storeId,
-//         layoutName: `${planoDoc.storeName} - Layout`,
-//         clientId: '11',
-//         floorNumber: 1,
-//         floorName: 'floor 1',
-//         layoutPolygon: [
-//           {
-//             elementType: 'wall',
-//             distance: totalDistanceFeet + 3,
-//             unit: 'ft',
-//             direction: 'right',
-//             angle: 90,
-//             elementNumber: 1,
-//             detailedDistance: totalDetailedDistanceFeet + 3,
-//           },
-//           {
-//             elementType: 'wall',
-//             distance: yDistance,
-//             unit: 'ft',
-//             direction: 'down',
-//             angle: 90,
-//             elementNumber: 2,
-//             detailedDistance: detailedyDistance,
-//           },
-//           {
-//             elementType: 'wall',
-//             distance: totalDistanceFeet + 3,
-//             unit: 'ft',
-//             direction: 'left',
-//             angle: 90,
-//             elementNumber: 3,
-//             detailedDistance: totalDetailedDistanceFeet + 3,
-//           },
-//           {
-//             elementType: 'wall',
-//             distance: Math.round((yDistance * 40) / 100),
-//             unit: 'ft',
-//             direction: 'up',
-//             angle: 90,
-//             elementNumber: 4,
-//             detailedDistance: Math.round((detailedyDistance * 35) / 100),
-//           },
-//           {
-//             elementType: 'entrance',
-//             distance: Math.round((yDistance * 20) / 100),
-//             unit: 'ft',
-//             direction: 'up',
-//             angle: 90,
-//             elementNumber: 1,
-//             detailedDistance: Math.round((detailedyDistance * 30) / 100),
-//           },
-//           {
-//             elementType: 'wall',
-//             distance: Math.round((yDistance * 40) / 100),
-//             unit: 'ft',
-//             direction: 'up',
-//             angle: 90,
-//             elementNumber: 5,
-//             detailedDistance: Math.round((detailedyDistance * 35) / 100),
-//           },
-//         ],
-//         createdBy: new mongoose.Types.ObjectId('66a78cd82734f4f857cd6db6'),
-//         createdByName: 'Bejan',
-//         createdByEmail: 'bejan@tangotech.co.in',
-//         status: 'completed',
-//         planoId: planoDoc._id,
-//       };
-
-//       await storeBuilderService.create(floorInsertData);
-
-//       console.log(floorInsertData);
-//     }));
-
-//     return res.sendSuccess({ message: 'Floor data inserted successfully' });
-//   } catch (e) {
-//     logger.error({ functionName: 'addFloorDataAPI', error: e });
-//     return res.sendError(e.message || 'Internal Server Error', 500);
-//   }
-// }
-
 export async function createFloors( req, res ) {
   try {
     if ( !req.files.file ) {
@@ -424,12 +258,12 @@ export async function createFloors( req, res ) {
       const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
       const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
 
-      const finalXDistance = maxXDistance;
-      const finalXDetailedDistance = maxXDetailedDistance;
 
+      const finalXDistance = maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance;
+      const finalXDetailedDistance = maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance;
 
-      const finalYDistance = maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : maxYDistance;
-      const finalYDetailedDistance = maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : maxYDetailedDistance;
+      const finalYDistance = maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) );
+      const finalYDetailedDistance = maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) );
 
       const floorInsertData = {
         storeName: planoDoc.storeName,
@@ -513,466 +347,6 @@ export async function createFloors( req, res ) {
   }
 }
 
-// export async function createFixturesShelves( req, res ) {
-//   try {
-//     if ( !req.files.file ) {
-//       return res.sendError( 'Invalid or missing Excel file', 400 );
-//     }
-
-//     const workbook = xlsx.read( req.files.file.data, { type: 'buffer' } );
-//     const sheetName = 'Layout,Fixture&VM';
-//     if ( !workbook.Sheets[sheetName] ) {
-//       return res.sendError( `Sheet "${sheetName}" not found`, 400 );
-//     }
-
-//     const rawData = xlsx.utils.sheet_to_json( workbook.Sheets[sheetName] );
-
-//     const groupedData = {};
-
-//     rawData.forEach( ( item ) => {
-//       const fixtureId = item['Store Fixture ID'];
-
-//       if ( !groupedData[fixtureId] ) {
-//         groupedData[fixtureId] = {
-//           'Store ID': item['Store ID'],
-//           'Store Fixture ID': fixtureId,
-//           'Fixture ID': item['Fixture ID ( For ref only)'],
-//           'Fixture Category': item['Fixture Category'],
-//           'Fixture Size (feet)': item['Fixture Size (feet)'],
-//           'Fixture Count': item['Fixture Count'],
-//           'Effective Fixture Count': item['Effective Fixture Count'],
-//           'Capacity': item['Capacity'],
-//           'Store Fixture Locator': item['Store Fixture Locator'],
-//           'Wall': item['Wall'],
-//           'Brand-Category': item['Brand-Category'],
-//           'Brand - Sub Category': item['Brand - Sub Category'],
-//           'VM Template ID': item['VM Template ID '],
-//           'categories': [],
-//         };
-//       }
-
-//       const categories = groupedData[fixtureId]['categories'];
-//       const existingCategory = categories.find( ( cat ) => cat['Zone'] === item['Section Allocation '] );
-
-//       if ( !existingCategory ) {
-//         categories.push( {
-//           'Allocation': item['Shelf Allocation'],
-//           'Zone': item['Section Allocation '],
-//         } );
-//       }
-//     } );
-
-//     const raw = Object.values( groupedData );
-
-//     const constantFixtureLength = 1220;
-//     const constantDetailedFixtureLength = 1220;
-//     const constantDetailedFloorFixtureLength = 1524;
-
-
-//     const constantFixtureWidth = 610;
-//     const constantDetailedFixtureWidth = 1524;
-//     const constantDetailedFloorFixtureWidth = 1220;
-
-
-//     const mmToFeet = 305;
-//     const layoutList = await storeBuilderService.find( {} );
-
-//     for ( let i = 0; i < layoutList.length; i++ ) {
-//       const layout = layoutList[i];
-
-//       const layoutDoc = layout.toObject();
-
-//       const leftFixtures = raw.filter( ( entry ) => entry['Store ID'] === layoutDoc.storeName && entry.Wall === 'Left' );
-//       const leftWallCount = leftFixtures.length;
-
-//       const rightFixtures = raw.filter( ( entry ) => entry['Store ID'] === layoutDoc.storeName && entry.Wall === 'Right' );
-//       const rightWallCount = rightFixtures.length;
-
-
-//       const floorFixtures = raw.filter( ( entry ) => entry['Store ID'] === layoutDoc.storeName && entry.Wall === 'Centre' );
-//       const floorFixtureCount = floorFixtures.length;
-
-//       const maxFixturesPerRow = floorFixtureCount > 4 ? 3 : 2;
-
-//       const totalRows = Math.ceil( floorFixtureCount / maxFixturesPerRow );
-//       const centerRow = Math.floor( totalRows / 2 );
-
-//       const totalLeftDistanceFeet = Math.round( ( leftWallCount * ( constantFixtureLength / mmToFeet ) ) );
-//       const totalLeftDetailedDistanceFeet = Math.round( ( leftWallCount * ( constantDetailedFixtureLength / mmToFeet ) ) );
-
-//       const totalRightDistanceFeet = Math.round( ( rightWallCount * ( constantFixtureLength / mmToFeet ) ) );
-//       const totalRightDetailedDistanceFeet = Math.round( ( rightWallCount * ( constantDetailedFixtureLength / mmToFeet ) ) );
-
-//       const totalCentreDistanceFeet = Math.round( ( ( totalRows + 6 ) * ( constantFixtureWidth / mmToFeet ) ) );
-//       const totalCentreDetailedDistanceFeet = Math.round( ( ( totalRows + 4 ) * ( constantDetailedFixtureWidth / mmToFeet ) ) );
-
-//       const totalDistanceFeetX = Math.max( totalLeftDistanceFeet, totalRightDistanceFeet );
-//       const totalDetailedDistanceFeetX = Math.max( totalLeftDetailedDistanceFeet, totalRightDetailedDistanceFeet );
-
-//       const totalDistanceFeetY = totalCentreDistanceFeet;
-//       const totalDetailedDistanceFeetY = totalCentreDetailedDistanceFeet;
-
-//       const startingX = ( totalDistanceFeetX / 2 ) - ( Math.floor( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) );
-//       const startingY = ( totalDistanceFeetY / 2 ) - ( centerRow * ( constantFixtureWidth / mmToFeet ) );
-
-//       const detailedStartingX = ( totalDetailedDistanceFeetX / 2 ) - ( Math.floor( maxFixturesPerRow / 2 ) * ( constantDetailedFloorFixtureLength / mmToFeet ) );
-//       const detailedStartingY = ( totalDetailedDistanceFeetY / 2 ) - ( centerRow * ( constantDetailedFloorFixtureWidth / mmToFeet ) );
-
-//       let fixtureCounter = 1;
-
-//       for ( let index = 0; index < leftFixtures.length; index++ ) {
-//         const fixture = leftFixtures[index];
-
-//         const fixtureData = {
-//           'clientId': layoutDoc.clientId,
-//           'storeName': layoutDoc.storeName,
-//           'storeId': layoutDoc.storeId,
-//           'planoId': layoutDoc.planoId,
-//           'floorId': layoutDoc._id,
-//           'fixtureName': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
-//           'fixtureCategory': fixture?.['Fixture Category'] ? fixture?.['Fixture Category'] : 'nil',
-//           'fixtureBrandCategory': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
-//           'fixtureBrandSubCategory': fixture?.['Brand - Sub Category'] ? fixture?.['Brand - Sub Category'] : 'nil',
-//           'fixtureCode': fixture?.['Fixture ID'],
-//           'fixtureCapacity': fixture?.['Capacity'],
-//           'fixtureType': 'wall',
-//           'fixtureHeight': {
-//             'value': 0,
-//             'unit': 'mm',
-//           },
-//           'fixtureLength': {
-//             'value': constantFixtureLength,
-//             'unit': 'mm',
-//           },
-//           'fixtureWidth': {
-//             'value': constantFixtureWidth,
-//             'unit': 'mm',
-//           },
-//           'associatedElementType': 'wall',
-//           'associatedElementNumber': 1,
-//           'relativePosition': {
-//             'x': Math.round( ( index * ( constantFixtureLength / mmToFeet ) ) ),
-//             'y': 0,
-//             'unit': 'ft',
-//           },
-//           'fixtureNumber': fixtureCounter++,
-//           'detailedFixtureLength': {
-//             'value': constantDetailedFixtureLength,
-//             'unit': 'mm',
-//           },
-//           'detailedFixtureWidth': {
-//             'value': constantDetailedFixtureWidth,
-//             'unit': 'mm',
-//           },
-//           'relativeDetailedPosition': {
-//             'x': Math.round( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
-//             'y': 0,
-//             'unit': 'ft',
-//           },
-//           'productResolutionLevel': 'L2',
-//         };
-
-//         const createdFixture = await storeFixtureService.create( fixtureData );
-
-//         // console.log( 'Fixture Data', fixtureData );
-
-
-//         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
-
-//         for ( let i = 0; i < vms?.length; i++ ) {
-//           const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
-
-//           if ( vmTemplate ) {
-//             const vmData = {
-//               'clientId': layoutDoc.clientId,
-//               'storeName': layoutDoc.storeName,
-//               'storeId': layoutDoc.storeId,
-//               'planoId': layoutDoc.planoId,
-//               'floorId': layoutDoc._id,
-//               'type': 'vm',
-//               'fixtureId': createdFixture._id,
-//               'productId': vmTemplate._id,
-//             };
-
-//             await planoMappingService.create( vmData );
-//           }
-//         }
-
-
-//         const fixtureConfig = await fixtureConfigService.findOne( { fixtureCode: fixture?.['Fixture ID'] } );
-
-//         if ( fixtureConfig ) {
-//           let shelfIndex = 0;
-
-//           for ( const section of fixtureConfig.sections ) {
-//             const storeCategory = fixture.categories.find( ( cat ) => cat.Zone === section.sectionId );
-
-//             for ( let j = 0; j < section.sectionShelves; j++ ) {
-//               if ( shelfIndex >= fixtureConfig.shelfCount ) break;
-
-
-//               const shelfData = {
-//                 'clientId': fixtureConfig.clientId,
-//                 'storeName': layoutDoc.storeName,
-//                 'storeId': layoutDoc.storeId,
-//                 'planoId': layoutDoc.planoId,
-//                 'floorId': layoutDoc._id,
-//                 'fixtureId': createdFixture._id,
-//                 'shelfNumber': shelfIndex + 1,
-//                 'shelfOrder': 'LTR',
-//                 'shelfCapacity': fixtureConfig.productPerShelf,
-//                 'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
-//                 'sectionZone': section.sectionId,
-//               };
-
-
-//               const createdShelf = await fixtureShelfService.create( shelfData );
-
-//               // console.log( 'Shelf Data:', createdShelf );
-
-//               shelfIndex++;
-//             }
-//           }
-//         }
-//       }
-
-//       for ( let index = 0; index < rightFixtures.length; index++ ) {
-//         const fixture = rightFixtures[index];
-
-//         const fixtureData = {
-//           'clientId': layoutDoc.clientId,
-//           'storeName': layoutDoc.storeName,
-//           'storeId': layoutDoc.storeId,
-//           'planoId': layoutDoc.planoId,
-//           'floorId': layoutDoc._id,
-//           'fixtureName': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
-//           'fixtureCategory': fixture?.['Fixture Category'] ? fixture?.['Fixture Category'] : 'nil',
-//           'fixtureBrandCategory': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
-//           'fixtureBrandSubCategory': fixture?.['Brand - Sub Category'] ? fixture?.['Brand - Sub Category'] : 'nil',
-//           'fixtureCode': fixture?.['Fixture ID'],
-//           'fixtureCapacity': fixture?.['Capacity'],
-//           'fixtureType': 'wall',
-//           'fixtureHeight': {
-//             'value': 0,
-//             'unit': 'mm',
-//           },
-//           'fixtureLength': {
-//             'value': constantFixtureLength,
-//             'unit': 'mm',
-//           },
-//           'fixtureWidth': {
-//             'value': constantFixtureWidth,
-//             'unit': 'mm',
-//           },
-//           'associatedElementType': 'wall',
-//           'associatedElementNumber': 3,
-//           'relativePosition': {
-//             'x': Math.round( ( index * ( constantFixtureLength / mmToFeet ) ) ),
-//             'y': Math.round( ( ( ( totalRows + 6 ) * ( constantFixtureWidth / mmToFeet ) ) - ( constantFixtureWidth / mmToFeet ) ) ),
-//             'unit': 'ft',
-//           },
-//           'fixtureNumber': fixtureCounter++,
-//           'detailedFixtureLength': {
-//             'value': constantDetailedFixtureLength,
-//             'unit': 'mm',
-//           },
-//           'detailedFixtureWidth': {
-//             'value': constantDetailedFixtureWidth,
-//             'unit': 'mm',
-//           },
-//           'relativeDetailedPosition': {
-//             'x': Math.round( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
-//             'y': Math.round( ( ( ( totalRows + 4 ) * ( constantDetailedFixtureWidth / mmToFeet ) ) - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
-//             'unit': 'ft',
-//           },
-//           'productResolutionLevel': 'L2',
-//         };
-
-//         const createdFixture = await storeFixtureService.create( fixtureData );
-
-//         // console.log( 'Fixture Data', fixtureData );
-
-//         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
-
-//         for ( let i = 0; i < vms?.length; i++ ) {
-//           const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
-
-//           if ( vmTemplate ) {
-//             const vmData = {
-//               'clientId': layoutDoc.clientId,
-//               'storeName': layoutDoc.storeName,
-//               'storeId': layoutDoc.storeId,
-//               'planoId': layoutDoc.planoId,
-//               'floorId': layoutDoc._id,
-//               'type': 'vm',
-//               'fixtureId': createdFixture._id,
-//               'productId': vmTemplate._id,
-//             };
-
-//             await planoMappingService.create( vmData );
-//           }
-//         }
-
-//         const fixtureConfig = await fixtureConfigService.findOne( { fixtureCode: fixture?.['Fixture ID'] } );
-
-//         if ( fixtureConfig ) {
-//           let shelfIndex = 0;
-
-//           for ( const section of fixtureConfig.sections ) {
-//             const storeCategory = fixture.categories.find( ( cat ) => cat.Zone === section.sectionId );
-//             for ( let j = 0; j < section.sectionShelves; j++ ) {
-//               if ( shelfIndex >= fixtureConfig.shelfCount ) break;
-
-//               const shelfData = {
-//                 'clientId': fixtureConfig.clientId,
-//                 'storeName': layoutDoc.storeName,
-//                 'storeId': layoutDoc.storeId,
-//                 'planoId': layoutDoc.planoId,
-//                 'floorId': layoutDoc._id,
-//                 'fixtureId': createdFixture._id,
-//                 'shelfNumber': shelfIndex + 1,
-//                 'shelfOrder': 'LTR',
-//                 'shelfCapacity': fixtureConfig.productPerShelf,
-//                 'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
-//                 'sectionZone': section.sectionId,
-//               };
-
-//               const createdShelf = await fixtureShelfService.create( shelfData );
-
-//               // console.log( 'Shelf Data:', createdShelf );
-
-//               shelfIndex++;
-//             }
-//           }
-//         }
-//       }
-
-//       for ( let index = 0; index < floorFixtures.length; index++ ) {
-//         const fixture = floorFixtures[index];
-
-//         const rowIndex = Math.floor( index / maxFixturesPerRow );
-//         const colIndex = index % maxFixturesPerRow;
-
-//         const xPos = Math.round( startingX + colIndex * ( constantFixtureLength / mmToFeet ) );
-//         const yPos = Math.round( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) );
-
-//         const detailedXPos = Math.round( detailedStartingX + colIndex * ( constantDetailedFloorFixtureLength / mmToFeet ) );
-//         const detailedYPos = Math.round( detailedStartingY + rowIndex * ( constantDetailedFloorFixtureWidth / mmToFeet ) );
-
-//         const fixtureData = {
-//           'clientId': layoutDoc.clientId,
-//           'storeName': layoutDoc.storeName,
-//           'storeId': layoutDoc.storeId,
-//           'planoId': layoutDoc.planoId,
-//           'floorId': layoutDoc._id,
-//           'fixtureName': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
-//           'fixtureCategory': fixture?.['Fixture Category'] ? fixture?.['Fixture Category'] : 'nil',
-//           'fixtureBrandCategory': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
-//           'fixtureBrandSubCategory': fixture?.['Brand - Sub Category'] ? fixture?.['Brand - Sub Category'] : 'nil',
-//           'fixtureCode': fixture?.['Fixture ID'],
-//           'fixtureCapacity': fixture?.['Capacity'],
-//           'fixtureType': 'floor',
-//           'fixtureHeight': {
-//             'value': 0,
-//             'unit': 'mm',
-//           },
-//           'fixtureLength': {
-//             'value': constantFixtureLength,
-//             'unit': 'mm',
-//           },
-//           'fixtureWidth': {
-//             'value': constantFixtureWidth,
-//             'unit': 'mm',
-//           },
-//           'relativePosition': {
-//             'x': xPos,
-//             'y': yPos,
-//             'unit': 'ft',
-//           },
-//           'fixtureNumber': fixtureCounter++,
-//           'detailedFixtureLength': {
-//             'value': constantDetailedFloorFixtureLength,
-//             'unit': 'mm',
-//           },
-//           'detailedFixtureWidth': {
-//             'value': constantDetailedFloorFixtureWidth,
-//             'unit': 'mm',
-//           },
-//           'relativeDetailedPosition': {
-//             'x': detailedXPos,
-//             'y': detailedYPos,
-//             'unit': 'ft',
-//           },
-//           'productResolutionLevel': 'L2',
-//         };
-
-//         const createdFixture = await storeFixtureService.create( fixtureData );
-//         // console.log( 'Fixture Data', fixtureData );
-
-//         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
-
-//         for ( let i = 0; i < vms?.length; i++ ) {
-//           const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
-
-//           if ( vmTemplate ) {
-//             const vmData = {
-//               'clientId': layoutDoc.clientId,
-//               'storeName': layoutDoc.storeName,
-//               'storeId': layoutDoc.storeId,
-//               'planoId': layoutDoc.planoId,
-//               'floorId': layoutDoc._id,
-//               'type': 'vm',
-//               'fixtureId': createdFixture._id,
-//               'productId': vmTemplate._id,
-//             };
-
-//             await planoMappingService.create( vmData );
-//           }
-//         }
-
-
-//         const fixtureConfig = await fixtureConfigService.findOne( { fixtureCode: fixture?.['Fixture ID'] } );
-
-//         if ( fixtureConfig ) {
-//           let shelfIndex = 0;
-
-//           for ( const section of fixtureConfig.sections ) {
-//             const storeCategory = fixture.categories.find( ( cat ) => cat.Zone === section.sectionId );
-//             for ( let j = 0; j < section.sectionShelves; j++ ) {
-//               if ( shelfIndex >= fixtureConfig.shelfCount ) break;
-
-//               const shelfData = {
-//                 'clientId': fixtureConfig.clientId,
-//                 'storeName': layoutDoc.storeName,
-//                 'storeId': layoutDoc.storeId,
-//                 'planoId': layoutDoc.planoId,
-//                 'floorId': layoutDoc._id,
-//                 'fixtureId': createdFixture._id,
-//                 'shelfNumber': shelfIndex + 1,
-//                 'shelfOrder': 'LTR',
-//                 'shelfCapacity': fixtureConfig.productPerShelf,
-//                 'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
-//                 'sectionZone': section.sectionId,
-//               };
-
-//               const createdShelf = await fixtureShelfService.create( shelfData );
-
-//               // console.log( 'Shelf Data:', createdShelf );
-
-//               shelfIndex++;
-//             }
-//           }
-//         }
-//       }
-//     }
-
-
-//     return res.sendSuccess( 'Updated successfully' );
-//   } catch ( e ) {
-//     logger.error( { functionName: 'createFixturesShelves', error: e } );
-//     return res.sendError( e.message || 'Internal Server Error', 500 );
-//   }
-// }
 
 export async function createFixturesShelves( req, res ) {
   try {
@@ -1082,11 +456,11 @@ export async function createFixturesShelves( req, res ) {
       const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
       const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
 
-      const finalXDistance = maxXDistance;
-      const finalXDetailedDistance = maxXDetailedDistance;
+      const finalXDistance = maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance;
+      const finalXDetailedDistance = maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDistance;
 
-      const finalYDistance = maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : maxYDistance;
-      const finalYDetailedDistance = maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : maxYDetailedDistance;
+      const finalYDistance = maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) );
+      const finalYDetailedDistance = maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) );
 
 
       let fixtureCounter = 1;
@@ -1434,8 +808,8 @@ export async function createFixturesShelves( req, res ) {
 
         const centerRow = Math.floor( totalRows / 2 );
 
-        const startingX = ( finalXDistance / 2 ) - ( Math.floor( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) );
-        const detailedStartingX = ( finalXDetailedDistance / 2 ) - ( Math.floor( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) );
+        const startingX =roundToTwo( ( ( finalXDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) ) );
+        const detailedStartingX = roundToTwo( ( ( finalXDetailedDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ) );
 
         const startingY = ( finalYDistance / 2 ) - ( centerRow * ( constantFixtureWidth / mmToFeet ) );
         const detailedStartingY = ( finalYDetailedDistance / 2 ) - ( centerRow * ( constantDetailedFixtureWidth / mmToFeet ) );
@@ -1497,6 +871,597 @@ export async function createFixturesShelves( req, res ) {
         };
 
         const createdFixture = await storeFixtureService.create( fixtureData );
+        // console.log( 'Fixture Data', fixtureData );
+
+        const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
+
+        for ( let i = 0; i < vms?.length; i++ ) {
+          const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
+
+          if ( vmTemplate ) {
+            const vmData = {
+              'clientId': layoutDoc.clientId,
+              'storeName': layoutDoc.storeName,
+              'storeId': layoutDoc.storeId,
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'type': 'vm',
+              'fixtureId': createdFixture._id,
+              'productId': vmTemplate._id,
+            };
+
+            await planoMappingService.create( vmData );
+          }
+        }
+
+
+        const fixtureConfig = await fixtureConfigService.findOne( { fixtureCode: fixture?.['Fixture ID'] } );
+
+        if ( fixtureConfig ) {
+          let shelfIndex = 0;
+
+          for ( const section of fixtureConfig.sections ) {
+            const storeCategory = fixture.categories.find( ( cat ) => cat.Zone === section.sectionId );
+            for ( let j = 0; j < section.sectionShelves; j++ ) {
+              if ( shelfIndex >= fixtureConfig.shelfCount ) break;
+
+              const shelfData = {
+                'clientId': fixtureConfig.clientId,
+                'storeName': layoutDoc.storeName,
+                'storeId': layoutDoc.storeId,
+                'planoId': layoutDoc.planoId,
+                'floorId': layoutDoc._id,
+                'fixtureId': createdFixture._id,
+                'shelfNumber': shelfIndex + 1,
+                'shelfOrder': 'LTR',
+                'shelfCapacity': fixtureConfig.productPerShelf,
+                'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
+                'sectionZone': section.sectionId,
+              };
+
+              await fixtureShelfService.create( shelfData );
+
+              // console.log( 'Shelf Data:', createdShelf );
+
+              shelfIndex++;
+            }
+          }
+        }
+      }
+    }
+
+
+    return res.sendSuccess( 'Updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'createFixturesShelves', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function updateFixturesShelves( req, res ) {
+  try {
+    if ( !req.files.file ) {
+      return res.sendError( 'Invalid or missing Excel file', 400 );
+    }
+
+    const workbook = xlsx.read( req.files.file.data, { type: 'buffer' } );
+    const sheetName = 'Layout,Fixture&VM';
+    if ( !workbook.Sheets[sheetName] ) {
+      return res.sendError( `Sheet "${sheetName}" not found`, 400 );
+    }
+
+    const rawData = xlsx.utils.sheet_to_json( workbook.Sheets[sheetName] );
+
+    const groupedData = {};
+
+    rawData.forEach( ( item ) => {
+      const fixtureId = item['Store Fixture ID'];
+
+      if ( !groupedData[fixtureId] ) {
+        groupedData[fixtureId] = {
+          'Store ID': item['Store ID'],
+          'Store Fixture ID': fixtureId,
+          'Fixture ID': item['Fixture ID ( For ref only)'],
+          'Fixture Category': item['Fixture Category'],
+          'Fixture Size (feet)': item['Fixture Size (feet)'],
+          'Fixture Count': item['Fixture Count'],
+          'Effective Fixture Count': item['Effective Fixture Count'],
+          'Capacity': item['Capacity'],
+          'Store Fixture Locator': item['Store Fixture Locator'],
+          'Wall': item['Wall'],
+          'Brand-Category': item['Brand-Category'],
+          'Brand - Sub Category': item['Brand - Sub Category'],
+          'VM Template ID': item['VM Template ID '],
+          'categories': [],
+          'fixtureNumber': item['fixtureNumber'],
+        };
+      }
+
+      const categories = groupedData[fixtureId]['categories'];
+      const existingCategory = categories.find( ( cat ) => cat['Zone'] === item['Section Allocation '] );
+
+      if ( !existingCategory ) {
+        categories.push( {
+          'Allocation': item['Shelf Allocation'],
+          'Zone': item['Section Allocation '],
+        } );
+      }
+    } );
+
+    const raw = Object.values( groupedData );
+
+    const constantFixtureLength = 1220;
+    const constantDetailedFixtureLength = 1220;
+
+
+    const constantFixtureWidth = 610;
+    const constantDetailedFixtureWidth = 1524;
+
+
+    const mmToFeet = 305;
+    const layoutList = await storeBuilderService.find( {} );
+
+    function roundToTwo( num ) {
+      return Math.round( num * 100 ) / 100;
+    }
+
+    for ( let i = 0; i < layoutList.length; i++ ) {
+      const layout = layoutList[i];
+
+      const layoutDoc = layout.toObject();
+
+      const leftFixtures = raw.filter( ( entry ) => entry['Store ID'] === layoutDoc.storeName && entry.Wall === 'Left' );
+      const rightFixtures = raw.filter( ( entry ) => entry['Store ID'] === layoutDoc.storeName && entry.Wall === 'Right' );
+      const floorFixtures = raw.filter( ( entry ) => entry['Store ID'] === layoutDoc.storeName && entry.Wall === 'Centre' );
+      const backFixtures = raw.filter( ( entry ) => entry['Store ID'] === layoutDoc.storeName && entry.Wall === 'Back' );
+
+      const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const leftXDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+      const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
+      const leftYDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantDetailedFixtureWidth / mmToFeet ) ) ) : 0;
+
+      const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const rightXDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+      const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+      const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
+
+      const maxFixturesPerRow = floorFixtures.length > 4 ? 3 : 2;
+      const totalRows = Math.ceil( floorFixtures.length / maxFixturesPerRow );
+      const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( maxFixturesPerRow * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( maxFixturesPerRow * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
+
+      const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( totalRows * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
+      const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( totalRows * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
+
+      const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+      const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
+
+      const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
+      const backYDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantDetailedFixtureWidth / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth )/mmToFeet ) ) ): 0;
+
+      const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
+      const maxXDetailedDistance = Math.max( leftXDetailedDistanceFeet, rightXDetailedDistanceFeet, floorXDetailedDistanceFeet );
+
+      const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
+      const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
+
+      const finalXDistance = maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance;
+      const finalXDetailedDistance = maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDistance;
+
+      const finalYDistance = maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) );
+      const finalYDetailedDistance = maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) );
+
+
+      let fixtureCounter = 1;
+
+      for ( let index = 0; index < leftFixtures.length; index++ ) {
+        const fixture = leftFixtures[index];
+
+        const fixtureData = {
+          'clientId': layoutDoc.clientId,
+          'storeName': layoutDoc.storeName,
+          'storeId': layoutDoc.storeId,
+          'planoId': layoutDoc.planoId,
+          'floorId': layoutDoc._id,
+          'fixtureName': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
+          'fixtureCategory': fixture?.['Fixture Category'] ? fixture?.['Fixture Category'] : 'nil',
+          'fixtureBrandCategory': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
+          'fixtureBrandSubCategory': fixture?.['Brand - Sub Category'] ? fixture?.['Brand - Sub Category'] : 'nil',
+          'fixtureCode': fixture?.['Fixture ID'],
+          'fixtureCapacity': fixture?.['Capacity'],
+          'fixtureType': 'wall',
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'associatedElementType': 'wall',
+          'associatedElementNumber': 1,
+          'relativePosition': {
+            'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+            'y': 0,
+            'unit': 'ft',
+          },
+          'fixtureNumber': fixtureCounter++,
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+            'y': 0,
+            'unit': 'ft',
+          },
+          'productResolutionLevel': 'L2',
+        };
+
+        const createdFixture = await storeFixtureService.findOneAndUpdate2( { storeName: layoutDoc.storeName, fixtureNumber: fixture?.['fixtureNumber'] }, { fixtureCode: fixture?.['Fixture ID'] } );
+
+        // console.log( 'Fixture Data', fixtureData );
+
+
+        const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
+
+        for ( let i = 0; i < vms?.length; i++ ) {
+          const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
+
+          if ( vmTemplate ) {
+            const vmData = {
+              'clientId': layoutDoc.clientId,
+              'storeName': layoutDoc.storeName,
+              'storeId': layoutDoc.storeId,
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'type': 'vm',
+              'fixtureId': createdFixture._id,
+              'productId': vmTemplate._id,
+            };
+
+            await planoMappingService.create( vmData );
+          }
+        }
+
+
+        const fixtureConfig = await fixtureConfigService.findOne( { fixtureCode: fixture?.['Fixture ID'] } );
+
+        if ( fixtureConfig ) {
+          let shelfIndex = 0;
+
+          for ( const section of fixtureConfig.sections ) {
+            const storeCategory = fixture.categories.find( ( cat ) => cat.Zone === section.sectionId );
+
+            for ( let j = 0; j < section.sectionShelves; j++ ) {
+              if ( shelfIndex >= fixtureConfig.shelfCount ) break;
+
+
+              const shelfData = {
+                'clientId': fixtureConfig.clientId,
+                'storeName': layoutDoc.storeName,
+                'storeId': layoutDoc.storeId,
+                'planoId': layoutDoc.planoId,
+                'floorId': layoutDoc._id,
+                'fixtureId': createdFixture._id,
+                'shelfNumber': shelfIndex + 1,
+                'shelfOrder': 'LTR',
+                'shelfCapacity': fixtureConfig.productPerShelf,
+                'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
+                'sectionZone': section.sectionId,
+              };
+
+
+              await fixtureShelfService.create( shelfData );
+
+              // console.log( 'Shelf Data:', createdShelf );
+
+              shelfIndex++;
+            }
+          }
+        }
+      }
+
+      for ( let index = 0; index < backFixtures.length; index++ ) {
+        const fixture = rightFixtures[index];
+
+        const fixtureData = {
+          'clientId': layoutDoc.clientId,
+          'storeName': layoutDoc.storeName,
+          'storeId': layoutDoc.storeId,
+          'planoId': layoutDoc.planoId,
+          'floorId': layoutDoc._id,
+          'fixtureName': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
+          'fixtureCategory': fixture?.['Fixture Category'] ? fixture?.['Fixture Category'] : 'nil',
+          'fixtureBrandCategory': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
+          'fixtureBrandSubCategory': fixture?.['Brand - Sub Category'] ? fixture?.['Brand - Sub Category'] : 'nil',
+          'fixtureCode': fixture?.['Fixture ID'],
+          'fixtureCapacity': fixture?.['Capacity'],
+          'fixtureType': 'wall',
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'associatedElementType': 'wall',
+          'associatedElementNumber': 2,
+          'relativePosition': {
+            'x': roundToTwo( ( finalXDistance - ( constantFixtureWidth/mmToFeet ) ) ),
+            'y': roundToTwo( ( ( index * ( ( constantFixtureLength/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantFixtureWidth/mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'fixtureNumber': fixtureCounter++,
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( finalXDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
+            'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'productResolutionLevel': 'L2',
+        };
+
+        const createdFixture = await storeFixtureService.findOneAndUpdate2( { storeName: layoutDoc.storeName, fixtureNumber: fixture?.['fixtureNumber'] }, { fixtureCode: fixture?.['Fixture ID'] } );
+
+        // console.log( 'Fixture Data', fixtureData );
+
+        const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
+
+        for ( let i = 0; i < vms?.length; i++ ) {
+          const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
+
+          if ( vmTemplate ) {
+            const vmData = {
+              'clientId': layoutDoc.clientId,
+              'storeName': layoutDoc.storeName,
+              'storeId': layoutDoc.storeId,
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'type': 'vm',
+              'fixtureId': createdFixture._id,
+              'productId': vmTemplate._id,
+            };
+
+            await planoMappingService.create( vmData );
+          }
+        }
+
+        const fixtureConfig = await fixtureConfigService.findOne( { fixtureCode: fixture?.['Fixture ID'] } );
+
+        if ( fixtureConfig ) {
+          let shelfIndex = 0;
+
+          for ( const section of fixtureConfig.sections ) {
+            const storeCategory = fixture.categories.find( ( cat ) => cat.Zone === section.sectionId );
+            for ( let j = 0; j < section.sectionShelves; j++ ) {
+              if ( shelfIndex >= fixtureConfig.shelfCount ) break;
+
+              const shelfData = {
+                'clientId': fixtureConfig.clientId,
+                'storeName': layoutDoc.storeName,
+                'storeId': layoutDoc.storeId,
+                'planoId': layoutDoc.planoId,
+                'floorId': layoutDoc._id,
+                'fixtureId': createdFixture._id,
+                'shelfNumber': shelfIndex + 1,
+                'shelfOrder': 'LTR',
+                'shelfCapacity': fixtureConfig.productPerShelf,
+                'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
+                'sectionZone': section.sectionId,
+              };
+
+              const createdShelf = await fixtureShelfService.create( shelfData );
+
+              // console.log( 'Shelf Data:', createdShelf );
+
+              shelfIndex++;
+            }
+          }
+        }
+      }
+
+      for ( let index = 0; index < rightFixtures.length; index++ ) {
+        const fixture = rightFixtures[index];
+
+        const fixtureData = {
+          'clientId': layoutDoc.clientId,
+          'storeName': layoutDoc.storeName,
+          'storeId': layoutDoc.storeId,
+          'planoId': layoutDoc.planoId,
+          'floorId': layoutDoc._id,
+          'fixtureName': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
+          'fixtureCategory': fixture?.['Fixture Category'] ? fixture?.['Fixture Category'] : 'nil',
+          'fixtureBrandCategory': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
+          'fixtureBrandSubCategory': fixture?.['Brand - Sub Category'] ? fixture?.['Brand - Sub Category'] : 'nil',
+          'fixtureCode': fixture?.['Fixture ID'],
+          'fixtureCapacity': fixture?.['Capacity'],
+          'fixtureType': 'wall',
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'associatedElementType': 'wall',
+          'associatedElementNumber': 3,
+          'relativePosition': {
+            'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+            'y': roundToTwo( ( finalYDistance - ( constantFixtureWidth / mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'fixtureNumber': fixtureCounter++,
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+            'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'productResolutionLevel': 'L2',
+        };
+
+        const createdFixture = await storeFixtureService.findOneAndUpdate2( { storeName: layoutDoc.storeName, fixtureNumber: fixture?.['fixtureNumber'] }, { fixtureCode: fixture?.['Fixture ID'] } );
+
+        // console.log( 'Fixture Data', fixtureData );
+
+        const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
+
+        for ( let i = 0; i < vms?.length; i++ ) {
+          const vmTemplate = await planoProductService.findOne( { productId: vms[i] } );
+
+          if ( vmTemplate ) {
+            const vmData = {
+              'clientId': layoutDoc.clientId,
+              'storeName': layoutDoc.storeName,
+              'storeId': layoutDoc.storeId,
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'type': 'vm',
+              'fixtureId': createdFixture._id,
+              'productId': vmTemplate._id,
+            };
+
+            await planoMappingService.create( vmData );
+          }
+        }
+
+        const fixtureConfig = await fixtureConfigService.findOne( { fixtureCode: fixture?.['Fixture ID'] } );
+
+        if ( fixtureConfig ) {
+          let shelfIndex = 0;
+
+          for ( const section of fixtureConfig.sections ) {
+            const storeCategory = fixture.categories.find( ( cat ) => cat.Zone === section.sectionId );
+            for ( let j = 0; j < section.sectionShelves; j++ ) {
+              if ( shelfIndex >= fixtureConfig.shelfCount ) break;
+
+              const shelfData = {
+                'clientId': fixtureConfig.clientId,
+                'storeName': layoutDoc.storeName,
+                'storeId': layoutDoc.storeId,
+                'planoId': layoutDoc.planoId,
+                'floorId': layoutDoc._id,
+                'fixtureId': createdFixture._id,
+                'shelfNumber': shelfIndex + 1,
+                'shelfOrder': 'LTR',
+                'shelfCapacity': fixtureConfig.productPerShelf,
+                'sectionName': storeCategory ? storeCategory?.['Allocation'] : 'Unknown',
+                'sectionZone': section.sectionId,
+              };
+
+              await fixtureShelfService.create( shelfData );
+
+              // console.log( 'Shelf Data:', createdShelf );
+
+              shelfIndex++;
+            }
+          }
+        }
+      }
+
+      for ( let index = 0; index < floorFixtures.length; index++ ) {
+        const fixture = floorFixtures[index];
+
+        const centerRow = Math.floor( totalRows / 2 );
+
+        const startingX =roundToTwo( ( ( finalXDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) ) );
+        const detailedStartingX = roundToTwo( ( ( finalXDetailedDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ) );
+
+        const startingY = ( finalYDistance / 2 ) - ( centerRow * ( constantFixtureWidth / mmToFeet ) );
+        const detailedStartingY = ( finalYDetailedDistance / 2 ) - ( centerRow * ( constantDetailedFixtureWidth / mmToFeet ) );
+
+        const rowIndex = Math.floor( index / maxFixturesPerRow );
+        const colIndex = index % maxFixturesPerRow;
+
+        const xPos = roundToTwo( ( startingX + colIndex * ( constantFixtureLength / mmToFeet ) ) );
+        const yPos = roundToTwo( ( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) ) );
+
+        const detailedXPos = roundToTwo( ( detailedStartingX + colIndex * ( constantDetailedFixtureLength / mmToFeet ) ) );
+        const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
+
+        const fixtureData = {
+          'clientId': layoutDoc.clientId,
+          'storeName': layoutDoc.storeName,
+          'storeId': layoutDoc.storeId,
+          'planoId': layoutDoc.planoId,
+          'floorId': layoutDoc._id,
+          'fixtureName': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
+          'fixtureCategory': fixture?.['Fixture Category'] ? fixture?.['Fixture Category'] : 'nil',
+          'fixtureBrandCategory': fixture?.['Brand-Category'] ? fixture?.['Brand-Category'] : 'nil',
+          'fixtureBrandSubCategory': fixture?.['Brand - Sub Category'] ? fixture?.['Brand - Sub Category'] : 'nil',
+          'fixtureCode': fixture?.['Fixture ID'],
+          'fixtureCapacity': fixture?.['Capacity'],
+          'fixtureType': 'floor',
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativePosition': {
+            'x': xPos,
+            'y': yPos,
+            'unit': 'ft',
+          },
+          'fixtureNumber': fixtureCounter++,
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': detailedXPos,
+            'y': detailedYPos,
+            'unit': 'ft',
+          },
+          'productResolutionLevel': 'L2',
+        };
+
+        const createdFixture = await storeFixtureService.findOneAndUpdate2( { storeName: layoutDoc.storeName, fixtureNumber: fixture?.['fixtureNumber'] }, { fixtureCode: fixture?.['Fixture ID'] } );
         // console.log( 'Fixture Data', fixtureData );
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
