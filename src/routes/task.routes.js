@@ -6,6 +6,7 @@ export const storeBuilderTaskRouter = express.Router();
 
 storeBuilderTaskRouter
     .post( '/createTask', taskController.createTask )
+    .post( '/createPlano', taskController.createPlano )
     .get( '/taskDetails', taskController.getTaskDetails )
     .post( '/uploadImage', taskController.uploadImage )
     .post( '/updateStatus', taskController.updateStatus )

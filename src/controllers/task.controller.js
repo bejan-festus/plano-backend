@@ -1,11 +1,13 @@
 import * as taskService from '../service/task.service.js';
-import * as processedService from '../service/processedchecklist.service.js';
+import * as processedService from '../service/processedTaskservice.js';
 import * as storeService from '../service/store.service.js';
+import * as processedChecklistService from '../service/processedchecklist.service.js';
 import * as userService from '../service/user.service.js';
 import dayjs from 'dayjs';
 import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
 import * as planoTaskService from '../service/planoTask.service.js';
 import * as planoService from '../service/planogram.service.js';
+import * as checklistService from '../service/checklist.service.js';
 
 async function createUser( data ) {
   try {
@@ -100,8 +102,8 @@ async function createUser( data ) {
 
 export async function createTask( req, res ) {
   try {
-    let taskDetails = await taskService.find( { isPlano: true, client_id: req.body.clientId } );
-    let storeList = req.body.stores.map( ( ele ) => ele.toLowerCase() );
+    let taskDetails = await taskService.find( { isPlano: true, client_id: req.body.clientId, ...( req.body.checkListName )? { checkListName: req.body.checkListName } : {} } );
+    let storeList = req.body.stores.map( ( ele ) => ele.store.toLowerCase() );
     let userDetails;
     if ( !taskDetails.length ) {
       return res.sendError( 'No data found', 204 );
@@ -149,7 +151,7 @@ export async function createTask( req, res ) {
         approvalEnable: false,
         redoStatus: false,
         isPlano: true,
-        type: task.checkListName == 'Product Verification' ? 'product' : task.checkListName == 'Fixture Verification' ? 'fixture' : 'vm',
+        planoType: task.checkListName == 'Product Verification' ? 'product' : task.checkListName == 'Fixture Verification' ? 'fixture' : task.checkListName == 'Layout Verification' ? 'layout' : 'vm',
       };
       let query = [
         {
@@ -166,47 +168,34 @@ export async function createTask( req, res ) {
       ];
 
       let storeDetails = await storeService.aggregate( query );
-      if ( req.body.userEmail ) {
-        let query = [
-          {
-            $addFields: {
-              emailLower: { $toLower: '$email' },
-            },
-          },
-          {
-            $match: {
-              clientId: req.body.clientId,
-              emailLower: req.body.userEmail,
-            },
-          },
-        ];
-        userDetails = await userService.aggregate( query );
-        if ( !userDetails.length ) {
-          let userData = {
-            clientId: req.body.clientId,
-            mobileNumber: '',
-            email: req.body.userEmail,
-            userName: req.body.userEmail.split( '@' )[0],
-          };
-          userDetails = await createUser( userData );
-        } else {
-          userDetails = userDetails[0];
-        }
-      }
-
       await Promise.all( storeDetails.map( async ( store ) => {
+        let getUserEmail = req.body.stores.find( ( ele ) => ele.store.toLowerCase() == store.storeName.toLowerCase() );
         let planoDetails = await planoService.findOne( { storeId: store.storeId } );
-        console.log( planoDetails, store.storeId, 'details' );
-        if ( !req.body.userEmail ) {
-          userDetails = await userService.findOne( { email: store?.spocDetails?.[0]?.email } );
-          if ( !userDetails ) {
+        if ( getUserEmail ) {
+          let query = [
+            {
+              $addFields: {
+                emailLower: { $toLower: '$email' },
+              },
+            },
+            {
+              $match: {
+                clientId: req.body.clientId,
+                email: getUserEmail.email,
+              },
+            },
+          ];
+          userDetails = await userService.aggregate( query );
+          if ( !userDetails.length ) {
             let userData = {
               clientId: req.body.clientId,
-              mobileNumber: store?.spocDetails?.[0]?.contact,
-              email: store?.spocDetails?.[0]?.email,
-              userName: store?.spocDetails?.[0]?.name,
+              mobileNumber: '',
+              email: getUserEmail.email,
+              userName: getUserEmail.email.split( '@' )[0],
             };
             userDetails = await createUser( userData );
+          } else {
+            userDetails = userDetails[0];
           }
         }
         let taskData = { ...data };
@@ -226,6 +215,127 @@ export async function createTask( req, res ) {
     } ) );
 
     return res.sendSuccess( 'Task created successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'createTask', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function createPlano( req, res ) {
+  try {
+    let checklistDetails = await checklistService.find( { isPlano: true, client_id: req.body.clientId } );
+    let storeList = req.body.stores.map( ( ele ) => ele.store.toLowerCase() );
+    let userDetails;
+    if ( !checklistDetails.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    await Promise.all( checklistDetails.map( async ( checklist ) => {
+      let data = {
+        client_id: req.body.clientId,
+        date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
+        date_string: dayjs().format( 'YYYY-MM-DD' ),
+        sourceCheckList_id: checklist._id,
+        checkListName: checklist.checkListName,
+        checkListId: checklist._id,
+        scheduleStartTime: '08:00 AM',
+        scheduleEndTime: '11:59 PM',
+        scheduleStartTime_iso: dayjs.utc( '08:00 AM', 'hh:mm A' ).format(),
+        scheduleEndTime_iso: dayjs.utc( '11:59 PM', 'hh:mm A' ).format(),
+        allowedOverTime: false,
+        allowedStoreLocation: false,
+        createdBy: checklist.createdBy,
+        createdByName: checklist.createdByName,
+        questionAnswers: [],
+        isdeleted: false,
+        questionCount: 0,
+        storeCount: 0,
+        locationCount: 0,
+        checkListType: 'custom',
+        country: '',
+        store_id: '',
+        storeName: '',
+        userId: '',
+        userName: '',
+        userEmail: '',
+        checklistStatus: 'open',
+        timeFlagStatus: true,
+        timeFlag: 0,
+        questionFlag: 0,
+        mobileDetectionFlag: 0,
+        storeOpenCloseFlag: 0,
+        reinitiateStatus: false,
+        markasread: false,
+        uniformDetectionFlag: 0,
+        scheduleRepeatedType: 'daily',
+        approvalStatus: false,
+        approvalEnable: false,
+        redoStatus: false,
+        isPlano: true,
+        planoType: checklist.checkListName == 'Planogram QR' ? 'qr' : 'rfid',
+      };
+      let query = [
+        {
+          $addFields: {
+            store: { $toLower: '$storeName' },
+          },
+        },
+        {
+          $match: {
+            clientId: req.body.clientId,
+            store: { $in: storeList },
+          },
+        },
+      ];
+
+      let storeDetails = await storeService.aggregate( query );
+      await Promise.all( storeDetails.map( async ( store ) => {
+        let getUserEmail = req.body.stores.find( ( ele ) => ele.store.toLowerCase() == store.storeName.toLowerCase() );
+        let planoDetails = await planoService.findOne( { storeId: store.storeId } );
+        if ( getUserEmail ) {
+          let query = [
+            {
+              $addFields: {
+                emailLower: { $toLower: '$email' },
+              },
+            },
+            {
+              $match: {
+                clientId: req.body.clientId,
+                email: getUserEmail.email,
+              },
+            },
+          ];
+          userDetails = await userService.aggregate( query );
+          console.log( userDetails );
+          if ( !userDetails.length ) {
+            let userData = {
+              clientId: req.body.clientId,
+              mobileNumber: '',
+              email: getUserEmail.email,
+              userName: getUserEmail.email.split( '@' )[0],
+            };
+            userDetails = await createUser( userData );
+          } else {
+            userDetails = userDetails[0];
+          }
+        }
+        let checklistData = { ...data };
+        checklistData.store_id = store.storeId;
+        checklistData.storeName = store.storeName;
+        checklistData.userId = userDetails._id;
+        checklistData.userName = userDetails.userName;
+        checklistData.userEmail = userDetails.email;
+        checklistData.planoId = planoDetails?._id;
+        for ( let i=0; i<req.body.days; i++ ) {
+          let currDate = dayjs().add( i, 'day' );
+          let insertData = { ...checklistData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 08:00 AM`, 'YYYY-MM-DD hh:mm A' ).format(), scheduleEndTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 11:59 PM`, 'YYYY-MM-DD hh:mm A' ).format() };
+          let response = await processedChecklistService.updateOne( { date_string: currDate.format( 'YYYY-MM-DD' ), store_id: insertData.store_id, userEmail: insertData.userEmail, planoId: insertData.planoId, sourceCheckList_id: checklist._id }, insertData );
+          console.log( insertData.store_id, response );
+        }
+      } ) );
+    } ) );
+
+    return res.sendSuccess( 'Checklist created successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'createTask', error: e } );
     return res.sendError( e, 500 );
@@ -337,10 +447,21 @@ export async function updateAnswers( req, res ) {
 
 export async function getFixtureDetails( req, res ) {
   try {
-    if ( !req.query.fixtureId ) {
-      return res.sendError( 'Fixture id is required', 400 );
+    if ( !req.query.fixtureId && !req.query.planoId ) {
+      return res.sendError( 'Fixture/Plano id is required', 400 );
     }
-    let fixtureDetails = await planoTaskService.findOne( { fixtureId: req.query.fixtureId, type: req.query.type } );
+    let query = { type: req.query.type };
+    if ( req.query?.fixtureId ) {
+      query['fixtureId'] = req.query.fixtureId;
+    } else {
+      if ( !req.query.floorId ) {
+        return res.sendError( 'Floor id is required', 400 );
+      }
+      query['planoId'] = req.query.planoId;
+      query['floorId'] = req.query.floorId;
+    }
+
+    let fixtureDetails = await planoTaskService.findOne( { fixtureId: req.query.fixtureId } );
     if ( !fixtureDetails ) {
       return res.sendError( 'No data found', 204 );
     }
