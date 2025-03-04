@@ -24,6 +24,10 @@ export async function findOneAndUpdate( query={}, field={} ) {
   return model.storeFixtureModel.findOneAndUpdate( query, field );
 }
 
+export async function findOneAndUpdate2( query={}, field={} ) {
+  return model.storeFixtureModel.findOneAndUpdate( query, field, { new: true } );
+}
+
 export async function create( data ) {
   return model.storeFixtureModel.create( data );
 }

@@ -10,4 +10,5 @@ scriptRouter
     .post( '/bulkInsertPlanoData', scriptController.createPlano )
     .post( '/bulkIinsertFloorData', scriptController.createFloors )
     .post( '/bulkIinsertVmTemplateData', scriptController.createVmData )
-    .post( '/bulkIinsertFixturesShelvesVmsData', scriptController.createFixturesShelves );
+    .post( '/bulkIinsertFixturesShelvesVmsData', scriptController.createFixturesShelves )
+    .post( '/updateFixturesShelvesVms', scriptController.updateFixturesShelves );
