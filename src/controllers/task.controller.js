@@ -417,9 +417,9 @@ export async function updateStatus( req, res ) {
 
 export async function updateAnswers( req, res ) {
   try {
-    if ( !req.body.fixtureId ) {
-      return res.sendError( 'No data found', 204 );
-    }
+    // if ( !req.body.fixtureId ) {
+    //   return res.sendError( 'No data found', 204 );
+    // }
 
     req.body.answers.forEach( ( ans ) => {
       if ( ans.image && ans.image.includes( 'http' ) ) {
