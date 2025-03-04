@@ -417,14 +417,14 @@ export async function updateStatus( req, res ) {
 
 export async function updateAnswers( req, res ) {
   try {
-    // if ( !req.body.fixtureId ) {
-    //   return res.sendError( 'No data found', 204 );
-    // }
-
     req.body.answers.forEach( ( ans ) => {
-      if ( ans.image && ans.image.includes( 'http' ) ) {
+      if ( ans.image ) {
         ans.image = ans.image.split( '.com/' )[1].split( '?' )[0];
         ans.image = decodeURIComponent( ans.image );
+      }
+      if ( ans.video ) {
+        ans.video = ans.video.split( '.com/' )[1].split( '?' )[0];
+        ans.video = decodeURIComponent( ans.video );
       }
     } );
 
@@ -473,6 +473,14 @@ export async function getFixtureDetails( req, res ) {
         };
         let imageUrl = await signedUrl( params );
         ans.image = imageUrl;
+      }
+      if ( ans.video ) {
+        let params = {
+          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+          file_path: ans.video,
+        };
+        let imageUrl = await signedUrl( params );
+        ans.video = imageUrl;
       }
       return ans;
     } ) );
