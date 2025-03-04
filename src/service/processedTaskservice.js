@@ -12,6 +12,10 @@ export async function updateOne( query = {}, record = {} ) {
   return model.taskProcessedModel.updateOne( query, { $set: record }, { upsert: true } );
 }
 
+export async function deleteMany( query = {} ) {
+  return model.taskProcessedModel.deleteMany( query );
+}
+
 export async function find( query = {}, field = {} ) {
   return model.taskProcessedModel.find( query, field );
 }

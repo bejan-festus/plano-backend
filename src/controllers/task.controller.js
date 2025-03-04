@@ -8,6 +8,8 @@ import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
 import * as planoTaskService from '../service/planoTask.service.js';
 import * as planoService from '../service/planogram.service.js';
 import * as checklistService from '../service/checklist.service.js';
+import timeZone from 'dayjs/plugin/timezone.js';
+dayjs.extend( timeZone );
 
 async function createUser( data ) {
   try {
@@ -404,7 +406,15 @@ export async function updateStatus( req, res ) {
     if ( !taskDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-    await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status } );
+    let storeTimeZone = await storeService.findOne( { storeName: { $regex: taskDetails.storeName, $options: 'i' }, clientId: taskDetails.client_id }, { 'storeProfile.timeZone': 1 } );
+    let currentDateTime;
+    if ( storeTimeZone?.storeProfile?.timeZone ) {
+      currentDateTime = dayjs().tz( storeTimeZone?.storeProfile?.timeZone );
+    } else {
+      currentDateTime = requestData?.currentTime ? dayjs( requestData.currentTime, 'HH:mm:ss' ) : dayjs();
+    }
+    let submitTimeString = currentDateTime.format( 'hh:mm A, DD MMM YYYY' );
+    await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status, ...( req.body.status == 'inprogress' ) ? { startTime_string: submitTimeString } : { submitTime_string: submitTimeString } } );
     if ( req.body.status == 'submit' ) {
       await processedService.deleteMany( { _id: req.body.taskId, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } } );
     }
