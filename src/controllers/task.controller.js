@@ -428,6 +428,18 @@ export async function updateStatus( req, res ) {
 export async function updateAnswers( req, res ) {
   try {
     req.body.answers.forEach( ( ans ) => {
+      if ( ans?.correctedFixture?.length ) {
+        ans.correctedFixture.forEach( ( fixture ) => {
+          if ( fixture.image ) {
+            fixture.image = fixture.image.split( '.com/' )[1].split( '?' )[0];
+            fixture.image = decodeURIComponent( fixture.image );
+          }
+          if ( fixture.video ) {
+            fixture.video = fixture.video.split( '.com/' )[1].split( '?' )[0];
+            fixture.video = decodeURIComponent( fixture.video );
+          }
+        } );
+      }
       if ( ans.image ) {
         ans.image = ans.image.split( '.com/' )[1].split( '?' )[0];
         ans.image = decodeURIComponent( ans.image );
