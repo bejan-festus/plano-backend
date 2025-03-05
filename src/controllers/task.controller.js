@@ -8,6 +8,8 @@ import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
 import * as planoTaskService from '../service/planoTask.service.js';
 import * as planoService from '../service/planogram.service.js';
 import * as checklistService from '../service/checklist.service.js';
+import timeZone from 'dayjs/plugin/timezone.js';
+dayjs.extend( timeZone );
 
 async function createUser( data ) {
   try {
@@ -404,7 +406,15 @@ export async function updateStatus( req, res ) {
     if ( !taskDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-    await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status } );
+    let storeTimeZone = await storeService.findOne( { storeName: { $regex: taskDetails.storeName, $options: 'i' }, clientId: taskDetails.client_id }, { 'storeProfile.timeZone': 1 } );
+    let currentDateTime;
+    if ( storeTimeZone?.storeProfile?.timeZone ) {
+      currentDateTime = dayjs().tz( storeTimeZone?.storeProfile?.timeZone );
+    } else {
+      currentDateTime = requestData?.currentTime ? dayjs( requestData.currentTime, 'HH:mm:ss' ) : dayjs();
+    }
+    let submitTimeString = currentDateTime.format( 'hh:mm A, DD MMM YYYY' );
+    await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status, ...( req.body.status == 'inprogress' ) ? { startTime_string: submitTimeString } : { submitTime_string: submitTimeString } } );
     if ( req.body.status == 'submit' ) {
       await processedService.deleteMany( { _id: req.body.taskId, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } } );
     }
@@ -417,14 +427,14 @@ export async function updateStatus( req, res ) {
 
 export async function updateAnswers( req, res ) {
   try {
-    if ( !req.body.fixtureId ) {
-      return res.sendError( 'No data found', 204 );
-    }
-
     req.body.answers.forEach( ( ans ) => {
-      if ( ans.image && ans.image.includes( 'http' ) ) {
+      if ( ans.image ) {
         ans.image = ans.image.split( '.com/' )[1].split( '?' )[0];
         ans.image = decodeURIComponent( ans.image );
+      }
+      if ( ans.video ) {
+        ans.video = ans.video.split( '.com/' )[1].split( '?' )[0];
+        ans.video = decodeURIComponent( ans.video );
       }
     } );
 
@@ -473,6 +483,14 @@ export async function getFixtureDetails( req, res ) {
         };
         let imageUrl = await signedUrl( params );
         ans.image = imageUrl;
+      }
+      if ( ans.video ) {
+        let params = {
+          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+          file_path: ans.video,
+        };
+        let imageUrl = await signedUrl( params );
+        ans.video = imageUrl;
       }
       return ans;
     } ) );
