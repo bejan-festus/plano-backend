@@ -568,6 +568,7 @@ export async function storeFixturesv1( req, res ) {
 
           const floorsWithFixtures = await Promise.all(
               floors.map( async ( floor ) => {
+                let productCapacity = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.find( {
@@ -588,6 +589,7 @@ export async function storeFixturesv1( req, res ) {
                             } else {
                               fixture.imageUrl = '';
                             }
+                            productCapacity += fixture.toObject().fixtureCapacity;
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -682,6 +684,7 @@ export async function storeFixturesv1( req, res ) {
                       } else {
                         fixture.imageUrl = '';
                       }
+                      productCapacity += fixture.toObject().fixtureCapacity;
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -759,7 +762,8 @@ export async function storeFixturesv1( req, res ) {
                   ...floor.toObject(),
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
-                  productCount: productCount,
+                  productCount: productCapacity,
+                  // productCapacity: productCapacity,
                   otherElements: otherElements,
                 };
               } ),
@@ -1988,6 +1992,7 @@ export async function storeFixturesTask( req, res ) {
 
           const floorsWithFixtures = await Promise.all(
               floors.map( async ( floor ) => {
+                let productCapacity = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.find( {
@@ -2008,6 +2013,7 @@ export async function storeFixturesTask( req, res ) {
                             } else {
                               fixture.imageUrl = '';
                             }
+                            productCapacity += fixture.toObject().fixtureCapacity;
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -2075,6 +2081,7 @@ export async function storeFixturesTask( req, res ) {
                       } else {
                         fixture.imageUrl = '';
                       }
+                      productCapacity += fixture.toObject().fixtureCapacity;
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -2124,7 +2131,8 @@ export async function storeFixturesTask( req, res ) {
                   ...floor.toObject(),
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
-                  productCount: productCount,
+                  productCount: productCapacity,
+                  // productCapacity: productCapacity,
                   otherElements: otherElements,
                 };
               } ),
