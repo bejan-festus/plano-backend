@@ -448,6 +448,18 @@ export async function updateAnswers( req, res ) {
         ans.video = ans.video.split( '.com/' )[1].split( '?' )[0];
         ans.video = decodeURIComponent( ans.video );
       }
+      if ( ans?.newVms?.length ) {
+        ans.newVms.forEach( ( vms ) => {
+          if ( vms?.imageUrl ) {
+            vms.imageUrl = vms.imageUrl.split( '.com/' )[1].split( '?' )[0];
+            vms.imageUrl = decodeURIComponent( vms.imageUrl );
+          }
+          if ( vms?.video ) {
+            vms.video = vms.video.split( '.com/' )[1].split( '?' )[0];
+            vms.video = decodeURIComponent( vms.video );
+          }
+        } );
+      }
     } );
 
     let data = {
@@ -496,6 +508,24 @@ export async function getFixtureDetails( req, res ) {
               file_path: fixture.image,
             };
             fixture.image = await signedUrl( params );
+          }
+          if ( fixture.video ) {
+            let params = {
+              Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+              file_path: fixture.video,
+            };
+            fixture.video = await signedUrl( params );
+          }
+        }
+      }
+      if ( ans?.newVms?.length ) {
+        for ( let fixture of ans.newVms ) {
+          if ( fixture.imageUrl ) {
+            let params = {
+              Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+              file_path: fixture.imageUrl,
+            };
+            fixture.imageUrl = await signedUrl( params );
           }
           if ( fixture.video ) {
             let params = {
