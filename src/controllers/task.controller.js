@@ -428,6 +428,18 @@ export async function updateStatus( req, res ) {
 export async function updateAnswers( req, res ) {
   try {
     req.body.answers.forEach( ( ans ) => {
+      if ( ans?.correctedFixture?.length ) {
+        ans.correctedFixture.forEach( ( fixture ) => {
+          if ( fixture.image ) {
+            fixture.image = fixture.image.split( '.com/' )[1].split( '?' )[0];
+            fixture.image = decodeURIComponent( fixture.image );
+          }
+          if ( fixture.video ) {
+            fixture.video = fixture.video.split( '.com/' )[1].split( '?' )[0];
+            fixture.video = decodeURIComponent( fixture.video );
+          }
+        } );
+      }
       if ( ans.image ) {
         ans.image = ans.image.split( '.com/' )[1].split( '?' )[0];
         ans.image = decodeURIComponent( ans.image );
@@ -471,11 +483,29 @@ export async function getFixtureDetails( req, res ) {
       query['floorId'] = req.query.floorId;
     }
 
-    let fixtureDetails = await planoTaskService.findOne( { fixtureId: req.query.fixtureId } );
+    let fixtureDetails = await planoTaskService.findOne( query );
     if ( !fixtureDetails ) {
       return res.sendError( 'No data found', 204 );
     }
     fixtureDetails = await Promise.all( fixtureDetails.answers.map( async ( ans ) => {
+      if ( ans?.correctedFixture?.length ) {
+        for ( let fixture of ans.correctedFixture ) {
+          if ( fixture.image ) {
+            let params = {
+              Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+              file_path: fixture.image,
+            };
+            fixture.image = await signedUrl( params );
+          }
+          if ( fixture.video ) {
+            let params = {
+              Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+              file_path: fixture.video,
+            };
+            fixture.video = await signedUrl( params );
+          }
+        }
+      }
       if ( ans.image ) {
         let params = {
           Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
