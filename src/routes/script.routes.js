@@ -11,4 +11,5 @@ scriptRouter
     .post( '/bulkIinsertFloorData', scriptController.createFloors )
     .post( '/bulkIinsertVmTemplateData', scriptController.createVmData )
     .post( '/bulkIinsertFixturesShelvesVmsData', scriptController.createFixturesShelves )
-    .post( '/updateFixturesShelvesVms', scriptController.updateFixturesShelves );
+    .post( '/updateFixturesShelvesVms', scriptController.updateFixturesShelves )
+    .post( '/lk98lK1993Update', scriptController.lk98lK1993Update );
