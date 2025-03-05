@@ -1573,3 +1573,66 @@ export async function createVmData( req, res ) {
     return res.sendError( e.message || 'Internal Server Error', 500 );
   }
 }
+
+export async function lk98lK1993Update( req, res ) {
+  try {
+    const modelFixture = await storeFixtureService.findOne( { storeName: 'LKST98', fixtureNumber: 1 } );
+
+    const modelShelves = await fixtureShelfService.find( { fixtureId: modelFixture.toObject()._id } );
+
+    const modelproducts = await planoMappingService.find( { fixtureId: modelFixture.toObject()._id, type: 'product' } );
+
+    const stores = [ 'LKST1193' ];
+
+    for ( let i = 0; i < stores.length; i++ ) {
+      const store = stores[i];
+
+      const storeFixtures = await storeFixtureService.find( { storeName: store, fixtureType: { $ne: 'other' } } );
+
+      for ( let j = 0; j < storeFixtures.length; j++ ) {
+        const fixture = storeFixtures[j].toObject();
+
+        for ( let k = 0; k < modelShelves.length; k++ ) {
+          const modelShelf = modelShelves[k].toObject();
+
+          delete modelShelf._id;
+
+          const updateShelfData = {
+            ...modelShelf,
+            fixtureId: fixture._id,
+            storeName: 'LKST1193',
+            storeId: '11-1076',
+            planoId: new mongoose.Types.ObjectId( '67c1a273dad5d3cfdbf18fe3' ),
+            floorId: new mongoose.Types.ObjectId( '67c1a2a8dad5d3cfdbf1c9f5' ),
+          };
+
+          const createdShelf = await fixtureShelfService.create( updateShelfData );
+          console.log( updateShelfData );
+
+          for ( let l = 0; l < modelproducts.length; l++ ) {
+            const modelProduct = modelproducts[l].toObject();
+
+            delete modelProduct._id;
+
+            const updateProductData = {
+              ...modelProduct,
+              fixtureId: fixture._id,
+              shelfId: createdShelf.toObject()._id,
+              storeName: 'LKST1193',
+              storeId: '11-1076',
+              planoId: new mongoose.Types.ObjectId( '67c1a273dad5d3cfdbf18fe3' ),
+              floorId: new mongoose.Types.ObjectId( '67c1a2a8dad5d3cfdbf1c9f5' ),
+            };
+
+            await planoMappingService.create( updateProductData );
+            console.log( updateProductData );
+          }
+        }
+      }
+    }
+    return res.sendSuccess( 'Updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'transformDataAPI', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
