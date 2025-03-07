@@ -1636,3 +1636,96 @@ export async function lk98lK1993Update( req, res ) {
     return res.sendError( e.message || 'Internal Server Error', 500 );
   }
 }
+
+export async function updateInventory( req, res ) {
+  try {
+    if ( !req.files.file ) {
+      return res.sendError( 'Invalid or missing Excel file', 400 );
+    }
+
+    const workbook = xlsx.read( req.files.file.data, { type: 'buffer' } );
+    const sheetName = 'Sheet1';
+    if ( !workbook.Sheets[sheetName] ) {
+      return res.sendError( `Sheet "${sheetName}" not found`, 400 );
+    }
+
+    const raw = xlsx.utils.sheet_to_json( workbook.Sheets[sheetName] );
+
+    for ( let i = 0; i < raw.length; i++ ) {
+      const element = raw[i];
+
+      const updateData = {
+        productBrand: element.parent_brand,
+        productType: element.parent_category,
+        productId: element.barcode,
+        type: 'product',
+        storeName: 'LKST1193',
+        clientId: '11',
+      };
+
+      console.log( updateData );
+
+      const product = await planoProductService.create( updateData );
+    }
+
+
+    return res.sendSuccess( { message: 'Product inventory updated successfully' } );
+  } catch ( e ) {
+    logger.error( { functionName: 'createPlanoAPI', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function updateRfidProduct( req, res ) {
+  try {
+    const productMappings = await planoMappingService.find( { fixtureId: req.body.fixtureId } );
+
+    console.log( productMappings );
+
+    for ( let i = 0; i < productMappings.length; i++ ) {
+      const mapping = productMappings[i].toObject();
+
+      const product = await planoProductService.findOne( { productId: mapping.rfId } );
+
+      if ( product ) {
+        await planoMappingService.updateOne( { _id: mapping._id }, { productId: product.toObject()._id } );
+      }
+
+      console.log( product );
+    }
+
+
+    return res.sendSuccess( { message: 'Product inventory updated successfully' } );
+  } catch ( e ) {
+    logger.error( { functionName: 'createPlanoAPI', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function updateRfidProduct2( req, res ) {
+  try {
+    const data = req.body.data;
+
+    for ( let i = 0; i < data.length; i++ ) {
+      const section = data[i];
+
+      for ( let j = 0; j < section.products.length; j++ ) {
+        const product = section.products[j];
+
+        const productDetail = await planoProductService.findOne( { productId: product.qr } );
+
+        if ( productDetail ) {
+          await planoMappingService.updateOne( { rfId: product.rfId }, { productId: productDetail.toObject()._id } );
+        }
+
+        console.log( productDetail );
+      }
+    }
+
+
+    return res.sendSuccess( { message: 'Product inventory updated successfully' } );
+  } catch ( e ) {
+    logger.error( { functionName: 'createPlanoAPI', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
