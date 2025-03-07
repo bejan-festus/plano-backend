@@ -1782,6 +1782,8 @@ export async function bulkFixtureUpload( req, res ) {
         'shelfCapacity': 2,
         'shelfType': 'middle',
         'sectionName': req.body.data[i].sectionName,
+        'sectionZone': req.body.data[i]?.sectionZone,
+        // 'rfId':req.body.data[i].sectionName
       };
 
       const createdShelf = await fixtureShelfService.create( shelfData );
@@ -1806,6 +1808,21 @@ export async function bulkFixtureUpload( req, res ) {
         await planoMappingService.create( productMapping );
         console.log( j );
       }
+    }
+
+    const productMappings = await planoMappingService.find( { fixtureId: req.body.id } );
+
+
+    for ( let i = 0; i < productMappings.length; i++ ) {
+      const mapping = productMappings[i].toObject();
+
+      const product = await planoProductService.findOne( { productId: mapping.rfId } );
+
+      if ( product ) {
+        await planoMappingService.updateOne( { _id: mapping._id }, { productId: product.toObject()._id } );
+      }
+
+      console.log( product );
     }
 
     res.sendSuccess( fixture );
@@ -2454,3 +2471,58 @@ export const upsertFixtures = async ( req, res ) => {
     return res.sendError( 'Internal Server Error', 500 );
   }
 };
+
+export const getShelfSections = async ( req, res ) => {
+  try {
+    const pipeline = [
+      {
+        '$match': {
+          'clientId': req.body.clientId,
+        },
+      },
+      {
+        $project:
+          {
+            sectionName: 1,
+            sectionZone: 1,
+          },
+      },
+      {
+        '$match': {
+          'sectionName': { '$ne': null },
+        },
+      },
+      {
+        $group: {
+          _id: '$sectionName',
+        },
+      },
+      {
+        $group: {
+          '_id': null,
+          'sectionNames': { '$push': '$_id' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sectionNames: 1,
+        },
+      },
+    ];
+
+    const sections = await fixtureShelfService.aggregate( pipeline );
+
+    if ( !sections.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    const [ data ] = sections;
+
+    return res.sendSuccess( data?.sectionNames );
+  } catch ( error ) {
+    logger.error( 'upsertFixtures =>', error );
+    return res.sendError( 'Internal Server Error', 500 );
+  }
+};
+

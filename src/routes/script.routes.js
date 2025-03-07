@@ -12,4 +12,7 @@ scriptRouter
     .post( '/bulkIinsertVmTemplateData', scriptController.createVmData )
     .post( '/bulkIinsertFixturesShelvesVmsData', scriptController.createFixturesShelves )
     .post( '/updateFixturesShelvesVms', scriptController.updateFixturesShelves )
-    .post( '/lk98lK1993Update', scriptController.lk98lK1993Update );
+    .post( '/lk98lK1993Update', scriptController.lk98lK1993Update )
+    .post( '/updateinventory', scriptController.updateInventory )
+    .post( '/updateRfidProduct', scriptController.updateRfidProduct )
+    .post( '/updateRfidProduct2', scriptController.updateRfidProduct2 );
