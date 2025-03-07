@@ -1,5 +1,5 @@
 import express from 'express';
-// import { isAllowedSessionHandler } from 'tango-app-api-middleware';
+import { isAllowedSessionHandler } from 'tango-app-api-middleware';
 import * as taskController from '../controllers/task.controller.js';
 
 export const storeBuilderTaskRouter = express.Router();
@@ -7,7 +7,7 @@ export const storeBuilderTaskRouter = express.Router();
 storeBuilderTaskRouter
     .post( '/createTask', taskController.createTask )
     .post( '/createPlano', taskController.createPlano )
-    .get( '/taskDetails', taskController.getTaskDetails )
+    .get( '/taskDetails', isAllowedSessionHandler, taskController.getTaskDetails )
     .post( '/uploadImage', taskController.uploadImage )
     .post( '/updateStatus', taskController.updateStatus )
     .post( '/updateAnswers', taskController.updateAnswers )
