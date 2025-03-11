@@ -13,6 +13,7 @@ import * as planoMappingService from '../service/planoMapping.service.js';
 import * as planoComplianceService from '../service/planoCompliance.service.js';
 import * as planoTaskComplianceService from '../service/planoTask.service.js';
 import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
+import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 
 import path from 'path';
 
@@ -2521,8 +2522,171 @@ export const getShelfSections = async ( req, res ) => {
 
     return res.sendSuccess( data?.sectionNames );
   } catch ( error ) {
-    logger.error( 'upsertFixtures =>', error );
+    logger.error( 'getShelfSections =>', error );
     return res.sendError( 'Internal Server Error', 500 );
   }
 };
 
+export const getFixtureTypes = async ( req, res ) => {
+  try {
+    const pipeline = [
+      {
+        '$match': {
+          'clientId': req.body.clientId,
+        },
+      },
+      {
+        $project:
+          {
+            fixtureCategory: 1,
+          },
+      },
+      {
+        '$match': {
+          'fixtureCategory': { '$ne': null },
+        },
+      },
+      {
+        $group: {
+          _id: '$fixtureCategory',
+        },
+      },
+      {
+        $group: {
+          '_id': null,
+          'fixtureCategory': { '$push': '$_id' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          fixtureCategory: 1,
+        },
+      },
+    ];
+
+    const sections = await fixtureConfigService.aggregate( pipeline );
+
+    if ( !sections.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    const [ data ] = sections;
+
+    return res.sendSuccess( data?.fixtureCategory );
+  } catch ( error ) {
+    logger.error( 'getFixtureTypes =>', error );
+    return res.sendError( 'Internal Server Error', 500 );
+  }
+};
+
+export const getFixtureLengths = async ( req, res ) => {
+  try {
+    const pipeline = [
+      {
+        '$match': {
+          'clientId': req.body.clientId,
+        },
+      },
+      {
+        $project:
+          {
+            fixtureLength: 1,
+          },
+      },
+      {
+        '$match': {
+          '$and': [
+            { 'fixtureLength': { '$ne': null } },
+            { 'fixtureLength.value': { '$ne': 0 } },
+          ]
+          ,
+        },
+      },
+      {
+        $group: {
+          _id: '$fixtureLength',
+        },
+      },
+      {
+        $group: {
+          '_id': null,
+          'fixtureLength': { '$push': '$_id' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          fixtureLength: 1,
+        },
+      },
+    ];
+
+    const sections = await fixtureConfigService.aggregate( pipeline );
+
+    if ( !sections.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    const [ data ] = sections;
+
+    return res.sendSuccess( data?.fixtureLength );
+  } catch ( error ) {
+    logger.error( 'getFixtureLengths =>', error );
+    return res.sendError( 'Internal Server Error', 500 );
+  }
+};
+
+
+export const getFixtureBrands = async ( req, res ) => {
+  try {
+    const pipeline = [
+      {
+        '$match': {
+          'clientId': req.body.clientId,
+        },
+      },
+      {
+        $project:
+          {
+            fixtureBrandCategory: 1,
+          },
+      },
+      {
+        '$match': {
+          'fixtureBrandCategory': { '$ne': null },
+        },
+      },
+      {
+        $group: {
+          _id: '$fixtureBrandCategory',
+        },
+      },
+      {
+        $group: {
+          '_id': null,
+          'fixtureBrandCategory': { '$push': '$_id' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          fixtureBrandCategory: 1,
+        },
+      },
+    ];
+
+    const sections = await storeFixtureService.aggregate( pipeline );
+
+    if ( !sections.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    const [ data ] = sections;
+
+    return res.sendSuccess( data?.fixtureBrandCategory );
+  } catch ( error ) {
+    logger.error( 'getFixtureBrands =>', error );
+    return res.sendError( 'Internal Server Error', 500 );
+  }
+};

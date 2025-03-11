@@ -259,8 +259,8 @@ export async function createFloors( req, res ) {
       const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
 
 
-      const finalXDistance = maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance;
-      const finalXDetailedDistance = maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance;
+      const finalXDistance = maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance;
+      const finalXDetailedDistance = maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance;
 
       const finalYDistance = maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) );
       const finalYDetailedDistance = maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) );
@@ -337,7 +337,7 @@ export async function createFloors( req, res ) {
 
       await storeBuilderService.create( floorInsertData );
 
-      // console.log( floorInsertData );
+      console.log( floorInsertData );
     } ) );
 
     return res.sendSuccess( { message: 'Floor data inserted successfully' } );
@@ -456,8 +456,8 @@ export async function createFixturesShelves( req, res ) {
       const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
       const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
 
-      const finalXDistance = maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance;
-      const finalXDetailedDistance = maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDistance;
+      const finalXDistance = maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance;
+      const finalXDetailedDistance = maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance;
 
       const finalYDistance = maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) );
       const finalYDetailedDistance = maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) );
@@ -519,7 +519,7 @@ export async function createFixturesShelves( req, res ) {
 
         const createdFixture = await storeFixtureService.create( fixtureData );
 
-        // console.log( 'Fixture Data', fixtureData );
+        console.log( 'Fixture Data', fixtureData );
 
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
@@ -573,7 +573,7 @@ export async function createFixturesShelves( req, res ) {
 
               await fixtureShelfService.create( shelfData );
 
-              // console.log( 'Shelf Data:', createdShelf );
+              console.log( 'Shelf Data:', createdShelf );
 
               shelfIndex++;
             }
@@ -635,7 +635,7 @@ export async function createFixturesShelves( req, res ) {
 
         const createdFixture = await storeFixtureService.create( fixtureData );
 
-        // console.log( 'Fixture Data', fixtureData );
+        console.log( 'Fixture Data', fixtureData );
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
@@ -684,7 +684,7 @@ export async function createFixturesShelves( req, res ) {
 
               const createdShelf = await fixtureShelfService.create( shelfData );
 
-              // console.log( 'Shelf Data:', createdShelf );
+              console.log( 'Shelf Data:', createdShelf );
 
               shelfIndex++;
             }
@@ -746,7 +746,7 @@ export async function createFixturesShelves( req, res ) {
 
         const createdFixture = await storeFixtureService.create( fixtureData );
 
-        // console.log( 'Fixture Data', fixtureData );
+        console.log( 'Fixture Data', fixtureData );
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
@@ -795,7 +795,7 @@ export async function createFixturesShelves( req, res ) {
 
               await fixtureShelfService.create( shelfData );
 
-              // console.log( 'Shelf Data:', createdShelf );
+              console.log( 'Shelf Data:', createdShelf );
 
               shelfIndex++;
             }
@@ -871,7 +871,7 @@ export async function createFixturesShelves( req, res ) {
         };
 
         const createdFixture = await storeFixtureService.create( fixtureData );
-        // console.log( 'Fixture Data', fixtureData );
+        console.log( 'Fixture Data', fixtureData );
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
@@ -921,7 +921,7 @@ export async function createFixturesShelves( req, res ) {
 
               await fixtureShelfService.create( shelfData );
 
-              // console.log( 'Shelf Data:', createdShelf );
+              console.log( 'Shelf Data:', createdShelf );
 
               shelfIndex++;
             }
