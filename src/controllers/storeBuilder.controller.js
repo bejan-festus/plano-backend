@@ -2654,7 +2654,12 @@ export const getFixtureBrands = async ( req, res ) => {
       },
       {
         '$match': {
-          'fixtureBrandCategory': { '$ne': null },
+          '$and': [
+            { 'fixtureBrandCategory': { '$ne': null } },
+            { 'fixtureBrandCategory': { '$ne': '' } },
+            { 'fixtureBrandCategory': { '$ne': 'nil' } },
+            { 'fixtureBrandCategory': { '$not': { '$type': 'array' } } },
+          ],
         },
       },
       {
