@@ -5,10 +5,10 @@ import * as taskController from '../controllers/task.controller.js';
 export const storeBuilderTaskRouter = express.Router();
 
 storeBuilderTaskRouter
-    .post( '/createTask', taskController.createTask )
-    .post( '/createPlano', taskController.createPlano )
+    .post( '/createTask', isAllowedSessionHandler, taskController.createTask )
+    .post( '/createPlano', isAllowedSessionHandler, taskController.createPlano )
     .get( '/taskDetails', isAllowedSessionHandler, taskController.getTaskDetails )
-    .post( '/uploadImage', taskController.uploadImage )
-    .post( '/updateStatus', taskController.updateStatus )
-    .post( '/updateAnswers', taskController.updateAnswers )
-    .get( '/getFixtureDetails', taskController.getFixtureDetails );
+    .post( '/uploadImage', isAllowedSessionHandler, taskController.uploadImage )
+    .post( '/updateStatus', isAllowedSessionHandler, taskController.updateStatus )
+    .post( '/updateAnswers', isAllowedSessionHandler, taskController.updateAnswers )
+    .get( '/getFixtureDetails', isAllowedSessionHandler, taskController.getFixtureDetails );
