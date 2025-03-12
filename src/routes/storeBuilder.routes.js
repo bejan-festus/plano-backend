@@ -39,4 +39,5 @@ storeBuilderRouter
     .post( '/getshelfSections', isAllowedSessionHandler, storeBuilderController.getShelfSections )
     .post( '/getFixtureTypes', isAllowedSessionHandler, storeBuilderController.getFixtureTypes )
     .post( '/getFixtureLengths', isAllowedSessionHandler, storeBuilderController.getFixtureLengths )
-    .post( '/getFixtureBrands', isAllowedSessionHandler, storeBuilderController.getFixtureBrands );
+    .post( '/getFixtureBrands', isAllowedSessionHandler, storeBuilderController.getFixtureBrands )
+    .post( '/checkPlanoExist', isAllowedSessionHandler, storeBuilderController.checkPlanoExist );

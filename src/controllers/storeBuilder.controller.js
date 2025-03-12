@@ -2695,3 +2695,18 @@ export const getFixtureBrands = async ( req, res ) => {
     return res.sendError( 'Internal Server Error', 500 );
   }
 };
+
+export const checkPlanoExist = async ( req, res ) => {
+  try {
+    const plano = await planoService.findOne( { storeName: req.body.store } );
+
+    if ( plano ) {
+      return res.sendSuccess( true );
+    } else {
+      return res.sendSuccess( false );
+    }
+  } catch ( error ) {
+    logger.error( 'getFixtureBrands =>', error );
+    return res.sendError( 'Internal Server Error', 500 );
+  }
+};
