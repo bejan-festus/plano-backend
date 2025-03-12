@@ -1,6 +1,6 @@
 {
     "name": "tango-app-api-store-builder",
-    "version": "1.0.0-beta-60",
+    "version": "1.0.0-beta-61",
     "description": "storeBuilder",
     "main": "index.js",
     "type": "module",
