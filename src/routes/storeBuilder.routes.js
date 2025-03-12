@@ -23,7 +23,7 @@ storeBuilderRouter
     // .post( '/FixtureShelfDetails', storeBuilderController.fixtureShelfProduct )
     // .post( '/scan', storeBuilderController.scan )
     .post( '/storeLayout', isAllowedSessionHandler, validate( validateDtos.storeList ), storeBuilderController.storeLayout )
-    .post( '/storeFixtures', isAllowedSessionHandler, validate( validateDtos.storeList ), storeBuilderController.storeFixturesv1 )
+    .post( '/storeFixtures', validate( validateDtos.storeList ), storeBuilderController.storeFixturesv1 )
     .post( '/FixtureShelfDetails', isAllowedSessionHandler, validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv1 )
     .post( '/scan', isAllowedSessionHandler, storeBuilderController.scanv1 )
     .post( '/updateMissing', isAllowedSessionHandler, storeBuilderController.updateMissing )
@@ -39,4 +39,5 @@ storeBuilderRouter
     .post( '/getshelfSections', isAllowedSessionHandler, storeBuilderController.getShelfSections )
     .post( '/getFixtureTypes', isAllowedSessionHandler, storeBuilderController.getFixtureTypes )
     .post( '/getFixtureLengths', isAllowedSessionHandler, storeBuilderController.getFixtureLengths )
-    .post( '/getFixtureBrands', isAllowedSessionHandler, storeBuilderController.getFixtureBrands );
+    .post( '/getFixtureBrands', isAllowedSessionHandler, storeBuilderController.getFixtureBrands )
+    .post( '/checkPlanoExist', isAllowedSessionHandler, storeBuilderController.checkPlanoExist );
