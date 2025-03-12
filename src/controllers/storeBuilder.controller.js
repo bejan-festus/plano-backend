@@ -2663,56 +2663,181 @@ export const getFixtureLengths = async ( req, res ) => {
 
 export const getFixtureBrands = async ( req, res ) => {
   try {
-    const pipeline = [
-      {
-        '$match': {
-          'clientId': req.body.clientId,
-        },
-      },
-      {
-        $project:
-          {
-            fixtureBrandCategory: 1,
-          },
-      },
-      {
-        '$match': {
-          '$and': [
-            { 'fixtureBrandCategory': { '$ne': null } },
-            { 'fixtureBrandCategory': { '$ne': '' } },
-            { 'fixtureBrandCategory': { '$ne': 'nil' } },
-            { 'fixtureBrandCategory': { '$not': { '$type': 'array' } } },
-          ],
-        },
-      },
-      {
-        $group: {
-          _id: '$fixtureBrandCategory',
-        },
-      },
-      {
-        $group: {
-          '_id': null,
-          'fixtureBrandCategory': { '$push': '$_id' },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          fixtureBrandCategory: 1,
-        },
-      },
+    // const pipeline = [
+    //   {
+    //     '$match': {
+    //       'clientId': req.body.clientId,
+    //     },
+    //   },
+    //   {
+    //     $project:
+    //       {
+    //         fixtureBrandCategory: 1,
+    //       },
+    //   },
+    //   {
+    //     '$match': {
+    //       '$and': [
+    //         { 'fixtureBrandCategory': { '$ne': null } },
+    //         { 'fixtureBrandCategory': { '$ne': '' } },
+    //         { 'fixtureBrandCategory': { '$ne': 'nil' } },
+    //         { 'fixtureBrandCategory': { '$not': { '$type': 'array' } } },
+    //       ],
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       _id: '$fixtureBrandCategory',
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       '_id': null,
+    //       'fixtureBrandCategory': { '$push': '$_id' },
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       fixtureBrandCategory: 1,
+    //     },
+    //   },
+    // ];
+
+    // const sections = await storeFixtureService.aggregate( pipeline );
+
+    // if ( !sections.length ) {
+    //   return res.sendError( 'No data found', 204 );
+    // }
+
+    // const [ data ] = sections;
+
+    const data = [
+      'Acuvue',
+      'Acuvue Moist',
+      'Acuvue Oasys',
+      'Acuvue Vita',
+      'Air Optix',
+      'Alcon',
+      'Alcon Air Optix',
+      'Alcon Aquacomfort',
+      'Alcon Focus',
+      'Alcon Freshlook',
+      'Alcon O2 Optix',
+      'Alcon Precision',
+      'Alcon Total',
+      'All Clean',
+      'Amara',
+      'Amara Color',
+      'Aqua Clear',
+      'Aqua Lens 10H Dailies',
+      'Aqua Soft',
+      'Aquacolor',
+      'Aquacolor Candypack',
+      'Aquacolor Premium',
+      'Aquacolor_Dailies 10LP',
+      'Aquacolor_Monthly 2LP',
+      'Aquacolor_Premium 2LP',
+      'Aqualens',
+      'Aqualens Nxt',
+      'Aqualens_24H 30LP',
+      'Aqualens_24H 6LP',
+      'Aqualens_24H Nxt 3LP',
+      'Aqualens_CandyPack 2LP',
+      'Aqualens_Dailies 10LP',
+      'Aqualens_Dailies 30LP',
+      'Aqualens_Dailies 5LP',
+      'Bausch & Lomb',
+      'Bausch & Lomb Lacelle',
+      'Bausch & Lomb PureVision',
+      'Bausch & Lomb Soflens',
+      'Bausch & Lomb Soflens 59',
+      'Bausch & Lomb iConnect',
+      'Bella',
+      'Biomedic',
+      'Biotrue',
+      'Boss Orange',
+      'British Optics',
+      'Calvin Klein',
+      'Carrera',
+      'Celebration Toric',
+      'Chamelo',
+      'Chhota Bheem',
+      'Ciba Vision',
+      'Clalen Iris',
+      'Colour Perfection',
+      'Cooper Vision',
+      'Cooper Vision Avaira',
+      'Cooper Vision Biofinity',
+      'Diva',
+      'FORM',
+      'Fallon Colby',
+      'Fastrack',
+      'Fossil',
+      'French Connection',
+      'Freshlook',
+      'Hooper',
+      'Hooper Online',
+      'Hooper Screen Glasses',
+      'ICE CUBE',
+      'IDEE',
+      'J&J Define',
+      'John Jacobs',
+      'John Jacobs Computer Glasses',
+      'John Jacobs Online',
+      'John Jacobs Screen Glasses',
+      'John Jacobs TI',
+      'Johnson & Johnson',
+      'LENSKART BLU READERS',
+      'LENSKART PREMIUM READERS',
+      'Le Petit Lunetier',
+      'Lee Cooper',
+      'Lenses Only',
+      'Lenskart',
+      'Lenskart Air',
+      'Lenskart Air LA',
+      'Lenskart Air Online',
+      'Lenskart Air Screen Glasses',
+      'Lenskart BLU Screen Glasses',
+      'Lenskart Boost',
+      'Lenskart Hustlr',
+      'Lenskart Hustlr Screen Glasses',
+      'Lenskart Junior Computer Glasses',
+      'Lenskart PLUS',
+      'Lenskart READERS',
+      'Lenskart STUDIO',
+      'Lenskart Safety Goggles',
+      'Lenskart Studio Online',
+      'Lenskart TOI Special',
+      'Lensme',
+      'Lensspray',
+      'Lewis Hamilton',
+      'Mask',
+      'New Balance',
+      'OJOS',
+      'OWNDAYS',
+      'Oakley',
+      'Opti-Free',
+      'Other Third Party Brands',
+      'Polaroid',
+      'Ray-Ban',
+      'Sunpocket',
+      'Superman',
+      'ThinOptics',
+      'Tom and Jerry',
+      'Tommy Hilfiger',
+      'Velocity',
+      'Vincent Chase',
+      'Vincent Chase Essentials',
+      'Vincent Chase Kids',
+      'Vincent Chase Online',
+      'Vincent Chase Polarized',
+      'Vincent Chase Screen Glasses',
+      'Vintage',
+      'Vogue',
     ];
 
-    const sections = await storeFixtureService.aggregate( pipeline );
-
-    if ( !sections.length ) {
-      return res.sendError( 'No data found', 204 );
-    }
-
-    const [ data ] = sections;
-
-    return res.sendSuccess( data?.fixtureBrandCategory );
+    return res.sendSuccess( data );
   } catch ( error ) {
     logger.error( 'getFixtureBrands =>', error );
     return res.sendError( 'Internal Server Error', 500 );
