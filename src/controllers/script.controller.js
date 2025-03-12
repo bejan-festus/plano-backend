@@ -17,6 +17,9 @@ import mongoose from 'mongoose';
 
 export async function getStoreNames( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     if ( !req.files.file ) {
       return res.sendError( 'Excel file is required', 400 );
     }
@@ -40,6 +43,9 @@ export async function getStoreNames( req, res ) {
 
 export async function createFixtureConfig( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     if ( !req.files.file ) {
       return res.sendError( 'Invalid or missing Excel file', 400 );
     }
@@ -105,6 +111,9 @@ export async function createFixtureConfig( req, res ) {
 
 export async function createPlano( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     if ( !req.files.file ) {
       return res.sendError( 'Invalid or missing Excel file', 400 );
     }
@@ -156,6 +165,9 @@ export async function createPlano( req, res ) {
 
 export async function createFloors( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     if ( !req.files.file ) {
       return res.sendError( 'Invalid or missing Excel file', 400 );
     }
@@ -350,6 +362,9 @@ export async function createFloors( req, res ) {
 
 export async function createFixturesShelves( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     if ( !req.files.file ) {
       return res.sendError( 'Invalid or missing Excel file', 400 );
     }
@@ -573,8 +588,6 @@ export async function createFixturesShelves( req, res ) {
 
               await fixtureShelfService.create( shelfData );
 
-              console.log( 'Shelf Data:', createdShelf );
-
               shelfIndex++;
             }
           }
@@ -582,7 +595,7 @@ export async function createFixturesShelves( req, res ) {
       }
 
       for ( let index = 0; index < backFixtures.length; index++ ) {
-        const fixture = rightFixtures[index];
+        const fixture = backFixtures[index];
 
         const fixtureData = {
           'clientId': layoutDoc.clientId,
@@ -682,9 +695,7 @@ export async function createFixturesShelves( req, res ) {
                 'sectionZone': section.sectionId,
               };
 
-              const createdShelf = await fixtureShelfService.create( shelfData );
-
-              console.log( 'Shelf Data:', createdShelf );
+              await fixtureShelfService.create( shelfData );
 
               shelfIndex++;
             }
@@ -794,9 +805,6 @@ export async function createFixturesShelves( req, res ) {
               };
 
               await fixtureShelfService.create( shelfData );
-
-              console.log( 'Shelf Data:', createdShelf );
-
               shelfIndex++;
             }
           }
@@ -921,8 +929,6 @@ export async function createFixturesShelves( req, res ) {
 
               await fixtureShelfService.create( shelfData );
 
-              console.log( 'Shelf Data:', createdShelf );
-
               shelfIndex++;
             }
           }
@@ -940,6 +946,9 @@ export async function createFixturesShelves( req, res ) {
 
 export async function updateFixturesShelves( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     if ( !req.files.file ) {
       return res.sendError( 'Invalid or missing Excel file', 400 );
     }
@@ -1531,6 +1540,9 @@ export async function updateFixturesShelves( req, res ) {
 
 export async function createVmData( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     if ( !req.files.file ) {
       return res.sendError( 'Invalid or missing Excel file', 400 );
     }
@@ -1576,6 +1588,9 @@ export async function createVmData( req, res ) {
 
 export async function lk98lK1993Update( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     const modelFixture = await storeFixtureService.findOne( { storeName: 'LKST98', fixtureNumber: 1 } );
 
     const modelShelves = await fixtureShelfService.find( { fixtureId: modelFixture.toObject()._id } );
@@ -1639,6 +1654,9 @@ export async function lk98lK1993Update( req, res ) {
 
 export async function updateInventory( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     if ( !req.files.file ) {
       return res.sendError( 'Invalid or missing Excel file', 400 );
     }
@@ -1678,6 +1696,9 @@ export async function updateInventory( req, res ) {
 
 export async function updateRfidProduct( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     const productMappings = await planoMappingService.find( { fixtureId: req.body.fixtureId } );
 
     console.log( productMappings );
@@ -1704,6 +1725,9 @@ export async function updateRfidProduct( req, res ) {
 
 export async function updateRfidProduct2( req, res ) {
   try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
     const data = req.body.data;
 
     for ( let i = 0; i < data.length; i++ ) {

@@ -2057,6 +2057,16 @@ export async function storeFixturesTask( req, res ) {
                                 } ),
                             );
 
+                            const vms = await planoMappingService.find( { fixtureId: fixture._id, type: 'vm' } );
+
+                            const vmDetails = await Promise.all( vms.map( async ( vm ) => {
+                              const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
+                              return {
+                                ...vm.toObject(),
+                                ...vmTemplate?.toObject(),
+                              };
+                            } ) );
+
                             return {
                               ...fixture.toObject(),
                               status: compliance?.status ? compliance.status : '',
@@ -2064,6 +2074,7 @@ export async function storeFixturesTask( req, res ) {
                               productCount: productCount,
                               vmCount: vmCount,
                               shelfDetails: shelfDetails,
+                              vms: vmDetails,
                             };
                           } ),
                       );
@@ -2125,6 +2136,17 @@ export async function storeFixturesTask( req, res ) {
                           } ),
                       );
 
+                      const vms = await planoMappingService.find( { fixtureId: fixture._id, type: 'vm' } );
+
+                      const vmDetails = await Promise.all( vms.map( async ( vm ) => {
+                        const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
+
+                        return {
+                          ...vm.toObject(),
+                          ...vmTemplate?.toObject(),
+                        };
+                      } ) );
+
                       return {
                         ...fixture.toObject(),
                         status: compliance?.status ? compliance.status : '',
@@ -2132,6 +2154,7 @@ export async function storeFixturesTask( req, res ) {
                         productCount: productCount,
                         vmCount: vmCount,
                         shelfDetails: shelfDetails,
+                        vms: vmDetails,
                       };
                     } ),
                 );

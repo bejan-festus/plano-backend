@@ -153,7 +153,7 @@ export async function createTask( req, res ) {
         approvalEnable: false,
         redoStatus: false,
         isPlano: true,
-        planoType: task.checkListName == 'Product Verification' ? 'product' : task.checkListName == 'Fixture Verification' ? 'fixture' : task.checkListName == 'Layout Verification' ? 'layout' : 'vm',
+        planoType: task.checkListName == 'Product Verification' ? 'product' : task.checkListName == 'Layout and Fixture Verification' ? 'layoutFixture' : 'vm',
       };
       let query = [
         {
