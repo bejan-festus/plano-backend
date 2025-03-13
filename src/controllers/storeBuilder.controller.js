@@ -1076,7 +1076,7 @@ export async function fixtureShelfProductv1( req, res ) {
 
     if ( [ 'L2', 'L4' ].includes( fixture.toObject().productResolutionLevel ) ) {
       const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
-      if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+      // if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
       const productCount = await planoMappingService.count( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const shelfProducts = await Promise.all(
           fixtureShelves.map( async ( shelf ) => {
@@ -1090,7 +1090,7 @@ export async function fixtureShelfProductv1( req, res ) {
 
     if ( fixture.toObject().productResolutionLevel === 'L3' ) {
       const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
-      if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+      // if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
       const productCount = await planoMappingService.count( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const groupedShelves = fixtureShelves.reduce( async ( accPromise, shelf ) => {
         const acc = await accPromise;
