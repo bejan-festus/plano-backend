@@ -14,6 +14,8 @@ import * as planoComplianceService from '../service/planoCompliance.service.js';
 import * as planoTaskComplianceService from '../service/planoTask.service.js';
 import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
+import * as planoStaticBrandCategoriesService from '../service/planoStaticBrandCategories.service.js';
+
 
 import path from 'path';
 
@@ -1076,7 +1078,7 @@ export async function fixtureShelfProductv1( req, res ) {
 
     if ( [ 'L2', 'L4' ].includes( fixture.toObject().productResolutionLevel ) ) {
       const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
-      if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+      // if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
       const productCount = await planoMappingService.count( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const shelfProducts = await Promise.all(
           fixtureShelves.map( async ( shelf ) => {
@@ -1090,7 +1092,7 @@ export async function fixtureShelfProductv1( req, res ) {
 
     if ( fixture.toObject().productResolutionLevel === 'L3' ) {
       const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
-      if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
+      // if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
       const productCount = await planoMappingService.count( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const groupedShelves = fixtureShelves.reduce( async ( accPromise, shelf ) => {
         const acc = await accPromise;
@@ -2543,7 +2545,12 @@ export const getShelfSections = async ( req, res ) => {
 
     const [ data ] = sections;
 
-    return res.sendSuccess( data?.sectionNames );
+    const resData = [
+      ...data?.sectionNames,
+      'NA',
+    ];
+
+    return res.sendSuccess( resData );
   } catch ( error ) {
     logger.error( 'getShelfSections =>', error );
     return res.sendError( 'Internal Server Error', 500 );
@@ -2712,132 +2719,9 @@ export const getFixtureBrands = async ( req, res ) => {
 
     // const [ data ] = sections;
 
-    const data = [
-      'Acuvue',
-      'Acuvue Moist',
-      'Acuvue Oasys',
-      'Acuvue Vita',
-      'Air Optix',
-      'Alcon',
-      'Alcon Air Optix',
-      'Alcon Aquacomfort',
-      'Alcon Focus',
-      'Alcon Freshlook',
-      'Alcon O2 Optix',
-      'Alcon Precision',
-      'Alcon Total',
-      'All Clean',
-      'Amara',
-      'Amara Color',
-      'Aqua Clear',
-      'Aqua Lens 10H Dailies',
-      'Aqua Soft',
-      'Aquacolor',
-      'Aquacolor Candypack',
-      'Aquacolor Premium',
-      'Aquacolor_Dailies 10LP',
-      'Aquacolor_Monthly 2LP',
-      'Aquacolor_Premium 2LP',
-      'Aqualens',
-      'Aqualens Nxt',
-      'Aqualens_24H 30LP',
-      'Aqualens_24H 6LP',
-      'Aqualens_24H Nxt 3LP',
-      'Aqualens_CandyPack 2LP',
-      'Aqualens_Dailies 10LP',
-      'Aqualens_Dailies 30LP',
-      'Aqualens_Dailies 5LP',
-      'Bausch & Lomb',
-      'Bausch & Lomb Lacelle',
-      'Bausch & Lomb PureVision',
-      'Bausch & Lomb Soflens',
-      'Bausch & Lomb Soflens 59',
-      'Bausch & Lomb iConnect',
-      'Bella',
-      'Biomedic',
-      'Biotrue',
-      'Boss Orange',
-      'British Optics',
-      'Calvin Klein',
-      'Carrera',
-      'Celebration Toric',
-      'Chamelo',
-      'Chhota Bheem',
-      'Ciba Vision',
-      'Clalen Iris',
-      'Colour Perfection',
-      'Cooper Vision',
-      'Cooper Vision Avaira',
-      'Cooper Vision Biofinity',
-      'Diva',
-      'FORM',
-      'Fallon Colby',
-      'Fastrack',
-      'Fossil',
-      'French Connection',
-      'Freshlook',
-      'Hooper',
-      'Hooper Online',
-      'Hooper Screen Glasses',
-      'ICE CUBE',
-      'IDEE',
-      'J&J Define',
-      'John Jacobs',
-      'John Jacobs Computer Glasses',
-      'John Jacobs Online',
-      'John Jacobs Screen Glasses',
-      'John Jacobs TI',
-      'Johnson & Johnson',
-      'LENSKART BLU READERS',
-      'LENSKART PREMIUM READERS',
-      'Le Petit Lunetier',
-      'Lee Cooper',
-      'Lenses Only',
-      'Lenskart',
-      'Lenskart Air',
-      'Lenskart Air LA',
-      'Lenskart Air Online',
-      'Lenskart Air Screen Glasses',
-      'Lenskart BLU Screen Glasses',
-      'Lenskart Boost',
-      'Lenskart Hustlr',
-      'Lenskart Hustlr Screen Glasses',
-      'Lenskart Junior Computer Glasses',
-      'Lenskart PLUS',
-      'Lenskart READERS',
-      'Lenskart STUDIO',
-      'Lenskart Safety Goggles',
-      'Lenskart Studio Online',
-      'Lenskart TOI Special',
-      'Lensme',
-      'Lensspray',
-      'Lewis Hamilton',
-      'Mask',
-      'New Balance',
-      'OJOS',
-      'OWNDAYS',
-      'Oakley',
-      'Opti-Free',
-      'Other Third Party Brands',
-      'Polaroid',
-      'Ray-Ban',
-      'Sunpocket',
-      'Superman',
-      'ThinOptics',
-      'Tom and Jerry',
-      'Tommy Hilfiger',
-      'Velocity',
-      'Vincent Chase',
-      'Vincent Chase Essentials',
-      'Vincent Chase Kids',
-      'Vincent Chase Online',
-      'Vincent Chase Polarized',
-      'Vincent Chase Screen Glasses',
-      'Vintage',
-      'Vogue',
-    ];
+    const brandCategories = await planoStaticBrandCategoriesService.findOne( { } );
 
-    return res.sendSuccess( data );
+    return res.sendSuccess( brandCategories.toObject().data );
   } catch ( error ) {
     logger.error( 'getFixtureBrands =>', error );
     return res.sendError( 'Internal Server Error', 500 );
