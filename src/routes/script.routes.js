@@ -15,4 +15,5 @@ scriptRouter
     .post( '/lk98lK1993Update', scriptController.lk98lK1993Update )
     .post( '/updateinventory', scriptController.updateInventory )
     .post( '/updateRfidProduct', scriptController.updateRfidProduct )
-    .post( '/updateRfidProduct2', scriptController.updateRfidProduct2 );
+    .post( '/updateRfidProduct2', scriptController.updateRfidProduct2 )
+    .post('/getProdTaskData', scriptController.getProdTaskData );
