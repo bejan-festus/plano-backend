@@ -12,6 +12,10 @@ export async function findOne( query={}, field={} ) {
   return model.planoTaskCompliance.findOne( query, field );
 }
 
+export async function find( query={}, field={} ) {
+  return model.planoTaskCompliance.find( query, field );
+}
+
 export async function count( data ) {
   return model.planoTaskCompliance.countDocuments( data );
 }
