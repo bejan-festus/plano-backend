@@ -13,7 +13,7 @@ import * as planoMappingService from '../service/planoMapping.service.js';
 // import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import mongoose from 'mongoose';
-
+import model from 'tango-api-schema';
 
 export async function getStoreNames( req, res ) {
   try {
@@ -151,9 +151,9 @@ export async function createPlano( req, res ) {
         scanType: 'qr',
       };
 
-      await planoService.create( planoInsertData );
-
       console.log( planoInsertData );
+
+      await planoService.create( planoInsertData );
     }
 
     return res.sendSuccess( { message: 'Plano data inserted successfully', length: storeNamesArray.length } );
@@ -1750,6 +1750,95 @@ export async function updateRfidProduct2( req, res ) {
     return res.sendSuccess( { message: 'Product inventory updated successfully' } );
   } catch ( e ) {
     logger.error( { functionName: 'createPlanoAPI', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function getProdTaskData( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    const db = mongoose.createConnection( 'mongodb+srv://tango-api-production:5TdxKKSkZiRVtjta@production.qc4rw.mongodb.net/tango-retail?authSource=admin', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    } );
+
+    const planoModel = db.model( 'planogram', model.planogramModel.schema );
+
+    const planoData = await planoModel.findOne( { storeName: req.body.store } );
+
+    const planoTaskModel = db.model( 'planotaskcompliance', model.planoTaskCompliance.schema );
+
+    let fixtureDetails = await planoTaskModel.find( { planoId: planoData.toObject()._id, type: req.body.type } );
+    if ( !fixtureDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    // for ( let i = 0; i < fixtureDetails.length; i++ ) {
+    //   const data = await Promise.all( fixtureDetails?.[i].answers.map( async ( ans ) => {
+    //     if ( ans?.correctedFixture?.length ) {
+    //       for ( let fixture of ans.correctedFixture ) {
+    //         if ( fixture.image ) {
+    //           let params = {
+    //             Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+    //             file_path: fixture.image,
+    //           };
+    //           fixture.image = await signedUrl( params );
+    //         }
+    //         if ( fixture.video ) {
+    //           let params = {
+    //             Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+    //             file_path: fixture.video,
+    //           };
+    //           fixture.video = await signedUrl( params );
+    //         }
+    //       }
+    //     }
+    //     if ( ans?.newVms?.length ) {
+    //       for ( let fixture of ans.newVms ) {
+    //         if ( fixture.imageUrl ) {
+    //           let params = {
+    //             Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+    //             file_path: fixture.imageUrl,
+    //           };
+    //           fixture.imageUrl = await signedUrl( params );
+    //         }
+    //         if ( fixture.video ) {
+    //           let params = {
+    //             Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+    //             file_path: fixture.video,
+    //           };
+    //           fixture.video = await signedUrl( params );
+    //         }
+    //       }
+    //     }
+    //     if ( ans.image ) {
+    //       let params = {
+    //         Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+    //         file_path: ans.image,
+    //       };
+    //       let imageUrl = await signedUrl( params );
+    //       ans.image = imageUrl;
+    //     }
+    //     if ( ans.video ) {
+    //       let params = {
+    //         Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+    //         file_path: ans.video,
+    //       };
+    //       let imageUrl = await signedUrl( params );
+    //       ans.video = imageUrl;
+    //     }
+    //     return ans;
+    //   } ) );
+    //   fixtureDetails[i].answers = data;
+    // }
+
+
+    return res.sendSuccess( fixtureDetails );
+  } catch ( e ) {
+    logger.error( { functionName: 'getProdTaskData', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );
   }
 }
