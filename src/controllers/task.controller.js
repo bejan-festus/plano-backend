@@ -471,7 +471,7 @@ export async function updateAnswers( req, res ) {
       type: req.body.type,
     };
 
-    await planoTaskService.updateOne( { fixtureId: req.body.fixtureId, type: req.body.type }, data );
+    await planoTaskService.updateOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ) }, data );
     return res.sendSuccess( 'Fixture details updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateAnswers', error: e } );
