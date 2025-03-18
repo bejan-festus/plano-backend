@@ -495,6 +495,9 @@ export async function getFixtureDetails( req, res ) {
       query['floorId'] = req.query.floorId;
     }
 
+    if ( req.query?.date ) {
+      query['date_string'] = req.query?.date;
+    }
     let fixtureDetails = await planoTaskService.findOne( query );
     if ( !fixtureDetails ) {
       return res.sendError( 'No data found', 204 );
