@@ -2045,6 +2045,7 @@ export async function storeFixturesTask( req, res ) {
                             const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
                               type: req.body?.type ? req.body.type : 'fixture',
+                              date_string: req.body?.date,
                             }, { status: 1 } );
 
                             const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
@@ -2124,6 +2125,7 @@ export async function storeFixturesTask( req, res ) {
                       const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
                         type: req.body?.type ? req.body.type : 'fixture',
+                        date_string: req.body?.date,
                       }, { status: 1 } );
 
                       const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
