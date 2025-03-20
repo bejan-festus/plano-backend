@@ -40,4 +40,5 @@ storeBuilderRouter
     .post( '/getFixtureTypes', isAllowedSessionHandler, storeBuilderController.getFixtureTypes )
     .post( '/getFixtureLengths', isAllowedSessionHandler, storeBuilderController.getFixtureLengths )
     .post( '/getFixtureBrands', isAllowedSessionHandler, storeBuilderController.getFixtureBrands )
-    .post( '/checkPlanoExist', isAllowedSessionHandler, storeBuilderController.checkPlanoExist );
+    .post( '/checkPlanoExist', isAllowedSessionHandler, storeBuilderController.checkPlanoExist )
+    .post( '/storeLayoutElements', isAllowedSessionHandler, storeBuilderController.storeLayoutElements );
