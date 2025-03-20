@@ -16,4 +16,6 @@ scriptRouter
     .post( '/updateinventory', scriptController.updateInventory )
     .post( '/updateRfidProduct', scriptController.updateRfidProduct )
     .post( '/updateRfidProduct2', scriptController.updateRfidProduct2 )
-    .post('/getProdTaskData', scriptController.getProdTaskData );
+    .post( '/getProdTaskData', scriptController.getProdTaskData )
+    .post( '/updateLayoutFeedback', scriptController.updatelayoutFeedback )
+    .post( '/getFileNames', scriptController.extractZipFileNames );

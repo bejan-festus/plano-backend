@@ -395,7 +395,11 @@ export async function storeLayout( req, res ) {
 
     const storeLayout = await Promise.all(
         planograms.map( async ( planogram ) => {
-          const floors = await storeBuilderService.find( { planoId: planogram._id }, { floorName: 1, layoutPolygon: 1 } );
+          const floorList = await storeBuilderService.find( { planoId: planogram._id }, { floorName: 1, layoutPolygon: 1, crestLayout: true } );
+
+          const floors = floorList.map( ( floor ) => {
+            return floor.toObject();
+          } );
           return {
             ...planogram.toObject(),
             floors,
@@ -2744,3 +2748,58 @@ export const checkPlanoExist = async ( req, res ) => {
     return res.sendError( 'Internal Server Error', 500 );
   }
 };
+
+export async function storeLayoutElements( req, res ) {
+  try {
+    // const planoIds = req.body.id.map( ( id ) => new mongoose.Types.ObjectId( id ) );
+
+    const planograms = await planoService.find(
+        { _id: new mongoose.Types.ObjectId( req.body.id ) },
+        { storeId: 1, storeName: 1, planoId: '$_id' },
+    );
+
+    if ( !planograms?.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    const storeLayout = await Promise.all(
+        planograms.map( async ( planogram ) => {
+          const floorList = await storeBuilderService.find(
+              { planoId: planogram._id },
+              { floorName: 1, layoutPolygon: 1, crestLayout: 1 },
+          );
+
+          const floors = floorList.map( ( floor ) => {
+            if ( floor.toObject()?.crestLayout ) {
+              return {
+                floorName: 'floor 1',
+                layoutPolygon: [ 'wall 1', 'wall 2', 'wall 3', 'centre' ],
+              };
+            } else {
+              const layoutPolygon = floor
+                  .toObject()
+                  ?.layoutPolygon.map( ( element ) => {
+                    return `${element?.elementType} ${element?.elementNumber}`;
+                  } );
+              layoutPolygon.push( 'centre' );
+              return {
+                ...floor.toObject(),
+                layoutPolygon,
+              };
+            }
+          } );
+
+          return {
+            ...planogram.toObject(),
+            floors,
+          };
+        } ),
+    );
+
+    return res.sendSuccess( storeLayout );
+  } catch ( e ) {
+    logger.error( { functionName: 'storeLayoutv1', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
