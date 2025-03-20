@@ -1,6 +1,6 @@
 {
     "name": "tango-app-api-store-builder",
-    "version": "1.0.0-beta-66",
+    "version": "1.0.0-beta-70",
     "description": "storeBuilder",
     "main": "index.js",
     "type": "module",
@@ -23,7 +23,7 @@
         "joi": "^17.13.3",
         "mongodb": "^6.12.0",
         "nodemon": "^3.1.9",
-        "tango-api-schema": "^2.2.75",
+        "tango-api-schema": "^2.2.77",
         "tango-app-api-middleware": "^3.1.48",
         "winston": "^3.17.0",
         "winston-daily-rotate-file": "^5.0.0",
