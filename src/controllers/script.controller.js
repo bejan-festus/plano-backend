@@ -14,6 +14,8 @@ import * as planoTaskService from '../service/planoTask.service.js';
 // import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import mongoose from 'mongoose';
+import JSZip from 'jszip';
+
 
 export async function getStoreNames( req, res ) {
   try {
@@ -1771,6 +1773,203 @@ export async function getProdTaskData( req, res ) {
     return res.sendSuccess( fixtureDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getProdTaskData', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function updatelayoutFeedback( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+    const layoutFeedbacks = await planoTaskService.find( { type: 'layout' } );
+
+    for ( let i = 0; i < layoutFeedbacks.length; i++ ) {
+      const layoutDoc = layoutFeedbacks[i].toObject();
+
+      const [ q1, q2, q3 ] = layoutDoc.answers;
+
+      if ( q1.value === false ) {
+        const floor = await storeBuilderService.findOne( { _id: layoutDoc.floorId } );
+
+        const floorDoc = floor.toObject();
+
+        const fixtures = await storeFixtureService.find( { floorId: floorDoc._id } );
+
+        const constantFixtureLength = 1220;
+        const constantDetailedFixtureLength = 1220;
+
+        const constantFixtureWidth = 610;
+        const constantDetailedFixtureWidth = 1524;
+
+        const mmToFeet = 305;
+
+
+        function roundToTwo( num ) {
+          return Math.round( num * 100 ) / 100;
+        }
+
+        const leftFixtures = fixtures.filter( ( fixture ) => fixture.toObject().associatedElementType === 'wall' && fixture.toObject().associatedElementNumber === 1 && fixture.toObject().fixtureType === 'wall' );
+        const rightFixtures = fixtures.filter( ( fixture ) => fixture.toObject().associatedElementType === 'wall' && fixture.toObject().associatedElementNumber === 3 && fixture.toObject().fixtureType === 'wall' );
+        const floorFixtures = fixtures.filter( ( fixture ) => fixture.toObject().fixtureType === 'floor' );
+        const backFixtures = fixtures.filter( ( fixture ) => fixture.toObject().associatedElementType === 'wall' && fixture.toObject().associatedElementNumber === 2 && fixture.toObject().fixtureType === 'wall' );
+
+        q2.correctedFixture.forEach( ( cf ) => {
+          switch ( cf.alignment ) {
+            case 'Wall 1':
+              leftFixtures.push( {} );
+              break;
+            case 'Wall 2':
+              backFixtures.push( {} );
+              break;
+            case 'Wall 3':
+              rightFixtures.push( {} );
+              break;
+
+            default:
+              break;
+          }
+        } );
+
+
+        const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        const leftXDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+        const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
+        const leftYDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantDetailedFixtureWidth / mmToFeet ) ) ) : 0;
+
+        const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        const rightXDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+        const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+        const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
+
+        const maxFixturesPerRow = floorFixtures.length > 4 ? 3 : 2;
+        const totalRows = Math.ceil( floorFixtures.length / maxFixturesPerRow );
+        const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( maxFixturesPerRow * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( maxFixturesPerRow * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
+
+        const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( totalRows * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
+        const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( totalRows * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
+
+        const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+        const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
+
+        const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
+        const backYDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantDetailedFixtureWidth / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth )/mmToFeet ) ) ): 0;
+
+        const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
+        const maxXDetailedDistance = Math.max( leftXDetailedDistanceFeet, rightXDetailedDistanceFeet, floorXDetailedDistanceFeet );
+
+        const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
+        const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
+
+
+        const finalXDistance = maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance;
+        const finalXDetailedDistance = maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance;
+
+        const finalYDistance = maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) );
+        const finalYDetailedDistance = maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) );
+
+        const layoutPolygon = [
+          {
+            elementType: 'wall',
+            distance: roundToTwo( finalXDistance ),
+            unit: 'ft',
+            direction: 'right',
+            angle: 90,
+            elementNumber: 1,
+            detailedDistance: roundToTwo( finalXDetailedDistance ),
+          },
+          {
+            elementType: 'wall',
+            distance: roundToTwo( finalYDistance ),
+            unit: 'ft',
+            direction: 'down',
+            angle: 90,
+            elementNumber: 2,
+            detailedDistance: roundToTwo( finalYDetailedDistance ),
+          },
+          {
+            elementType: 'wall',
+            distance: roundToTwo( finalXDistance ),
+            unit: 'ft',
+            direction: 'left',
+            angle: 90,
+            elementNumber: 3,
+            detailedDistance: roundToTwo( finalXDetailedDistance ),
+          },
+          {
+            elementType: 'wall',
+            distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 4,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+          },
+          {
+            elementType: 'entrance',
+            distance: roundToTwo( ( ( finalYDistance * 20 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 1,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
+          },
+          {
+            elementType: 'wall',
+            distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 5,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+          },
+        ];
+
+        await storeBuilderService.updateOne( { _id: floorDoc._id }, { layoutPolygon: layoutPolygon } );
+
+        console.log( layoutPolygon, floorDoc._id );
+      }
+    }
+  } catch ( e ) {
+    logger.error( { functionName: 'updatelayoutFeedback', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function extractZipFileNames( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    if ( !req.files.file ) {
+      return res.sendError( 'No file uploaded', 400 );
+    }
+
+    const zip = new JSZip();
+    const zipContents = await zip.loadAsync( req.files.file.data );
+
+    const fileNames = Object.keys( zipContents.files );
+
+    return res.sendSuccess( { fileNames } );
+  } catch ( e ) {
+    logger.error( { functionName: 'extractZipFileNames', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function updateFixtureFeedback( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    
+  } catch ( e ) {
+    logger.error( { functionName: 'updatelayoutFeedback', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );
   }
 }
