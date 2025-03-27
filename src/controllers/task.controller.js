@@ -9,6 +9,7 @@ import * as planoTaskService from '../service/planoTask.service.js';
 import * as planoService from '../service/planogram.service.js';
 import * as checklistService from '../service/checklist.service.js';
 import timeZone from 'dayjs/plugin/timezone.js';
+import * as planoProductService from '../service/planoProduct.service.js';
 dayjs.extend( timeZone );
 
 async function createUser( data ) {
@@ -110,6 +111,32 @@ export async function createTask( req, res ) {
     if ( !taskDetails.length ) {
       return res.sendError( 'No data found', 204 );
     }
+    let userEmailList = [ ...new Set( req.body.stores.map( ( ele ) => ele.email ) ) ];
+    for ( let mail of userEmailList ) {
+      let query = [
+        {
+          $addFields: {
+            emailLower: { $toLower: '$email' },
+          },
+        },
+        {
+          $match: {
+            clientId: req.body.clientId,
+            emailLower: mail.toLowerCase(),
+          },
+        },
+      ];
+      userDetails = await userService.aggregate( query );
+      if ( !userDetails.length ) {
+        let userData = {
+          clientId: req.body.clientId,
+          mobileNumber: '',
+          email: mail,
+          userName: mail.split( '@' )[0],
+        };
+        await createUser( userData );
+      }
+    }
     let endDate = dayjs().add( req.body.days, 'day' ).format( 'YYYY-MM-DD' );
     await Promise.all( taskDetails.map( async ( task ) => {
       let data = {
@@ -183,22 +210,22 @@ export async function createTask( req, res ) {
             {
               $match: {
                 clientId: req.body.clientId,
-                email: getUserEmail.email,
+                email: getUserEmail.email.toLowerCase(),
               },
             },
           ];
           userDetails = await userService.aggregate( query );
-          if ( !userDetails.length ) {
-            let userData = {
-              clientId: req.body.clientId,
-              mobileNumber: '',
-              email: getUserEmail.email,
-              userName: getUserEmail.email.split( '@' )[0],
-            };
-            userDetails = await createUser( userData );
-          } else {
-            userDetails = userDetails[0];
-          }
+          // if ( !userDetails.length ) {
+          //   let userData = {
+          //     clientId: req.body.clientId,
+          //     mobileNumber: '',
+          //     email: getUserEmail.email,
+          //     userName: getUserEmail.email.split( '@' )[0],
+          //   };
+          //   userDetails = await createUser( userData );
+          // } else {
+          userDetails = userDetails[0];
+          // }
         }
         let taskData = { ...data };
         taskData.store_id = store.storeId;
@@ -561,6 +588,21 @@ export async function getFixtureDetails( req, res ) {
     return res.sendSuccess( fixtureDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getFixtureDetails', error: 'e' } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function getVmDetails( req, res ) {
+  try {
+    let getVms = await planoProductService.find( { type: 'vm' }, { productName: 1 } );
+    if ( !getVms.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    getVms = [ ...new Set( getVms.map( ( ele ) => ele.productName ) ) ];
+    getVms.push( 'other' );
+    return res.sendSuccess( getVms );
+  } catch ( e ) {
+    logger.error( { functionName: 'getVmDetails', error: e } );
     return res.sendError( e, 500 );
   }
 }

@@ -11,4 +11,5 @@ storeBuilderTaskRouter
     .post( '/uploadImage', isAllowedSessionHandler, taskController.uploadImage )
     .post( '/updateStatus', isAllowedSessionHandler, taskController.updateStatus )
     .post( '/updateAnswers', isAllowedSessionHandler, taskController.updateAnswers )
-    .get( '/getFixtureDetails', isAllowedSessionHandler, taskController.getFixtureDetails );
+    .get( '/getFixtureDetails', isAllowedSessionHandler, taskController.getFixtureDetails )
+    .get( '/getVmDetails', isAllowedSessionHandler, taskController.getVmDetails );
