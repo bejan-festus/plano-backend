@@ -34,6 +34,7 @@ storeBuilderRouter
     .post( '/updateQrCvProcessRequest', isAllowedSessionHandler, storeBuilderController.updateQrCvProcessRequest )
     .post( '/getQrCvProcessRequest', isAllowedSessionHandler, storeBuilderController.getQrCvProcessRequest )
     .post( '/fixtureQrUpdate', isAllowedSessionHandler, storeBuilderController.fixtureQrUpdate )
+    .post( '/fixtureQrUpdatev1', isAllowedSessionHandler, storeBuilderController.fixtureQrUpdatev1 )
     .post( '/updateDeatailedDistance', isAllowedSessionHandler, storeBuilderController.updateDetailedDistance )
     .post( '/upsertFixture', isAllowedSessionHandler, storeBuilderController.upsertFixtures )
     .post( '/getshelfSections', isAllowedSessionHandler, storeBuilderController.getShelfSections )
