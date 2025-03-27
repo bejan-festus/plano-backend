@@ -1928,6 +1928,8 @@ export async function updatelayoutFeedback( req, res ) {
           },
         ];
 
+        await storeBuilderService.updateOne( { _id: floorDoc._id }, { layoutPolygon: layoutPolygon } );
+
         console.log( layoutPolygon, floorDoc._id );
       }
     }
@@ -1955,6 +1957,19 @@ export async function extractZipFileNames( req, res ) {
     return res.sendSuccess( { fileNames } );
   } catch ( e ) {
     logger.error( { functionName: 'extractZipFileNames', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function updateFixtureFeedback( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    
+  } catch ( e ) {
+    logger.error( { functionName: 'updatelayoutFeedback', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );
   }
 }

@@ -563,4 +563,4 @@ export async function getFixtureDetails( req, res ) {
     logger.error( { functionName: 'getFixtureDetails', error: 'e' } );
     return res.sendError( e, 500 );
   }
-}
+};

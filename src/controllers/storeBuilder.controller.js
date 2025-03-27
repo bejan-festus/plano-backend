@@ -14,7 +14,7 @@ import * as planoComplianceService from '../service/planoCompliance.service.js';
 import * as planoTaskComplianceService from '../service/planoTask.service.js';
 import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
-import * as planoStaticBrandCategoriesService from '../service/planoStaticBrandCategories.service.js';
+import * as planoStaticData from '../service/planoStaticData.service.js';
 
 
 import path from 'path';
@@ -2437,6 +2437,61 @@ export const fixtureQrUpdate = async ( req, res ) => {
   }
 };
 
+export const fixtureQrUpdatev1 = async ( req, res ) => {
+  try {
+    const { fixtureId, date, productQr } = req.body;
+
+    const fixture = await storeFixtureService.findOne( { _id: new mongoose.Types.ObjectId( fixtureId ) }, { _id: 1 } );
+
+    if ( !fixture ) {
+      return res.sendError( { message: 'Invalid fixture Id' }, 400 );
+    }
+
+    const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
+
+    let productIndex = 0;
+
+    const complianceData = fixtureShelves.map( ( shelf ) => {
+      const shelfObj = shelf.toObject();
+      const products = shelfObj.shelfCapacity ?
+        Array.from( { length: shelfObj.shelfCapacity }, () => ( {
+          category: shelfObj.sectionName,
+          productIndex: productIndex++,
+          status: 'missing',
+        } ) ) :
+        [];
+
+      return { ...shelfObj, products };
+    } );
+
+    const productMap = new Map();
+    productQr.forEach( ( productCv, i ) => {
+      if ( productCv.parent_brand ) {
+        productMap.set( i, productCv );
+      }
+    } );
+
+    complianceData.forEach( ( shelf ) => {
+      shelf.products.forEach( ( product ) => {
+        const matchedProduct = productMap.get( product.productIndex );
+        if ( matchedProduct && product.category === matchedProduct.parent_brand ) {
+          Object.assign( product, { status: 'proper', barcode: matchedProduct.barcode } );
+        }
+      } );
+    } );
+
+    const currentDate = new Date( date );
+
+    await planoQrConversionRequestService.updateOne( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), date: currentDate }, { status: 'data-received', receivedQr: productQr, processedData: complianceData } );
+
+    res.sendSuccess( complianceData );
+  } catch ( error ) {
+    logger.error( 'fixtureQrUpdate =>', error );
+    return res.sendError( { message: 'Internal Server Error' }, 500 );
+  }
+};
+
+
 export const updateDetailedDistance = async ( req, res ) => {
   try {
     const { floorId, elementNumber, elementType, detailedDistance } = req.body;
@@ -2725,7 +2780,7 @@ export const getFixtureBrands = async ( req, res ) => {
 
     // const [ data ] = sections;
 
-    const brandCategories = await planoStaticBrandCategoriesService.findOne( { } );
+    const brandCategories = await planoStaticData.findOne( { type: 'brandCategory' } );
 
     return res.sendSuccess( brandCategories.toObject().data );
   } catch ( error ) {
