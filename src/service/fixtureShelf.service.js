@@ -4,6 +4,10 @@ export async function find( query={}, field={} ) {
   return model.fixtureShelfModel.find( query, field );
 }
 
+export async function findAndSort( query={}, field={}, sortField={} ) {
+  return model.fixtureShelfModel.find( query, field ).sort( sortField );
+}
+
 export async function findOne( query={}, field={} ) {
   return model.fixtureShelfModel.findOne( query, field );
 }
@@ -26,4 +30,8 @@ export async function create( data ) {
 
 export async function count( data ) {
   return model.fixtureShelfModel.countDocuments( data );
+}
+
+export async function deleteOne( query ) {
+  return model.fixtureShelfModel.deleteOne( query );
 }

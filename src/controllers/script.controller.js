@@ -1967,7 +1967,152 @@ export async function updateFixtureFeedback( req, res ) {
       return res.sendError( 'Unauthorized', 401 );
     }
 
-    
+    if ( !req.body.length ) {
+      return res.sendError( 'Store List is required', 400 );
+    }
+
+    const storeList = req.body;
+
+    for ( let i = 0; i < storeList.length; i++ ) {
+      const store = storeList[i];
+
+      const issueTypes = [
+        'Fixture size is wrong',
+        'Fixture type is wrong',
+        'Fixture brand is wrong',
+        'Fixture not in the store',
+        'Shelves count/Product Category/Capacity is wrong',
+        'Others',
+      ];
+
+      const planogram = await planoService.findOne( { storeName: store.storeName } );
+
+      const fixtureTaskList = await planoTaskService.find( { planoId: planogram.toObject()._id, type: 'fixture' } );
+
+      for ( let j = 0; j < fixtureTaskList.length; j++ ) {
+        const fixtureTask = fixtureTaskList[j].toObject();
+
+        const [ q1 ] = fixtureTask.answers;
+
+        if ( q1.value === true ) {
+          continue;
+        }
+
+        const fixture = await storeFixtureService.findOne( { _id: fixtureTask.fixtureId } );
+
+        const fixtureDoc = fixture?.toObject();
+
+
+        if ( q1.issues.includes( 'Shelves count/Product Category/Capacity is wrong' ) ) {
+          const taskShelves = q1.data.shelves;
+
+          const fixtureShelves = await fixtureShelfService.findAndSort( { fixtureId: fixtureTask.fixtureId }, {}, { shelfNumber: 1 } );
+
+          const shelfCount = q1.data.shelves.length;
+
+          const fixtureCapacity = q1.data.shelves.reduce( ( sum, item ) => sum + ( item.productCapacity ? item.productCapacity : 0 ), 0 );
+
+          const updateFixture = await storeFixtureService.updateOne( { _id: fixtureDoc._id }, { shelfcount: shelfCount, fixtureCapacity: fixtureCapacity } );
+
+          // console.log( updateFixture );
+
+          // console.log( taskShelves.length, fixtureShelves.length );
+
+          console.log( taskShelves.length, fixtureShelves.length );
+          if ( taskShelves.length === fixtureShelves.length ) {
+            console.log( '1' );
+            for ( let k = 0; k < taskShelves.length; k++ ) {
+              const taskShelf = taskShelves[k];
+              const productCapacity = taskShelf.productCapacity;
+              const section = taskShelf.section;
+              const subBrand = taskShelf.subBrand;
+              const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
+
+              const fixtureShelf = fixtureShelves.filter( ( shelf ) => {
+                return shelf.toObject().shelfNumber === k+1;
+              } );
+
+              const updateShelf = await fixtureShelfService.updateOne( { _id: fixtureShelf?.[0].toObject()._id }, { shelfCapacity: productCapacity, sectionName: formattedsubBrand, sectionZone: section } );
+
+              // console.log( updateShelf );
+            }
+          } else if ( taskShelves.length < fixtureShelves.length ) {
+            console.log( '2' );
+            for ( let k = 0; k < taskShelves.length; k++ ) {
+              const taskShelf = taskShelves[k];
+              const productCapacity = taskShelf.productCapacity;
+              const section = taskShelf.section;
+              const subBrand = taskShelf.subBrand;
+              const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
+
+              const fixtureShelf = fixtureShelves.filter( ( shelf ) => {
+                return shelf.toObject().shelfNumber === k+1;
+              } );
+
+
+              const updateShelf = await fixtureShelfService.updateOne( { _id: fixtureShelf?.[0].toObject()._id }, { shelfCapacity: productCapacity, sectionName: formattedsubBrand, sectionZone: section } );
+
+              // console.log( updateShelf );
+            }
+
+            const shelfDifference = fixtureShelves.length - taskShelves.length;
+
+            const shelvesToDelete = fixtureShelves.slice( -shelfDifference );
+
+            shelvesToDelete.map( async ( shelf ) => {
+              await fixtureShelfService.deleteOne( { _id: shelf.toObject()._id } );
+            } );
+
+            // console.log( shelfDifference );
+          } else if ( taskShelves.length > fixtureShelves.length ) {
+            console.log( '3' );
+            for ( let k = 0; k < taskShelves.length; k++ ) {
+              const taskShelf = taskShelves[k];
+              const productCapacity = taskShelf.productCapacity;
+              const section = taskShelf.section;
+              const subBrand = taskShelf.subBrand;
+              const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
+
+              if ( k + 1 <= fixtureShelves.length ) {
+                const fixtureShelf = fixtureShelves.filter( ( shelf ) => {
+                  // console.log( shelf.toObject() );
+                  return shelf.toObject().shelfNumber === k+1;
+                } );
+
+                // console.log( fixtureShelf );
+
+                console.log( '1 val' );
+
+
+                const updateShelf = await fixtureShelfService.updateOne( { _id: fixtureShelf?.[0].toObject()._id }, { shelfCapacity: productCapacity, sectionName: formattedsubBrand, sectionZone: section } );
+
+                // console.log( updateShelf );
+              } else if ( k + 1 > fixtureShelves.length ) {
+                const insertData = {
+                  'clientId': planogram.toObject().clientId,
+                  'storeName': planogram.toObject().storeName,
+                  'storeId': planogram.toObject().storeId,
+                  'planoId': planogram.toObject()._id,
+                  'floorId': fixtureDoc.floorId,
+                  'fixtureId': fixtureDoc._id,
+                  'shelfNumber': k+1,
+                  'shelfOrder': 'LTR',
+                  'shelfCapacity': productCapacity,
+                  'sectionName': formattedsubBrand,
+                  'sectionZone': section,
+                };
+
+                console.log( '2 val' );
+
+                const createShelf = await fixtureShelfService.create( insertData );
+              }
+            }
+          }
+        }
+      }
+    }
+
+    res.sendSuccess( 'out' );
   } catch ( e ) {
     logger.error( { functionName: 'updatelayoutFeedback', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );
