@@ -607,7 +607,7 @@ export async function storeFixturesv1( req, res ) {
                               date: currentDate,
                             } );
 
-                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
+                            const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 }, { shelfNumber: 1 } );
 
                             const shelfDetails = await Promise.all(
                                 shelves.map( async ( shelf ) => {
@@ -702,7 +702,7 @@ export async function storeFixturesv1( req, res ) {
                         date: currentDate,
                       } );
 
-                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
+                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 }, { shelfNumber: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {
@@ -1081,7 +1081,7 @@ export async function fixtureShelfProductv1( req, res ) {
     }
 
     if ( [ 'L2', 'L4' ].includes( fixture.toObject().productResolutionLevel ) ) {
-      const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
+      const fixtureShelves = await fixtureShelfService.findAndSort( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) }, {}, { shelfNumber: 1 } );
       // if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
       const productCount = await planoMappingService.count( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const shelfProducts = await Promise.all(
@@ -1095,7 +1095,7 @@ export async function fixtureShelfProductv1( req, res ) {
     }
 
     if ( fixture.toObject().productResolutionLevel === 'L3' ) {
-      const fixtureShelves = await fixtureShelfService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
+      const fixtureShelves = await fixtureShelfService.findAndSort( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) }, {}, { shelfNumber: 1 } );
       // if ( !fixtureShelves.length ) return res.sendError( 'No shelves found for the fixture', 204 );
       const productCount = await planoMappingService.count( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const groupedShelves = fixtureShelves.reduce( async ( accPromise, shelf ) => {
@@ -2048,7 +2048,7 @@ export async function storeFixturesTask( req, res ) {
                               date_string: req.body?.date,
                             }, { status: 1 } );
 
-                            const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
+                            const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 }, { shelfNumber: 1 } );
 
                             const shelfDetails = await Promise.all(
                                 shelves.map( async ( shelf ) => {
@@ -2128,7 +2128,7 @@ export async function storeFixturesTask( req, res ) {
                         date_string: req.body?.date,
                       }, { status: 1 } );
 
-                      const shelves = await fixtureShelfService.find( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 } );
+                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 }, { shelfNumber: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {
