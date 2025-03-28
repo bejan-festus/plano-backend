@@ -1072,7 +1072,10 @@ export async function fixtureShelfProductv1( req, res ) {
       }
     } ) );
     const vmMap = new Map( vms.map( ( vm ) => [ vm._id.toString(), vm.toObject() ] ) );
-    const vmDetails = vmMappings.map( ( mapping ) => vmMap.get( mapping.productId.toString() ) || {} );
+    const vmDetails = vmMappings.map( ( mapping ) => ( {
+      ...vmMap.get( mapping.productId.toString() ),
+      _id: mapping._id,
+    } ) );
 
     if ( fixture.toObject().productResolutionLevel === 'L1' ) {
       const productMappings = await planoMappingService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
