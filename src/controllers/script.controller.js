@@ -1976,14 +1976,14 @@ export async function updateFixtureFeedback( req, res ) {
     for ( let i = 0; i < storeList.length; i++ ) {
       const store = storeList[i];
 
-      const issueTypes = [
-        'Fixture size is wrong',
-        'Fixture type is wrong',
-        'Fixture brand is wrong',
-        'Fixture not in the store',
-        'Shelves count/Product Category/Capacity is wrong',
-        'Others',
-      ];
+      // const issueTypes = [
+      //   'Fixture size is wrong',
+      //   'Fixture type is wrong',
+      //   'Fixture brand is wrong',
+      //   'Fixture not in the store',
+      //   'Shelves count/Product Category/Capacity is wrong',
+      //   'Others',
+      // ];
 
       const planogram = await planoService.findOne( { storeName: store.storeName } );
 
@@ -2014,37 +2014,23 @@ export async function updateFixtureFeedback( req, res ) {
 
           const updateFixture = await storeFixtureService.updateOne( { _id: fixtureDoc._id }, { shelfcount: shelfCount, fixtureCapacity: fixtureCapacity } );
 
-          // console.log( updateFixture );
+          console.log( updateFixture );
 
-          // console.log( taskShelves.length, fixtureShelves.length );
-
-          console.log( taskShelves.length, fixtureShelves.length );
-          if ( taskShelves.length === fixtureShelves.length ) {
-            console.log( '1' );
-            for ( let k = 0; k < taskShelves.length; k++ ) {
-              const taskShelf = taskShelves[k];
-              const productCapacity = taskShelf.productCapacity;
-              const section = taskShelf.section;
-              const subBrand = taskShelf.subBrand;
-              const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
-
+          for ( let k = 0; k < taskShelves.length; k++ ) {
+            const taskShelf = taskShelves[k];
+            const productCapacity = taskShelf.productCapacity;
+            const section = taskShelf.section;
+            const subBrand = taskShelf.subBrand;
+            const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
+            if ( taskShelves.length === fixtureShelves.length ) {
               const fixtureShelf = fixtureShelves.filter( ( shelf ) => {
                 return shelf.toObject().shelfNumber === k+1;
               } );
 
               const updateShelf = await fixtureShelfService.updateOne( { _id: fixtureShelf?.[0].toObject()._id }, { shelfCapacity: productCapacity, sectionName: formattedsubBrand, sectionZone: section } );
 
-              // console.log( updateShelf );
-            }
-          } else if ( taskShelves.length < fixtureShelves.length ) {
-            console.log( '2' );
-            for ( let k = 0; k < taskShelves.length; k++ ) {
-              const taskShelf = taskShelves[k];
-              const productCapacity = taskShelf.productCapacity;
-              const section = taskShelf.section;
-              const subBrand = taskShelf.subBrand;
-              const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
-
+              console.log( updateShelf );
+            } else if ( taskShelves.length < fixtureShelves.length ) {
               const fixtureShelf = fixtureShelves.filter( ( shelf ) => {
                 return shelf.toObject().shelfNumber === k+1;
               } );
@@ -2052,41 +2038,26 @@ export async function updateFixtureFeedback( req, res ) {
 
               const updateShelf = await fixtureShelfService.updateOne( { _id: fixtureShelf?.[0].toObject()._id }, { shelfCapacity: productCapacity, sectionName: formattedsubBrand, sectionZone: section } );
 
-              // console.log( updateShelf );
-            }
+              console.log( updateShelf );
 
-            const shelfDifference = fixtureShelves.length - taskShelves.length;
 
-            const shelvesToDelete = fixtureShelves.slice( -shelfDifference );
+              const shelfDifference = fixtureShelves.length - taskShelves.length;
 
-            shelvesToDelete.map( async ( shelf ) => {
-              await fixtureShelfService.deleteOne( { _id: shelf.toObject()._id } );
-            } );
+              const shelvesToDelete = fixtureShelves.slice( -shelfDifference );
 
-            // console.log( shelfDifference );
-          } else if ( taskShelves.length > fixtureShelves.length ) {
-            console.log( '3' );
-            for ( let k = 0; k < taskShelves.length; k++ ) {
-              const taskShelf = taskShelves[k];
-              const productCapacity = taskShelf.productCapacity;
-              const section = taskShelf.section;
-              const subBrand = taskShelf.subBrand;
-              const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
-
+              shelvesToDelete.map( async ( shelf ) => {
+                await fixtureShelfService.deleteOne( { _id: shelf.toObject()._id } );
+              } );
+            } else if ( taskShelves.length > fixtureShelves.length ) {
               if ( k + 1 <= fixtureShelves.length ) {
                 const fixtureShelf = fixtureShelves.filter( ( shelf ) => {
-                  // console.log( shelf.toObject() );
                   return shelf.toObject().shelfNumber === k+1;
                 } );
-
-                // console.log( fixtureShelf );
-
-                console.log( '1 val' );
 
 
                 const updateShelf = await fixtureShelfService.updateOne( { _id: fixtureShelf?.[0].toObject()._id }, { shelfCapacity: productCapacity, sectionName: formattedsubBrand, sectionZone: section } );
 
-                // console.log( updateShelf );
+                console.log( updateShelf );
               } else if ( k + 1 > fixtureShelves.length ) {
                 const insertData = {
                   'clientId': planogram.toObject().clientId,
@@ -2102,9 +2073,8 @@ export async function updateFixtureFeedback( req, res ) {
                   'sectionZone': section,
                 };
 
-                console.log( '2 val' );
 
-                const createShelf = await fixtureShelfService.create( insertData );
+                await fixtureShelfService.create( insertData );
               }
             }
           }
@@ -2112,7 +2082,7 @@ export async function updateFixtureFeedback( req, res ) {
       }
     }
 
-    res.sendSuccess( 'out' );
+    res.sendSuccess( 'Updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updatelayoutFeedback', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );
