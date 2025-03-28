@@ -2022,6 +2022,8 @@ export async function updateFixtureFeedback( req, res ) {
             const section = taskShelf.section;
             const subBrand = taskShelf.subBrand;
             const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
+            // const formattedsubBrand = subBrand ? subBrand : undefined;
+
             if ( taskShelves.length === fixtureShelves.length ) {
               const fixtureShelf = fixtureShelves.filter( ( shelf ) => {
                 return shelf.toObject().shelfNumber === k+1;
