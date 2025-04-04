@@ -19,4 +19,7 @@ scriptRouter
     .post( '/getProdTaskData', scriptController.getProdTaskData )
     .post( '/updateLayoutFeedback', scriptController.updatelayoutFeedback )
     .post( '/updateFixtureFeedback', scriptController.updateFixtureFeedback )
-    .post( '/getFileNames', scriptController.extractZipFileNames );
+    .post( '/getFileNames', scriptController.extractZipFileNames )
+    .post( '/getVmTaskData', scriptController.getVmTaskData )
+    .post( '/updateVmData', scriptController.updateVmData )
+    .post( '/createCrestPlanogram', scriptController.createCrestPlanogram );
