@@ -15,6 +15,9 @@ import * as planoTaskService from '../service/planoTask.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import mongoose from 'mongoose';
 import JSZip from 'jszip';
+import { signedUrl } from 'tango-app-api-middleware';
+import fs from 'fs';
+import https from 'https';
 
 
 export async function getStoreNames( req, res ) {
@@ -1777,6 +1780,28 @@ export async function getProdTaskData( req, res ) {
   }
 }
 
+export async function extractZipFileNames( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    if ( !req.files.file ) {
+      return res.sendError( 'No file uploaded', 400 );
+    }
+
+    const zip = new JSZip();
+    const zipContents = await zip.loadAsync( req.files.file.data );
+
+    const fileNames = Object.keys( zipContents.files );
+
+    return res.sendSuccess( { fileNames } );
+  } catch ( e ) {
+    logger.error( { functionName: 'extractZipFileNames', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
 export async function updatelayoutFeedback( req, res ) {
   try {
     if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
@@ -1824,6 +1849,9 @@ export async function updatelayoutFeedback( req, res ) {
               break;
             case 'Wall 3':
               rightFixtures.push( {} );
+              break;
+            case 'centre':
+              floorFixtures.push( {} );
               break;
 
             default:
@@ -1939,28 +1967,6 @@ export async function updatelayoutFeedback( req, res ) {
   }
 }
 
-export async function extractZipFileNames( req, res ) {
-  try {
-    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
-      return res.sendError( 'Unauthorized', 401 );
-    }
-
-    if ( !req.files.file ) {
-      return res.sendError( 'No file uploaded', 400 );
-    }
-
-    const zip = new JSZip();
-    const zipContents = await zip.loadAsync( req.files.file.data );
-
-    const fileNames = Object.keys( zipContents.files );
-
-    return res.sendSuccess( { fileNames } );
-  } catch ( e ) {
-    logger.error( { functionName: 'extractZipFileNames', error: e } );
-    return res.sendError( e.message || 'Internal Server Error', 500 );
-  }
-}
-
 export async function updateFixtureFeedback( req, res ) {
   try {
     if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
@@ -1987,7 +1993,7 @@ export async function updateFixtureFeedback( req, res ) {
 
       const planogram = await planoService.findOne( { storeName: store.storeName } );
 
-      const fixtureTaskList = await planoTaskService.find( { planoId: planogram.toObject()._id, type: 'fixture' } );
+      const fixtureTaskList = await planoTaskService.find( { planoId: planogram.toObject()._id, type: 'fixture', date_string: store.date } );
 
       for ( let j = 0; j < fixtureTaskList.length; j++ ) {
         const fixtureTask = fixtureTaskList[j].toObject();
@@ -2001,6 +2007,38 @@ export async function updateFixtureFeedback( req, res ) {
         const fixture = await storeFixtureService.findOne( { _id: fixtureTask.fixtureId } );
 
         const fixtureDoc = fixture?.toObject();
+
+        if ( q1.issues.includes( 'Fixture size is wrong' ) ) {
+          const fixtureConfig = await fixtureConfigService.findOne( { 'fixtureLength.value': q1.data.fixtureSize.value } );
+
+          if ( fixtureConfig && fixtureConfig.toObject()?.fixtureCode ) {
+            await storeFixtureService.updateOne( { _id: fixtureDoc._id }, { fixtureCode: fixtureConfig.toObject().fixtureCode } );
+          }
+        }
+
+        if ( q1.issues.includes( 'Fixture type is wrong' ) ) {
+          const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: q1.data.fixtureType } );
+
+          if ( fixtureConfig && fixtureConfig.toObject().fixtureCode ) {
+            await storeFixtureService.updateOne( { _id: fixtureDoc._id }, { fixtureCode: fixtureConfig.toObject().fixtureCode } );
+          }
+        }
+
+        if ( q1.issues.includes( 'Fixture brand is wrong' ) ) {
+          const fixtureBrand = q1.data.fixtureBrand;
+
+          if ( fixtureBrand?.length ) {
+            const formattedfixtureBrand = fixtureBrand.length ? ( fixtureBrand.length > 1 ? fixtureBrand.join( ' + ' ) : fixtureBrand[0] ) : undefined;
+
+            await storeFixtureService.updateOne( { _id: fixtureDoc._id }, { fixtureName: formattedfixtureBrand, fixtureBrandCategory: formattedfixtureBrand } );
+          }
+        }
+
+        if ( q1.issues.includes( 'Fixture not in the store' ) ) {
+          await storeFixtureService.deleteOne( { _id: fixtureDoc._id } );
+          await fixtureShelfService.deleteMany( { fixtureId: fixtureDoc._id } );
+          await planoMappingService.deleteMany( { fixtureId: fixtureDoc._id } );
+        }
 
 
         if ( q1.issues.includes( 'Shelves count/Product Category/Capacity is wrong' ) ) {
@@ -2022,7 +2060,6 @@ export async function updateFixtureFeedback( req, res ) {
             const section = taskShelf.section;
             const subBrand = taskShelf.subBrand;
             const formattedsubBrand = subBrand.length ? ( subBrand.length > 1 ? subBrand.join( ' + ' ) : subBrand[0] ) : undefined;
-            // const formattedsubBrand = subBrand ? subBrand : undefined;
 
             if ( taskShelves.length === fixtureShelves.length ) {
               const fixtureShelf = fixtureShelves.filter( ( shelf ) => {
@@ -2037,11 +2074,9 @@ export async function updateFixtureFeedback( req, res ) {
                 return shelf.toObject().shelfNumber === k+1;
               } );
 
-
               const updateShelf = await fixtureShelfService.updateOne( { _id: fixtureShelf?.[0].toObject()._id }, { shelfCapacity: productCapacity, sectionName: formattedsubBrand, sectionZone: section } );
 
               console.log( updateShelf );
-
 
               const shelfDifference = fixtureShelves.length - taskShelves.length;
 
@@ -2049,6 +2084,7 @@ export async function updateFixtureFeedback( req, res ) {
 
               shelvesToDelete.map( async ( shelf ) => {
                 await fixtureShelfService.deleteOne( { _id: shelf.toObject()._id } );
+                await planoMappingService.deleteMany( { shelfId: shelf.toObject()._id } );
               } );
             } else if ( taskShelves.length > fixtureShelves.length ) {
               if ( k + 1 <= fixtureShelves.length ) {
@@ -2082,11 +2118,324 @@ export async function updateFixtureFeedback( req, res ) {
           }
         }
       }
+
+      const vmTaskList = await planoTaskService.find( { planoId: planogram.toObject()._id, type: 'vm', date_string: store.date } );
+
+      for ( let j = 0; j < vmTaskList.length; j++ ) {
+        const vmTask = vmTaskList[j].toObject();
+
+        const [ q1, q2 ] = vmTask.answers;
+
+        if ( q1.value ) continue;
+
+        const removeVms = q1.selectedVMs.forEach( async ( vmId ) => {
+          if ( !vmId ) return;
+          const vmObjectId = new mongoose.Types.ObjectId( vmId );
+
+          const deletedVm = await planoMappingService.deleteOne( { _id: vmObjectId } );
+
+          return deletedVm;
+        } );
+
+        console.log( removeVms, 'removed vms' );
+
+        const newVms = q1.newVmsType.forEach( async ( vmType ) => {
+          const vm = await planoProductService.findOne( { type: 'vm', productName: vmType } );
+
+          if ( !vm ) return;
+
+          const insertData = {
+            'clientId': planogram.toObject().clientId,
+            'storeName': planogram.toObject().storeName,
+            'storeId': planogram.toObject().storeId,
+            'type': 'vm',
+            'planoId': planogram.toObject()._id,
+            'floorId': vmTask.floorId,
+            'fixtureId': vmTask.fixtureId,
+            'productId': vm.toObject()._id,
+          };
+
+          const insertedVm = await planoMappingService.create( insertData );
+
+          return insertedVm;
+        } );
+
+        console.log( newVms, 'new vms' );
+      }
     }
 
     res.sendSuccess( 'Updated successfully' );
   } catch ( e ) {
-    logger.error( { functionName: 'updatelayoutFeedback', error: e } );
+    logger.error( { functionName: 'updateFixtureFeedback', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );
   }
 }
+
+export async function getVmTaskData( req, res ) {
+  try {
+    const { storeName, date } = req.body;
+
+    const planogram = await planoService.findOne( { storeName: storeName } );
+
+    const vmTaskList = await planoTaskService.find( { planoId: planogram.toObject()._id, type: 'vm', date_string: date } );
+
+    if ( !vmTaskList?.length ) {
+      return res.sendError( 'No data', 204 );
+    }
+
+    const storefixtures = await storeFixtureService.findAndSort( { planoId: planogram.toObject()._id, fixtureType: { $ne: 'other' } }, { fixtureName: 1, fixtureNumber: 1, _id: 1 }, { fixtureNumber: 1 } );
+
+    const fixtureVmData = await Promise.all(
+        storefixtures.map( async ( fixture ) => {
+          const fixtureDoc = fixture.toObject();
+          const vmTasks = await planoTaskService.find( { fixtureId: fixture._id, type: 'vm' } );
+
+          const q2 = vmTasks[0].toObject().answers?.[1];
+
+          const params = {
+            Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+            file_path: q2?.image || null,
+          };
+
+          const fixtureImage = await signedUrl( params );
+
+          const vmTaskData = await Promise.all(
+              vmTasks.flatMap( ( task ) => {
+                const q1 = task.toObject().answers?.[0];
+
+                if ( !q1?.newVmsType || !q1?.newVms ) return [];
+
+                return q1.newVmsType.map( async ( vmtype, k ) => {
+                  const params = {
+                    Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                    file_path: q1.newVms[k]?.imageUrl || null,
+                  };
+                  const signedImg = await signedUrl( params );
+
+                  return {
+                    vmtype,
+                    vmImg: signedImg,
+                  };
+                } );
+              } ),
+          );
+
+          return {
+            vms: vmTaskData,
+            fixtureImg: fixtureImage,
+            ...fixtureDoc,
+          };
+        } ),
+    );
+    return res.sendSuccess( fixtureVmData );
+  } catch ( e ) {
+    logger.error( { functionName: 'getVmTaskData', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+
+export async function updateVmData( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    if ( !req.files.file ) {
+      return res.sendError( 'Excel file is required', 400 );
+    }
+
+    const workbook = xlsx.read( req.files.file.data, { type: 'buffer' } );
+    const sheetName = 'Basha';
+    const raw = xlsx.utils.sheet_to_json( workbook.Sheets[sheetName] );
+
+    let initId = 81;
+
+    for ( let i = 0; i < raw.length; i++ ) {
+      const vmData = raw[i];
+
+      const vmInsertData = {
+        'clientId': '11',
+        'type': 'vm',
+        'productId': 'VM' + initId,
+        'productName': vmData?.['VM Categories '],
+        'productHeight': {
+          'value': vmData?.['VM Height mm'],
+          'unit': 'mm',
+        },
+        'productWidth': {
+          'value': vmData?.['VM Width mm'],
+          'unit': 'mm',
+        },
+        'startYPosition': vmData?.['StartPosition '],
+        'endYPosition': vmData?.['End Position'],
+        'xZone': vmData?.['Start Zone '],
+      };
+
+      const createdVm = await planoProductService.create( vmInsertData );
+
+      initId += 1;
+
+      const fixture = await storeFixtureService.findOne( { storeName: vmData?.['Store name '], fixtureNumber: vmData?.['Fixture Number'] } );
+
+      const fixtureDoc = fixture?.toObject();
+
+      if ( !fixture ) {
+        continue;
+      }
+
+      const mappingData = {
+        'clientId': '11',
+        'storeName': fixtureDoc.storeName,
+        'storeId': fixtureDoc.storeId,
+        'type': 'vm',
+        'planoId': fixtureDoc.planoId,
+        'floorId': fixtureDoc.floorId,
+        'fixtureId': fixtureDoc._id,
+        'productId': createdVm.toObject()._id,
+      };
+
+      await planoMappingService.create( mappingData );
+    }
+
+    res.sendSuccess( 'Updated Successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'getVmTaskData', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+
+async function scrapeCrest() {
+  const storeIds = [];
+  const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
+  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzNjY5ODIyLCJpYXQiOjE3NDM2NjYyMjIsImp0aSI6IjA5ZDRjYTVhZGRiNzQxMDVhYjhjOWVjMmU3MjZiM2NiIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.C3wLXzbv0bTDGiZqs8jSA3up0cq0wqA5PIMw45_T4Wg';
+  const filePath = 'response.json';
+  let allResults = [];
+
+  if ( fs.existsSync( filePath ) ) {
+    try {
+      const existingData = fs.readFileSync( filePath, 'utf8' );
+      allResults = JSON.parse( existingData );
+      if ( !Array.isArray( allResults ) ) {
+        allResults = [];
+      }
+    } catch ( error ) {
+      console.error( 'Error reading existing JSON file:', error.message );
+      allResults = [];
+    }
+  }
+
+  for ( const storeId of storeIds ) {
+    try {
+      const result = await new Promise( ( resolve ) => {
+        const payload = JSON.stringify( { store_id: storeId } );
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${bearerToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength( payload ),
+          },
+        };
+
+        const req = https.request( apiUrl, options, ( res ) => {
+          let data = '';
+          res.on( 'data', ( chunk ) => {
+            data += chunk;
+          } );
+          res.on( 'end', () => {
+            try {
+              const jsonData = JSON.parse( data );
+              const result = { storeName: storeId, data: jsonData };
+              allResults.push( result );
+              fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
+              console.log( 'Received Data:', result );
+              resolve( result );
+            } catch ( error ) {
+              console.error( `Error parsing JSON for ${storeId}:`, error.message );
+              resolve( { storeName: storeId, data: null } );
+            }
+          } );
+        } );
+
+        req.on( 'error', ( error ) => {
+          console.error( `Error fetching data for ${storeId}:`, error.message );
+          resolve( { storeName: storeId, data: null } );
+        } );
+
+        req.write( payload );
+        req.end();
+      } );
+    } catch ( error ) {
+      console.error( `Unexpected error for ${storeId}:`, error.message );
+    }
+    await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
+  }
+}
+
+export async function createCrestPlanogram( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    if ( !req.files || !req.files.file ) {
+      return res.sendError( 'JSON file is required', 400 );
+    }
+
+    const data = JSON.parse( req.files.file.data.toString( 'utf8' ) );
+
+    const crestData = data.filter( ( item ) => item.data.message === 'SUCCESS' );
+
+    const fixtureTypes = new Set();
+    const centerSubMains = new Set();
+
+    crestData.forEach( ( store ) => {
+      store.data.result.forEach( ( section ) => {
+        if ( section.fixtures ) {
+          section.fixtures.forEach( ( fixture ) => {
+            if ( fixture.fixtureType ) {
+              fixtureTypes.add( fixture.fixtureType );
+            }
+          } );
+        }
+
+        if ( section.main === 'Euro Center' && section.centerSubMain ) {
+          centerSubMains.add( section.centerSubMain );
+        }
+      } );
+    } );
+
+    return res.sendSuccess( {
+      fixtureTypes: Array.from( fixtureTypes ),
+      euroCenterSubMains: Array.from( centerSubMains ),
+    } );
+  } catch ( e ) {
+    logger.error( { functionName: 'createCrestPlanogram', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+const data = {
+  'clientId': '11',
+  'fixtureCode': 'FX01',
+  'fixtureCategory': 'Shelves',
+  'fixtureConfigLength': {
+    'value': 3,
+    'unit': 'ft',
+  },
+  'fixtureConfigWidth': {
+    'value': 2,
+    'unit': 'ft',
+  },
+  'fixtureConfigType': 'Shelves',
+  'shelfConfig': [
+    {
+      shelfNumber: 1,
+      shelfZone: 'Top',
+      shelfSplitup: 0,
+      shelfProducts: 10,
+    },
+  ],
+};

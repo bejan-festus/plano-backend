@@ -26,3 +26,11 @@ export async function count( query ) {
 export async function create( data ) {
   return model.planoMappingModel.create( data );
 }
+
+export async function deleteOne( query ) {
+  return model.planoMappingModel.deleteOne( query );
+}
+
+export async function deleteMany( query ) {
+  return model.planoMappingModel.deleteMany( query );
+}

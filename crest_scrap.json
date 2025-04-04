@@ -1,0 +1,1160 @@
+[
+  {
+    "storeName": "LKST98",
+    "data": {
+      "message": "SUCCESS",
+      "result": [
+        {
+          "email": "rksalaigt.chennai@lenskart.mobi",
+          "storeId": "LKST98"
+        },
+        {
+          "main": "LEFT WALL",
+          "fixtures": [
+            {
+              "id": "FX01",
+              "footer": "Storage Box",
+              "header": "JJ Eye",
+              "fixtureName": "Fixture 1 - See Through-Shelves",
+              "fixtureType": "See Through-Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye TR Flex",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye Rich Acetate + JJ Eye TR Flex"
+              ]
+            },
+            {
+              "id": "FX02",
+              "footer": "Storage Box",
+              "header": "JJ Eye",
+              "fixtureName": "Fixture 2 - See Through-Shelves",
+              "fixtureType": "See Through-Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Gilded",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "JJ Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye Metal + JJ Eye Rich Acetate"
+              ]
+            },
+            {
+              "id": "FX03",
+              "footer": "Storage Box",
+              "header": "JJ Eye(0.5)+OD Eye(0.5)",
+              "fixtureName": "Fixture 3 - See Through-Shelves",
+              "fixtureType": "See Through-Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "OD Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "OD Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye + OD Eye"
+              ]
+            },
+            {
+              "id": "FX04",
+              "footer": "Storage Box",
+              "header": "Fossil Eye",
+              "fixtureName": "Fixture 4 - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "Fossil Eye"
+              ]
+            },
+            {
+              "id": "FX05",
+              "footer": "Storage Box",
+              "header": "JJ Sun",
+              "fixtureName": "Fixture 5 - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Break the Frame",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "JJ Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Sun Non Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Sun Metal + JJ Sun Non Metal"
+              ]
+            }
+          ]
+        },
+        {
+          "main": "RIGHT WALL",
+          "fixtures": [
+            {
+              "id": "FX06",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 1 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Marble",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Non-Metal"
+              ]
+            },
+            {
+              "id": "FX07",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 2 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Switch Flip",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "LK Air"
+              ]
+            },
+            {
+              "id": "FX08",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 3 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Patriot ",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Metal"
+              ]
+            },
+            {
+              "id": "FX09",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 4 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Half Rim",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Half Rim",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Rimless",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Half Rim & Rimless"
+              ]
+            },
+            {
+              "id": "FX10",
+              "footer": "Storage Box",
+              "header": "VC Sun",
+              "fixtureName": "Fixture 5 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Summer Edit",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Sun Non Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Sun Metal + VC Sun Non Metal"
+              ]
+            },
+            {
+              "id": "FX11",
+              "footer": "Storage Box",
+              "header": "Hooper",
+              "fixtureName": "Fixture 6 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "Hooper Sun + Hustlr (Extra Narrow)",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Creatr",
+                      "isMerchandisingElement": true
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Flexi Hooper + Unbreakable + TR Essentials + Acetates",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "Hooper"
+              ]
+            },
+            {
+              "id": "FX12",
+              "footer": "Storage Box",
+              "header": "CL",
+              "fixtureName": " - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [],
+                  "zoneName": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "CL"
+              ]
+            }
+          ]
+        },
+        {
+          "main": "Entrance"
+        },
+        {
+          "main": "Cash Counter"
+        },
+        {
+          "id": "FX13",
+          "main": "Euro Center",
+          "centerSubMain": "Tentpole",
+          "fixtureLocator": "Fixture 1",
+          "centerSuperSubMain": [
+            {
+              "name": "Patriot Eye",
+              "isVisualMerchandiser": true
+            }
+          ]
+        },
+        {
+          "id": "FX14",
+          "main": "Euro Center",
+          "centerSubMain": "JJ Eye Half Rim & Rimless",
+          "fixtureLocator": "Fixture 2",
+          "centerSuperSubMain": [
+            {
+              "name": "JJ Eye Half Rim & Rimless",
+              "isVisualMerchandiser": false
+            }
+          ]
+        },
+        {
+          "id": "FX15",
+          "main": "Euro Center",
+          "centerSubMain": "Hustlr",
+          "fixtureLocator": "Fixture 3",
+          "centerSuperSubMain": [
+            {
+              "name": "Hustlr",
+              "isVisualMerchandiser": true
+            }
+          ]
+        },
+        {
+          "id": "FX16",
+          "main": "Euro Center",
+          "centerSubMain": "VC Sun Non Metal",
+          "fixtureLocator": "Fixture 4",
+          "centerSuperSubMain": [
+            {
+              "name": "VC Sun Non Metal",
+              "isVisualMerchandiser": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "storeName": "LKST1193",
+    "data": {
+      "message": "SUCCESS",
+      "result": [
+        {
+          "email": "nungambakkamnew.chennai@lenskartstore.com",
+          "storeId": "LKST1193"
+        },
+        {
+          "main": "LEFT WALL",
+          "fixtures": [
+            {
+              "id": "FX01",
+              "footer": "Storage Box",
+              "header": "JJ Eye",
+              "fixtureName": "Fixture 1 - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye TR Flex",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye TR Flex",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye TR Flex",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye TR Flex"
+              ]
+            },
+            {
+              "id": "FX02",
+              "footer": "Storage Box",
+              "header": "JJ Eye",
+              "fixtureName": "Fixture 2 - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Urban Elegance",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye Rich Acetate"
+              ]
+            },
+            {
+              "id": "FX03",
+              "footer": "Storage Box",
+              "header": "JJ Eye",
+              "fixtureName": "Fixture 3 - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Gilded",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "JJ Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye Metal"
+              ]
+            },
+            {
+              "id": "FX04",
+              "footer": "Storage Box",
+              "header": "JJ Eye",
+              "fixtureName": "Fixture 4 - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Half Rim",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Half Rim",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Rimless",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye Half Rim & Rimless"
+              ]
+            },
+            {
+              "id": "FX05",
+              "footer": "Storage Box",
+              "header": "Fossil Eye",
+              "fixtureName": "Fixture 5 - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "Fossil Eye"
+              ]
+            },
+            {
+              "id": "FX06",
+              "footer": "Storage Box",
+              "header": "JJ Sun(0.6)+OD Eye(0.4)",
+              "fixtureName": "Fixture 6 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "OD Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Sun",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Sun",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Sun + OD Eye"
+              ]
+            },
+            {
+              "id": "FX07",
+              "footer": "Storage Box",
+              "header": "Hooper",
+              "fixtureName": "Fixture 7 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "Hooper Sun + Hustlr (Extra Narrow)",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Creatr",
+                      "isMerchandisingElement": true
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Flexi Hooper + Unbreakable + TR Essentials + Acetates",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "Hooper"
+              ]
+            },
+            {
+              "id": "FX08",
+              "footer": "Storage Box",
+              "header": "CL",
+              "fixtureName": " - Shelves",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [],
+                  "zoneName": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "CL"
+              ]
+            }
+          ]
+        },
+        {
+          "main": "RIGHT WALL",
+          "fixtures": [
+            {
+              "id": "FX09",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 1 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Marble",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Non-Metal"
+              ]
+            },
+            {
+              "id": "FX10",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 2 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Switch Flip",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "LK Air + VC Eye Non-Metal"
+              ]
+            },
+            {
+              "id": "FX11",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 3 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Float Pop",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "LK Air + VC Eye Metal"
+              ]
+            },
+            {
+              "id": "FX12",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 4 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Patriot ",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Metal"
+              ]
+            },
+            {
+              "id": "FX13",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "Fixture 5 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Half Rim",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Half Rim",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Rimless",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Half Rim & Rimless"
+              ]
+            },
+            {
+              "id": "FX14",
+              "footer": "Storage Box",
+              "header": "VC Sun",
+              "fixtureName": "Fixture 6 - Hybrid",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Summer Edit",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid"
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Sun Non Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom"
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Sun Metal + VC Sun Non Metal"
+              ]
+            }
+          ]
+        },
+        {
+          "main": "Entrance"
+        },
+        {
+          "main": "Cash Counter"
+        }
+      ]
+    }
+  } 
+]

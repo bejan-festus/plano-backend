@@ -35,3 +35,7 @@ export async function count( data ) {
 export async function deleteOne( query ) {
   return model.fixtureShelfModel.deleteOne( query );
 }
+
+export async function deleteMany( query ) {
+  return model.fixtureShelfModel.deleteMany( query );
+}

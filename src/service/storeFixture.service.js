@@ -31,3 +31,11 @@ export async function findOneAndUpdate2( query={}, field={} ) {
 export async function create( data ) {
   return model.storeFixtureModel.create( data );
 }
+
+export async function deleteOne( query ) {
+  return model.storeFixtureModel.deleteOne( query );
+}
+
+export async function findAndSort( query={}, field={}, sortField={} ) {
+  return model.storeFixtureModel.find( query, field ).sort( sortField );
+}
