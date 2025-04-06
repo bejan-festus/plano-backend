@@ -2633,6 +2633,7 @@ export const getFixtureTypes = async ( req, res ) => {
         $project:
           {
             fixtureCategory: 1,
+            fixtureLength: 1,
           },
       },
       {
@@ -2643,12 +2644,13 @@ export const getFixtureTypes = async ( req, res ) => {
       {
         $group: {
           _id: '$fixtureCategory',
+          fixtureLength: { $first: '$fixtureLength' },
         },
       },
       {
         $group: {
           '_id': null,
-          'fixtureCategory': { '$push': '$_id' },
+          'fixtureCategory': { '$push': { $concat: [ '$_id', '-', { $toString: '$fixtureLength.value' }, '$fixtureLength.unit' ] } },
         },
       },
       {
