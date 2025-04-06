@@ -28,3 +28,11 @@ export async function updateOne( query, record ) {
 export async function create( data ) {
   return model.planoProductModel.create( data );
 }
+
+export async function upsertOne( query, record ) {
+  return model.planoProductModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}

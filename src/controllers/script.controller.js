@@ -2388,54 +2388,910 @@ export async function createCrestPlanogram( req, res ) {
 
     const crestData = data.filter( ( item ) => item.data.message === 'SUCCESS' );
 
-    const fixtureTypes = new Set();
-    const centerSubMains = new Set();
+    const constantFixtureLength = 1220;
+    const constantDetailedFixtureLength = 1220;
 
-    crestData.forEach( ( store ) => {
-      store.data.result.forEach( ( section ) => {
-        if ( section.fixtures ) {
-          section.fixtures.forEach( ( fixture ) => {
-            if ( fixture.fixtureType ) {
-              fixtureTypes.add( fixture.fixtureType );
+    const constantFixtureWidth = 610;
+    const constantDetailedFixtureWidth = 1524;
+
+    const mmToFeet = 305;
+
+    function roundToTwo( num ) {
+      return Math.round( num * 100 ) / 100;
+    }
+
+    for ( let i = 0; i < crestData.length; i++ ) {
+      const storeData = crestData[i];
+
+      const storeDetails = await storeService.findOne( { storeName: storeData.storeName } );
+
+      const planoInsertData = {
+        storeName: storeData.storeName,
+        storeId: storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        layoutName: `${storeData.storeName} - Layout`,
+        clientId: '11',
+        attachments: [],
+        createdBy: new mongoose.Types.ObjectId( '66a78cd82734f4f857cd6db6' ),
+        createdByName: 'Bejan',
+        createdByEmail: 'bejan@tangotech.co.in',
+        status: 'completed',
+        floorNumber: 1,
+        productResolutionLevel: 'L2',
+        scanType: 'qr',
+      };
+
+      const insertedPlano = await planoService.upsertOne( { storeName: storeData.storeName }, planoInsertData );
+
+      const planoDoc = insertedPlano.toObject();
+
+      const leftWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'LEFT WALL' );
+      const leftFixtures = leftWall.flatMap( ( wall ) => wall.fixtures );
+      const rightWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'RIGHT WALL' );
+      const rightFixtures = rightWall.flatMap( ( wall ) => wall.fixtures );
+      const backWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'RIGHT VERTICAL WALL' );
+      const backFixtures = backWall.flatMap( ( wall ) => wall.fixtures );
+      const floorFixtures = storeData.data.result.filter( ( entry ) => entry['main'] === 'Euro Center' || entry['main'] === 'Euro Center Dr' );
+
+      const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const leftXDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+      const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
+      const leftYDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantDetailedFixtureWidth / mmToFeet ) ) ) : 0;
+
+      const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const rightXDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+      const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+      const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
+
+      const maxFixturesPerRow = floorFixtures.length > 4 ? 3 : 2;
+      const totalRows = Math.ceil( floorFixtures.length / maxFixturesPerRow );
+      const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( maxFixturesPerRow * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( maxFixturesPerRow * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
+
+      const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( totalRows * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
+      const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( totalRows * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
+
+      const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+      const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
+
+      const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
+      const backYDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantDetailedFixtureWidth / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth )/mmToFeet ) ) ): 0;
+
+      const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
+      const maxXDetailedDistance = Math.max( leftXDetailedDistanceFeet, rightXDetailedDistanceFeet, floorXDetailedDistanceFeet );
+
+      const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
+      const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
+
+      const finalXDistance = roundToTwo( ( maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance ) );
+      const finalXDetailedDistance = roundToTwo( ( maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance ) );
+
+      const finalYDistance = roundToTwo( ( maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) ) ) );
+      const finalYDetailedDistance = roundToTwo( ( maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) ) ) );
+
+      const floorInsertData = {
+        storeName: planoDoc.storeName,
+        storeId: planoDoc.storeId,
+        layoutName: `${planoDoc.storeName} - Layout`,
+        clientId: '11',
+        floorNumber: 1,
+        floorName: 'floor 1',
+        layoutPolygon: [
+          {
+            elementType: 'wall',
+            distance: finalXDistance,
+            unit: 'ft',
+            direction: 'right',
+            angle: 90,
+            elementNumber: 1,
+            detailedDistance: finalXDetailedDistance,
+          },
+          {
+            elementType: 'wall',
+            distance: finalYDistance,
+            unit: 'ft',
+            direction: 'down',
+            angle: 90,
+            elementNumber: 2,
+            detailedDistance: finalYDetailedDistance,
+          },
+          {
+            elementType: 'wall',
+            distance: finalXDistance,
+            unit: 'ft',
+            direction: 'left',
+            angle: 90,
+            elementNumber: 3,
+            detailedDistance: finalXDetailedDistance,
+          },
+          {
+            elementType: 'wall',
+            distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 4,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+          },
+          {
+            elementType: 'entrance',
+            distance: roundToTwo( ( ( finalYDistance * 20 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 1,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
+          },
+          {
+            elementType: 'wall',
+            distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 5,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+          },
+        ],
+        createdBy: new mongoose.Types.ObjectId( '66a78cd82734f4f857cd6db6' ),
+        createdByName: 'Bejan',
+        createdByEmail: 'bejan@tangotech.co.in',
+        status: 'completed',
+        planoId: planoDoc._id,
+      };
+
+      const layoutDoc = await storeBuilderService.upsertOne( { planoId: planoDoc._id }, floorInsertData );
+
+      let fixtureCounter = 1;
+
+      for ( let index = 0; index < leftFixtures.length; index++ ) {
+        const fixture = leftFixtures[index];
+        const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+        const fixtureConfigDoc = fixtureConfig.toObject();
+
+        const fixtureData = {
+          'clientId': layoutDoc.clientId,
+          'storeName': layoutDoc.storeName,
+          'storeId': layoutDoc.storeId,
+          'planoId': layoutDoc.planoId,
+          'floorId': layoutDoc._id,
+          'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
+          'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
+          'fixtureBrandCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+          'fixtureBrandSubCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+          'fixtureCode': fixtureConfigDoc?.fixtureCode,
+          'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+          'fixtureType': 'wall',
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'associatedElementType': 'wall',
+          'associatedElementNumber': 1,
+          'relativePosition': {
+            'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+            'y': 0,
+            'unit': 'ft',
+          },
+          'fixtureNumber': fixtureCounter,
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+            'y': 0,
+            'unit': 'ft',
+          },
+          'productResolutionLevel': 'L2',
+          'associatedElementFixtureNumber': index+1,
+          'header': fixture.header,
+          'footer': fixture.footer,
+          'fixtureConfigId': fixtureConfigDoc._id,
+        };
+
+        const createdFixture = await storeFixtureService.upsertOne(
+            {
+              floorId: layoutDoc._id,
+              fixtureNumber: fixtureCounter,
+            },
+            fixtureData );
+
+        fixtureCounter +=1;
+
+        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' ) continue;
+
+
+        for ( let j = 0; j < fixtureConfigDoc.shelfConfig.length; j++ ) {
+          const configShelf = fixtureConfigDoc.shelfConfig[j];
+          const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+
+          const shelfSection = shelfZone.products.find( ( product ) => product.isMerchandisingElement === false );
+
+          const shelfData = {
+            'clientId': '11',
+            'storeName': layoutDoc.storeName,
+            'storeId': layoutDoc.storeId,
+            'planoId': layoutDoc.planoId,
+            'floorId': layoutDoc._id,
+            'fixtureId': createdFixture._id,
+            'shelfNumber': j + 1,
+            'shelfOrder': 'LTR',
+            'shelfCapacity': configShelf.shelfCapacity,
+            'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
+            'sectionZone': configShelf.shelfZone,
+          };
+
+          await fixtureShelfService.upsertOne(
+              {
+                fixtureId: createdFixture._id,
+                shelfNumber: j + 1,
+              },
+              shelfData,
+          );
+        }
+
+        for ( let i = 0; i < fixture.productZones?.length; i++ ) {
+          const vms = fixture.productZones[i].products.filter( ( vm ) => vm.isMerchandisingElement );
+          const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === fixture.productZones[i].zoneName );
+
+          for ( const vm of vms ) {
+            let vmTemplate = await planoProductService.findOne( { productName: vm.productName, fixtureConfigId: fixtureConfig._id } );
+            if ( !vmTemplate ) {
+              let configData = vmConfig[0];
+
+              if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
+              }
+
+              if ( vm.productName !== 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmNumber === 2 );
+              }
+
+              const insertData = {
+                'clientId': '11',
+                'productId': 'VMCR',
+                'type': 'vm',
+                'productName': vm.productName,
+                'productHeight': {
+                  'value': configData.vmHeightmm,
+                  'unit': 'mm',
+                },
+                'productWidth': {
+                  'value': configData.vmWidthmm,
+                  'unit': 'mm',
+                },
+                'startYPosition': configData.startShelf,
+                'endYPosition': configData.endShelf,
+                'xZone': configData.zone,
+                'fixtureConfigId': fixtureConfig._id,
+              };
+
+              vmTemplate = await planoProductService.upsertOne(
+                  { productName: vm.productName },
+                  insertData );
             }
-          } );
+
+            const vmData = {
+              'clientId': layoutDoc.clientId,
+              'storeName': layoutDoc.storeName,
+              'storeId': layoutDoc.storeId,
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'type': 'vm',
+              'fixtureId': createdFixture._id,
+              'productId': vmTemplate._id,
+            };
+
+            await planoMappingService.upsertOne(
+                {
+                  fixtureId: createdFixture._id,
+                  productId: vmTemplate._id,
+                },
+                vmData,
+            );
+          }
+        }
+      }
+
+      for ( let index = 0; index < backFixtures.length; index++ ) {
+        const fixture = backFixtures[index];
+        const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+        const fixtureConfigDoc = fixtureConfig.toObject();
+
+        const fixtureData = {
+          'clientId': layoutDoc.clientId,
+          'storeName': layoutDoc.storeName,
+          'storeId': layoutDoc.storeId,
+          'planoId': layoutDoc.planoId,
+          'floorId': layoutDoc._id,
+          'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
+          'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
+          'fixtureBrandCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+          'fixtureBrandSubCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+          'fixtureCode': fixtureConfigDoc?.fixtureCode,
+          'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+          'fixtureType': 'wall',
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'associatedElementType': 'wall',
+          'associatedElementNumber': 2,
+          'relativePosition': {
+            'x': roundToTwo( ( finalXDistance - ( constantFixtureWidth/mmToFeet ) ) ),
+            'y': roundToTwo( ( ( index * ( ( constantFixtureLength/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantFixtureWidth/mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'fixtureNumber': fixtureCounter,
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( finalXDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
+            'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'productResolutionLevel': 'L2',
+          'associatedElementFixtureNumber': index+1,
+          'header': fixture.header,
+          'footer': fixture.footer,
+          'fixtureConfigId': fixtureConfigDoc._id,
+        };
+
+        const createdFixture = await storeFixtureService.upsertOne(
+            {
+              floorId: layoutDoc._id,
+              fixtureNumber: fixtureCounter,
+            },
+            fixtureData );
+
+        fixtureCounter +=1;
+
+        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' ) continue;
+
+        for ( let j = 0; j < fixtureConfigDoc.shelfConfig.length; j++ ) {
+          const configShelf = fixtureConfigDoc.shelfConfig[j];
+          const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+
+          const shelfSection = shelfZone.products.find( ( product ) => product.isMerchandisingElement === false );
+
+          const shelfData = {
+            'clientId': '11',
+            'storeName': layoutDoc.storeName,
+            'storeId': layoutDoc.storeId,
+            'planoId': layoutDoc.planoId,
+            'floorId': layoutDoc._id,
+            'fixtureId': createdFixture._id,
+            'shelfNumber': j + 1,
+            'shelfOrder': 'LTR',
+            'shelfCapacity': configShelf.shelfCapacity,
+            'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
+            'sectionZone': configShelf.shelfZone,
+          };
+
+          await fixtureShelfService.upsertOne(
+              {
+                fixtureId: createdFixture._id,
+                shelfNumber: j + 1,
+              },
+              shelfData,
+          );
         }
 
-        if ( section.main === 'Euro Center' && section.centerSubMain ) {
-          centerSubMains.add( section.centerSubMain );
-        }
-      } );
-    } );
+        for ( let i = 0; i < fixture.productZones?.length; i++ ) {
+          const vms = fixture.productZones[i].products.filter( ( vm ) => vm.isMerchandisingElement );
+          const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === fixture.productZones[i].zoneName );
 
-    return res.sendSuccess( {
-      fixtureTypes: Array.from( fixtureTypes ),
-      euroCenterSubMains: Array.from( centerSubMains ),
-    } );
+          for ( const vm of vms ) {
+            let vmTemplate = await planoProductService.findOne( { productName: vm.productName, fixtureConfigId: fixtureConfig._id } );
+            if ( !vmTemplate ) {
+              let configData = vmConfig[0];
+
+              if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
+              }
+
+              if ( vm.productName !== 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmNumber === 2 );
+              }
+
+              const insertData = {
+                'clientId': '11',
+                'productId': 'VMCR',
+                'type': 'vm',
+                'productName': vm.productName,
+                'productHeight': {
+                  'value': configData.vmHeightmm,
+                  'unit': 'mm',
+                },
+                'productWidth': {
+                  'value': configData.vmWidthmm,
+                  'unit': 'mm',
+                },
+                'startYPosition': configData.startShelf,
+                'endYPosition': configData.endShelf,
+                'xZone': configData.zone,
+                'fixtureConfigId': fixtureConfig._id,
+              };
+
+              vmTemplate = await planoProductService.upsertOne(
+                  { productName: vm.productName },
+                  insertData );
+            }
+
+            const vmData = {
+              'clientId': layoutDoc.clientId,
+              'storeName': layoutDoc.storeName,
+              'storeId': layoutDoc.storeId,
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'type': 'vm',
+              'fixtureId': createdFixture._id,
+              'productId': vmTemplate._id,
+            };
+
+            await planoMappingService.upsertOne(
+                {
+                  fixtureId: createdFixture._id,
+                  productId: vmTemplate._id,
+                },
+                vmData,
+            );
+          }
+        }
+      }
+
+      for ( let index = 0; index < rightFixtures.length; index++ ) {
+        const fixture = rightFixtures[index];
+        const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+        const fixtureConfigDoc = fixtureConfig.toObject();
+
+        const fixtureData = {
+          'clientId': layoutDoc.clientId,
+          'storeName': layoutDoc.storeName,
+          'storeId': layoutDoc.storeId,
+          'planoId': layoutDoc.planoId,
+          'floorId': layoutDoc._id,
+          'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
+          'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
+          'fixtureBrandCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+          'fixtureBrandSubCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+          'fixtureCode': fixtureConfigDoc?.fixtureCode,
+          'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+          'fixtureType': 'wall',
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'associatedElementType': 'wall',
+          'associatedElementNumber': 3,
+          'relativePosition': {
+            'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+            'y': roundToTwo( ( finalYDistance - ( constantFixtureWidth / mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'fixtureNumber': fixtureCounter,
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+            'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'productResolutionLevel': 'L2',
+          'associatedElementFixtureNumber': index+1,
+          'header': fixture.header,
+          'footer': fixture.footer,
+          'fixtureConfigId': fixtureConfigDoc._id,
+        };
+
+        const createdFixture = await storeFixtureService.upsertOne(
+            {
+              floorId: layoutDoc._id,
+              fixtureNumber: fixtureCounter,
+            },
+            fixtureData );
+
+        fixtureCounter +=1;
+
+        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' ) continue;
+
+        for ( let j = 0; j < fixtureConfigDoc.shelfConfig.length; j++ ) {
+          const configShelf = fixtureConfigDoc.shelfConfig[j];
+
+          const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+          const shelfSection = shelfZone.products.find( ( product ) => product.isMerchandisingElement === false );
+
+          const shelfData = {
+            'clientId': '11',
+            'storeName': layoutDoc.storeName,
+            'storeId': layoutDoc.storeId,
+            'planoId': layoutDoc.planoId,
+            'floorId': layoutDoc._id,
+            'fixtureId': createdFixture._id,
+            'shelfNumber': j + 1,
+            'shelfOrder': 'LTR',
+            'shelfCapacity': configShelf.shelfCapacity,
+            'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
+            'sectionZone': configShelf.shelfZone,
+          };
+
+          await fixtureShelfService.upsertOne(
+              {
+                fixtureId: createdFixture._id,
+                shelfNumber: j + 1,
+              },
+              shelfData,
+          );
+        }
+
+        for ( let i = 0; i < fixture.productZones?.length; i++ ) {
+          const vms = fixture.productZones[i].products.filter( ( vm ) => vm.isMerchandisingElement );
+          const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === fixture.productZones[i].zoneName );
+
+          for ( const vm of vms ) {
+            let vmTemplate = await planoProductService.findOne( { productName: vm.productName, fixtureConfigId: fixtureConfig._id } );
+            if ( !vmTemplate ) {
+              let configData = vmConfig[0];
+
+              if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
+              }
+
+              if ( vm.productName !== 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmNumber === 2 );
+              }
+
+              const insertData = {
+                'clientId': '11',
+                'productId': 'VMCR',
+                'type': 'vm',
+                'productName': vm.productName,
+                'productHeight': {
+                  'value': configData.vmHeightmm,
+                  'unit': 'mm',
+                },
+                'productWidth': {
+                  'value': configData.vmWidthmm,
+                  'unit': 'mm',
+                },
+                'startYPosition': configData.startShelf,
+                'endYPosition': configData.endShelf,
+                'xZone': configData.zone,
+                'fixtureConfigId': fixtureConfig._id,
+              };
+
+              vmTemplate = await planoProductService.upsertOne(
+                  { productName: vm.productName },
+                  insertData );
+            }
+
+            const vmData = {
+              'clientId': layoutDoc.clientId,
+              'storeName': layoutDoc.storeName,
+              'storeId': layoutDoc.storeId,
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'type': 'vm',
+              'fixtureId': createdFixture._id,
+              'productId': vmTemplate._id,
+            };
+
+            await planoMappingService.upsertOne(
+                {
+                  fixtureId: createdFixture._id,
+                  productId: vmTemplate._id,
+                },
+                vmData,
+            );
+          }
+        }
+      }
+
+      for ( let index = 0; index < floorFixtures.length; index++ ) {
+        const fixture = floorFixtures[index];
+        const centerRow = Math.floor( totalRows / 2 );
+
+        const startingX =roundToTwo( ( ( finalXDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) ) );
+        const detailedStartingX = roundToTwo( ( ( finalXDetailedDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ) );
+
+        const startingY = ( finalYDistance / 2 ) - ( centerRow * ( constantFixtureWidth / mmToFeet ) );
+        const detailedStartingY = ( finalYDetailedDistance / 2 ) - ( centerRow * ( constantDetailedFixtureWidth / mmToFeet ) );
+
+        const rowIndex = Math.floor( index / maxFixturesPerRow );
+        const colIndex = index % maxFixturesPerRow;
+
+        const xPos = roundToTwo( ( startingX + colIndex * ( constantFixtureLength / mmToFeet ) ) );
+        const yPos = roundToTwo( ( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) ) );
+
+        const detailedXPos = roundToTwo( ( detailedStartingX + colIndex * ( constantDetailedFixtureLength / mmToFeet ) ) );
+        const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
+
+        const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.main } );
+        const fixtureConfigDoc = fixtureConfig.toObject();
+
+        const fixtureData = {
+          'clientId': layoutDoc.clientId,
+          'storeName': layoutDoc.storeName,
+          'storeId': layoutDoc.storeId,
+          'planoId': layoutDoc.planoId,
+          'floorId': layoutDoc._id,
+          'fixtureName': `Fixture ${index+1} - ${fixture.main}`,
+          'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
+          'fixtureBrandCategory': fixture.centerSubMain ? fixture.centerSubMain : undefined,
+          'fixtureBrandSubCategory': fixture.centerSubMain ? fixture.centerSubMain : undefined,
+          'fixtureCode': fixtureConfigDoc?.fixtureCode,
+          'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+          'fixtureType': 'floor',
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativePosition': {
+            'x': xPos,
+            'y': yPos,
+            'unit': 'ft',
+          },
+          'fixtureNumber': fixtureCounter,
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': detailedXPos,
+            'y': detailedYPos,
+            'unit': 'ft',
+          },
+          'productResolutionLevel': 'L2',
+          'associatedElementFixtureNumber': index+1,
+          'fixtureConfigId': fixtureConfigDoc._id,
+        };
+
+        const createdFixture = await storeFixtureService.upsertOne(
+            {
+              floorId: layoutDoc._id,
+              fixtureNumber: fixtureCounter,
+            },
+            fixtureData );
+
+        fixtureCounter +=1;
+
+        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' ) continue;
+
+        for ( let j = 0; j < fixtureConfigDoc.shelfConfig.length; j++ ) {
+          const configShelf = fixtureConfigDoc.shelfConfig[j];
+
+          const shelfSection = fixture.centerSuperSubMain.find( ( product ) => product.isVisualMerchandiser === false || product.isVisualMerchandiser === true );
+
+          const shelfData = {
+            'clientId': '11',
+            'storeName': layoutDoc.storeName,
+            'storeId': layoutDoc.storeId,
+            'planoId': layoutDoc.planoId,
+            'floorId': layoutDoc._id,
+            'fixtureId': createdFixture._id,
+            'shelfNumber': j + 1,
+            'shelfOrder': 'LTR',
+            'shelfCapacity': configShelf.shelfCapacity,
+            'sectionName': shelfSection?.name,
+          };
+
+          await fixtureShelfService.upsertOne(
+              {
+                fixtureId: createdFixture._id,
+                shelfNumber: j + 1,
+              },
+              shelfData,
+          );
+        }
+
+
+        const vm = fixture.centerSuperSubMain.find( ( vm ) => vm.isVisualMerchandiser );
+        const vmConfig = fixtureConfigDoc.vmConfig;
+
+        console.log( vm?.name );
+        if ( vm ) {
+          let vmTemplate1 = await planoProductService.findOne( { productName: vm.name, fixtureConfigId: fixtureConfig._id } );
+          if ( !vmTemplate1 ) {
+            let configData = vmConfig[0];
+
+
+            const insertData = {
+              'clientId': '11',
+              'productId': 'VMCR',
+              'type': 'vm',
+              'productName': vm.name,
+              'productHeight': {
+                'value': configData.vmHeightmm,
+                'unit': 'mm',
+              },
+              'productWidth': {
+                'value': configData.vmWidthmm,
+                'unit': 'mm',
+              },
+              'startYPosition': configData.startShelf,
+              'endYPosition': configData.endShelf,
+              'xZone': configData.zone,
+              'fixtureConfigId': fixtureConfig._id,
+            };
+
+            vmTemplate1 = await planoProductService.upsertOne(
+                { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
+                insertData );
+          }
+
+          const vmData1 = {
+            'clientId': layoutDoc.clientId,
+            'storeName': layoutDoc.storeName,
+            'storeId': layoutDoc.storeId,
+            'planoId': layoutDoc.planoId,
+            'floorId': layoutDoc._id,
+            'type': 'vm',
+            'fixtureId': createdFixture._id,
+            'productId': vmTemplate1._id,
+          };
+
+          await planoMappingService.upsertOne(
+              {
+                fixtureId: createdFixture._id,
+                productId: vmTemplate1._id,
+              },
+              vmData1,
+          );
+
+          let vmTemplate2 = await planoProductService.findOne( { productName: ' ', fixtureConfigId: fixtureConfig._id } );
+          if ( !vmTemplate2 ) {
+            let configData = vmConfig[1];
+
+
+            const insertData = {
+              'clientId': '11',
+              'productId': 'VMCR',
+              'type': 'vm',
+              'productName': ' ',
+              'productHeight': {
+                'value': configData.vmHeightmm,
+                'unit': 'mm',
+              },
+              'productWidth': {
+                'value': configData.vmWidthmm,
+                'unit': 'mm',
+              },
+              'startYPosition': configData.startShelf,
+              'endYPosition': configData.endShelf,
+              'xZone': configData.zone,
+              'fixtureConfigId': fixtureConfig._id,
+            };
+
+            vmTemplate2 = await planoProductService.upsertOne(
+                { productName: ' ', fixtureConfigId: fixtureConfig._id },
+                insertData );
+          }
+
+          const vmData2 = {
+            'clientId': layoutDoc.clientId,
+            'storeName': layoutDoc.storeName,
+            'storeId': layoutDoc.storeId,
+            'planoId': layoutDoc.planoId,
+            'floorId': layoutDoc._id,
+            'type': 'vm',
+            'fixtureId': createdFixture._id,
+            'productId': vmTemplate2._id,
+          };
+
+          await planoMappingService.upsertOne(
+              {
+                fixtureId: createdFixture._id,
+                productId: vmTemplate2._id,
+              },
+              vmData2,
+          );
+        }
+      }
+
+      console.log( storeData.storeName );
+    }
+
+    res.sendSuccess( 'Updated Successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'createCrestPlanogram', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );
   }
 }
 
-const data = {
-  'clientId': '11',
-  'fixtureCode': 'FX01',
-  'fixtureCategory': 'Shelves',
-  'fixtureConfigLength': {
-    'value': 3,
-    'unit': 'ft',
-  },
-  'fixtureConfigWidth': {
-    'value': 2,
-    'unit': 'ft',
-  },
-  'fixtureConfigType': 'Shelves',
-  'shelfConfig': [
-    {
-      shelfNumber: 1,
-      shelfZone: 'Top',
-      shelfSplitup: 0,
-      shelfProducts: 10,
-    },
-  ],
-};
+export async function updateCrestVms( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    if ( !req.files || !req.files.file ) {
+      return res.sendError( 'JSON file is required', 400 );
+    }
+
+    const data = JSON.parse( req.files.file.data.toString( 'utf8' ) );
+
+    const crestData = data.filter( ( item ) => item.data.message === 'SUCCESS' );
+
+
+    const vms = new Set();
+
+    const returnList = [];
+
+    crestData.forEach( ( store ) => {
+      store.data.result.forEach( ( wall ) => {
+        wall.fixtures?.forEach( ( fixture ) => {
+          fixture.productZones.forEach( ( zone ) => {
+            zone.products.forEach( ( product ) => {
+              if ( product?.isMerchandisingElement ) {
+                vms.add( product.productName );
+              }
+              if ( wall.fixtureType === 'Window' && zone.zoneName === 'Bottom' && product.isMerchandisingElement === true ) {
+                returnList.push( store.storeName );
+              }
+            } );
+          } );
+        } );
+      } );
+    } );
+
+    // return res.sendSuccess( Array.from( vms ) );
+    return res.sendSuccess( returnList );
+  } catch ( e ) {
+    logger.error( { functionName: 'createCrestPlanogram', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+

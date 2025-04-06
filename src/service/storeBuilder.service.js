@@ -39,3 +39,11 @@ export async function updateMany( query, record ) {
 export async function create( data ) {
   return model.storeLayoutModel.create( data );
 }
+
+export async function upsertOne( query, record ) {
+  return model.storeLayoutModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}

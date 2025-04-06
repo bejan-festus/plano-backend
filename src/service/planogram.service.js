@@ -28,6 +28,14 @@ export async function deleteOne( query ) {
   return model.planogramModel.deleteOne( query );
 }
 
+export async function upsertOne( query, record ) {
+  return model.planogramModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}
+
 export async function create( data ) {
   return model.planogramModel.create( data );
 }
