@@ -39,3 +39,11 @@ export async function deleteOne( query ) {
 export async function deleteMany( query ) {
   return model.fixtureShelfModel.deleteMany( query );
 }
+
+export async function upsertOne( query, record ) {
+  return model.fixtureShelfModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}

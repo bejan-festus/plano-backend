@@ -607,7 +607,7 @@ export async function storeFixturesv1( req, res ) {
                               date: currentDate,
                             } );
 
-                            const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 }, { shelfNumber: 1 } );
+                            const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1, shelfSplitup: 1 }, { shelfNumber: 1 } );
 
                             const shelfDetails = await Promise.all(
                                 shelves.map( async ( shelf ) => {
@@ -702,7 +702,7 @@ export async function storeFixturesv1( req, res ) {
                         date: currentDate,
                       } );
 
-                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 }, { shelfNumber: 1 } );
+                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1, shelfSplitup: 1 }, { shelfNumber: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {
@@ -2052,7 +2052,7 @@ export async function storeFixturesTask( req, res ) {
                               date_string: req.body?.date,
                             }, { status: 1 } );
 
-                            const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 }, { shelfNumber: 1 } );
+                            const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1, shelfSplitup: 1 }, { shelfNumber: 1 } );
 
                             const shelfDetails = await Promise.all(
                                 shelves.map( async ( shelf ) => {
@@ -2132,7 +2132,7 @@ export async function storeFixturesTask( req, res ) {
                         date_string: req.body?.date,
                       }, { status: 1 } );
 
-                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1 }, { shelfNumber: 1 } );
+                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { shelfNumber: 1, sectionName: 1, sectionZone: 1, shelfCapacity: 1, shelfSplitup: 1 }, { shelfNumber: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {
