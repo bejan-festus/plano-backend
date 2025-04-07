@@ -22,4 +22,5 @@ scriptRouter
     .post( '/getFileNames', scriptController.extractZipFileNames )
     .post( '/getVmTaskData', scriptController.getVmTaskData )
     .post( '/updateVmData', scriptController.updateVmData )
-    .post( '/createCrestPlanogram', scriptController.createCrestPlanogram );
+    .post( '/createCrestPlanogram', scriptController.createCrestPlanogram )
+    .post( '/updateCrestVms', scriptController.updateCrestVms );

@@ -39,3 +39,11 @@ export async function deleteOne( query ) {
 export async function findAndSort( query={}, field={}, sortField={} ) {
   return model.storeFixtureModel.find( query, field ).sort( sortField );
 }
+
+export async function upsertOne( query, record ) {
+  return model.storeFixtureModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}

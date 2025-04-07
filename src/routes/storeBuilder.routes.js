@@ -24,7 +24,7 @@ storeBuilderRouter
     // .post( '/scan', storeBuilderController.scan )
     .post( '/storeLayout', isAllowedSessionHandler, validate( validateDtos.storeList ), storeBuilderController.storeLayout )
     .post( '/storeFixtures', validate( validateDtos.storeList ), storeBuilderController.storeFixturesv1 )
-    .post( '/FixtureShelfDetails', isAllowedSessionHandler, validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv1 )
+    .post( '/FixtureShelfDetails', validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv1 )
     .post( '/scan', isAllowedSessionHandler, storeBuilderController.scanv1 )
     .post( '/updateMissing', isAllowedSessionHandler, storeBuilderController.updateMissing )
     .post( '/bulkFixtureUpload', isAllowedSessionHandler, storeBuilderController.bulkFixtureUpload )
