@@ -2444,13 +2444,14 @@ export async function createCrestPlanogram( req, res ) {
       const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
       const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
 
-      const maxFixturesPerRow = floorFixtures.length > 4 ? 3 : 2;
-      const totalRows = Math.ceil( floorFixtures.length / maxFixturesPerRow );
-      const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( maxFixturesPerRow * ( constantFixtureLength / mmToFeet ) ) ) : 0;
-      const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( maxFixturesPerRow * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
+      const maxFixturesPerRow = floorFixtures.length/2;
+      const totalRows = 2;
 
-      const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( totalRows * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
-      const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( totalRows * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
+      const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
+
+      const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( 2 * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
+      const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( 2 * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
 
       const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
       const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
@@ -2611,7 +2612,7 @@ export async function createCrestPlanogram( req, res ) {
 
         fixtureCounter +=1;
 
-        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' ) continue;
+        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
 
         for ( let j = 0; j < fixtureConfigDoc.shelfConfig.length; j++ ) {
@@ -2632,6 +2633,7 @@ export async function createCrestPlanogram( req, res ) {
             'shelfCapacity': configShelf.shelfCapacity,
             'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
             'sectionZone': configShelf.shelfZone,
+            'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
           };
 
           await fixtureShelfService.upsertOne(
@@ -2680,7 +2682,7 @@ export async function createCrestPlanogram( req, res ) {
               };
 
               vmTemplate = await planoProductService.upsertOne(
-                  { productName: vm.productName },
+                  { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
                   insertData );
             }
 
@@ -2753,7 +2755,7 @@ export async function createCrestPlanogram( req, res ) {
             'unit': 'mm',
           },
           'relativeDetailedPosition': {
-            'x': roundToTwo( ( finalXDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
+            'x': roundToTwo( ( finalXDetailedDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
             'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
             'unit': 'ft',
           },
@@ -2773,7 +2775,7 @@ export async function createCrestPlanogram( req, res ) {
 
         fixtureCounter +=1;
 
-        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' ) continue;
+        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
         for ( let j = 0; j < fixtureConfigDoc.shelfConfig.length; j++ ) {
           const configShelf = fixtureConfigDoc.shelfConfig[j];
@@ -2793,6 +2795,7 @@ export async function createCrestPlanogram( req, res ) {
             'shelfCapacity': configShelf.shelfCapacity,
             'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
             'sectionZone': configShelf.shelfZone,
+            'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
           };
 
           await fixtureShelfService.upsertOne(
@@ -2841,7 +2844,7 @@ export async function createCrestPlanogram( req, res ) {
               };
 
               vmTemplate = await planoProductService.upsertOne(
-                  { productName: vm.productName },
+                  { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
                   insertData );
             }
 
@@ -2934,7 +2937,7 @@ export async function createCrestPlanogram( req, res ) {
 
         fixtureCounter +=1;
 
-        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' ) continue;
+        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
         for ( let j = 0; j < fixtureConfigDoc.shelfConfig.length; j++ ) {
           const configShelf = fixtureConfigDoc.shelfConfig[j];
@@ -2954,6 +2957,7 @@ export async function createCrestPlanogram( req, res ) {
             'shelfCapacity': configShelf.shelfCapacity,
             'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
             'sectionZone': configShelf.shelfZone,
+            'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
           };
 
           await fixtureShelfService.upsertOne(
@@ -3002,7 +3006,7 @@ export async function createCrestPlanogram( req, res ) {
               };
 
               vmTemplate = await planoProductService.upsertOne(
-                  { productName: vm.productName },
+                  { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
                   insertData );
             }
 
@@ -3038,8 +3042,9 @@ export async function createCrestPlanogram( req, res ) {
         const startingY = ( finalYDistance / 2 ) - ( centerRow * ( constantFixtureWidth / mmToFeet ) );
         const detailedStartingY = ( finalYDetailedDistance / 2 ) - ( centerRow * ( constantDetailedFixtureWidth / mmToFeet ) );
 
-        const rowIndex = Math.floor( index / maxFixturesPerRow );
-        const colIndex = index % maxFixturesPerRow;
+        const colIndex = Math.floor( index / 2 );
+        const rowIndex = index % 2 === 0 ? 1 : 0;
+
 
         const xPos = roundToTwo( ( startingX + colIndex * ( constantFixtureLength / mmToFeet ) ) );
         const yPos = roundToTwo( ( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) ) );
@@ -3108,7 +3113,7 @@ export async function createCrestPlanogram( req, res ) {
 
         fixtureCounter +=1;
 
-        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' ) continue;
+        if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
         for ( let j = 0; j < fixtureConfigDoc.shelfConfig.length; j++ ) {
           const configShelf = fixtureConfigDoc.shelfConfig[j];
@@ -3125,7 +3130,8 @@ export async function createCrestPlanogram( req, res ) {
             'shelfNumber': j + 1,
             'shelfOrder': 'LTR',
             'shelfCapacity': configShelf.shelfCapacity,
-            'sectionName': shelfSection?.name,
+            'sectionName': fixture.centerSuperSubMain.find( ( product ) => product.isVisualMerchandiser === true ) ? shelfSection?.name + ' PIDs' : shelfSection?.name,
+            'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
           };
 
           await fixtureShelfService.upsertOne(
@@ -3141,35 +3147,34 @@ export async function createCrestPlanogram( req, res ) {
         const vm = fixture.centerSuperSubMain.find( ( vm ) => vm.isVisualMerchandiser );
         const vmConfig = fixtureConfigDoc.vmConfig;
 
-        console.log( vm?.name );
         if ( vm ) {
           let vmTemplate1 = await planoProductService.findOne( { productName: vm.name, fixtureConfigId: fixtureConfig._id } );
           if ( !vmTemplate1 ) {
-            let configData = vmConfig[0];
+            const configData1 = vmConfig[0];
 
 
-            const insertData = {
+            const insertData1 = {
               'clientId': '11',
               'productId': 'VMCR',
               'type': 'vm',
               'productName': vm.name,
               'productHeight': {
-                'value': configData.vmHeightmm,
+                'value': configData1.vmHeightmm,
                 'unit': 'mm',
               },
               'productWidth': {
-                'value': configData.vmWidthmm,
+                'value': configData1.vmWidthmm,
                 'unit': 'mm',
               },
-              'startYPosition': configData.startShelf,
-              'endYPosition': configData.endShelf,
-              'xZone': configData.zone,
+              'startYPosition': configData1.startShelf,
+              'endYPosition': configData1.endShelf,
+              'xZone': configData1.zone,
               'fixtureConfigId': fixtureConfig._id,
             };
 
             vmTemplate1 = await planoProductService.upsertOne(
                 { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
-                insertData );
+                insertData1 );
           }
 
           const vmData1 = {
@@ -3193,31 +3198,31 @@ export async function createCrestPlanogram( req, res ) {
 
           let vmTemplate2 = await planoProductService.findOne( { productName: ' ', fixtureConfigId: fixtureConfig._id } );
           if ( !vmTemplate2 ) {
-            let configData = vmConfig[1];
+            const configData2 = vmConfig[1];
 
 
-            const insertData = {
+            const insertData2 = {
               'clientId': '11',
               'productId': 'VMCR',
               'type': 'vm',
               'productName': ' ',
               'productHeight': {
-                'value': configData.vmHeightmm,
+                'value': configData2.vmHeightmm,
                 'unit': 'mm',
               },
               'productWidth': {
-                'value': configData.vmWidthmm,
+                'value': configData2.vmWidthmm,
                 'unit': 'mm',
               },
-              'startYPosition': configData.startShelf,
-              'endYPosition': configData.endShelf,
-              'xZone': configData.zone,
+              'startYPosition': configData2.startShelf,
+              'endYPosition': configData2.endShelf,
+              'xZone': configData2.zone,
               'fixtureConfigId': fixtureConfig._id,
             };
 
             vmTemplate2 = await planoProductService.upsertOne(
                 { productName: ' ', fixtureConfigId: fixtureConfig._id },
-                insertData );
+                insertData2 );
           }
 
           const vmData2 = {
@@ -3263,32 +3268,26 @@ export async function updateCrestVms( req, res ) {
 
     const data = JSON.parse( req.files.file.data.toString( 'utf8' ) );
 
-    const crestData = data.filter( ( item ) => item.data.message === 'SUCCESS' );
+    const crestData = data.filter( ( item ) => item.data.message === 'FAILURE' );
 
 
-    const vms = new Set();
+    const returnSet = new Set();
 
-    const returnList = [];
 
     crestData.forEach( ( store ) => {
-      store.data.result.forEach( ( wall ) => {
-        wall.fixtures?.forEach( ( fixture ) => {
-          fixture.productZones.forEach( ( zone ) => {
-            zone.products.forEach( ( product ) => {
-              if ( product?.isMerchandisingElement ) {
-                vms.add( product.productName );
-              }
-              if ( wall.fixtureType === 'Window' && zone.zoneName === 'Bottom' && product.isMerchandisingElement === true ) {
-                returnList.push( store.storeName );
-              }
-            } );
-          } );
-        } );
-      } );
+      returnSet.add( store.storeName );
+      // store.data.result.forEach( ( wall ) => {
+      //   wall.fixtures?.forEach( ( fixture ) => {
+      //     fixture.productZones.forEach( ( zone ) => {
+      //       zone.products.forEach( ( product ) => {
+
+      //       } );
+      //     } );
+      //   } );
+      // } );
     } );
 
-    // return res.sendSuccess( Array.from( vms ) );
-    return res.sendSuccess( returnList );
+    return res.sendSuccess( Array.from( returnSet ) );
   } catch ( e ) {
     logger.error( { functionName: 'createCrestPlanogram', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );
