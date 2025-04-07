@@ -139,6 +139,8 @@ export async function createTask( req, res ) {
     }
     let endDate = dayjs().add( req.body.days, 'day' ).format( 'YYYY-MM-DD' );
     await Promise.all( taskDetails.map( async ( task ) => {
+      let splitName = task?.checkListName.split( ' ' );
+      splitName.pop();
       let data = {
         client_id: req.body.clientId,
         date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
@@ -180,7 +182,7 @@ export async function createTask( req, res ) {
         approvalEnable: false,
         redoStatus: false,
         isPlano: true,
-        planoType: task.checkListName == 'Product Verification' ? 'product' : task.checkListName == 'Layout and Fixture Verification' ? 'layoutFixture' : 'vm',
+        planoType: splitName.length == 1 ? splitName[0].toLowerCase() : splitName[0].toLowerCase() + splitName[2],
       };
       let query = [
         {
