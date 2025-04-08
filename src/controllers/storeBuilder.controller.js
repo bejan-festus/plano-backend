@@ -1037,6 +1037,7 @@ export async function fixtureShelfProductv1( req, res ) {
     };
 
     fixture.imageUrl = await signedUrl( params );
+    let fixtureConfigDetails = await fixtureConfigService.findOne( { _id: fixture?.fixtureConfigId } );
 
     const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
 
@@ -1080,7 +1081,7 @@ export async function fixtureShelfProductv1( req, res ) {
     if ( fixture.toObject().productResolutionLevel === 'L1' ) {
       const productMappings = await planoMappingService.find( { fixtureId: new mongoose.Types.ObjectId( fixtureId ), type: 'product' } );
       const productDetails = await getProducts( productMappings );
-      return res.sendSuccess( { ...fixture.toObject(), products: productDetails, vms: vmDetails, productCount: productMappings.length } );
+      return res.sendSuccess( { ...fixture.toObject(), fixtureConfigLength: fixtureConfigDetails?.fixtureLength, products: productDetails, vms: vmDetails, productCount: productMappings.length } );
     }
 
     if ( [ 'L2', 'L4' ].includes( fixture.toObject().productResolutionLevel ) ) {
@@ -1094,7 +1095,7 @@ export async function fixtureShelfProductv1( req, res ) {
             return { ...shelf.toObject(), products: productDetails };
           } ),
       );
-      return res.sendSuccess( { ...fixture.toObject(), shelves: shelfProducts, vms: vmDetails, productCount: productCount } );
+      return res.sendSuccess( { ...fixture.toObject(), fixtureConfigLength: fixtureConfigDetails?.fixtureLength, shelves: shelfProducts, vms: vmDetails, productCount: productCount } );
     }
 
     if ( fixture.toObject().productResolutionLevel === 'L3' ) {
@@ -1110,7 +1111,7 @@ export async function fixtureShelfProductv1( req, res ) {
         acc[sectionName].push( { ...shelf.toObject(), products: productDetails } );
         return acc;
       }, Promise.resolve( {} ) );
-      return res.sendSuccess( { ...fixture.toObject(), categories: await groupedShelves, vms: vmDetails, productCount: productCount } );
+      return res.sendSuccess( { ...fixture.toObject(), fixtureConfigLength: fixtureConfigDetails?.fixtureLength, categories: await groupedShelves, vms: vmDetails, productCount: productCount } );
     }
 
     return res.sendError( 'Incorrect resolution level', 400 );
