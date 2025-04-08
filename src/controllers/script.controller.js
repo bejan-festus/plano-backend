@@ -2548,6 +2548,7 @@ export async function createCrestPlanogram( req, res ) {
       for ( let index = 0; index < leftFixtures.length; index++ ) {
         const fixture = leftFixtures[index];
         const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+        if ( !fixtureConfig ) continue;
         const fixtureConfigDoc = fixtureConfig.toObject();
 
         const fixtureData = {
@@ -2650,41 +2651,37 @@ export async function createCrestPlanogram( req, res ) {
           const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === fixture.productZones[i].zoneName );
 
           for ( const vm of vms ) {
-            let vmTemplate = await planoProductService.findOne( { productName: vm.productName, fixtureConfigId: fixtureConfig._id } );
-            if ( !vmTemplate ) {
-              let configData = vmConfig[0];
+            let configData = vmConfig[0];
 
-              if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
-                configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
-              }
-
-              if ( vm.productName !== 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
-                configData = vmConfig.find( ( config ) => config.vmNumber === 2 );
-              }
-
-              const insertData = {
-                'clientId': '11',
-                'productId': 'VMCR',
-                'type': 'vm',
-                'productName': vm.productName,
-                'productHeight': {
-                  'value': configData.vmHeightmm,
-                  'unit': 'mm',
-                },
-                'productWidth': {
-                  'value': configData.vmWidthmm,
-                  'unit': 'mm',
-                },
-                'startYPosition': configData.startShelf,
-                'endYPosition': configData.endShelf,
-                'xZone': configData.zone,
-                'fixtureConfigId': fixtureConfig._id,
-              };
-
-              vmTemplate = await planoProductService.upsertOne(
-                  { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
-                  insertData );
+            if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+              configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
             }
+
+            if ( !configData ) continue;
+            const insertData = {
+              'clientId': '11',
+              'productId': 'VMCR',
+              'type': 'vm',
+              'productName': vm.productName,
+              'productHeight': {
+                'value': configData.vmHeightmm,
+                'unit': 'mm',
+              },
+              'productWidth': {
+                'value': configData.vmWidthmm,
+                'unit': 'mm',
+              },
+              'startYPosition': configData.startShelf,
+              'endYPosition': configData.endShelf,
+              'xZone': configData.zone,
+              'fixtureConfigId': fixtureConfig._id,
+            };
+
+            const vmTemplate = await planoProductService.upsertOne(
+                { 'productName': vm.productName, 'fixtureConfigId': fixtureConfig._id, 'productHeight.value': configData.vmHeightmm,
+                  'productWidth.value': configData.vmWidthmm, 'startYPosition': configData.startShelf, 'endYPosition': configData.endShelf, 'xZone': configData.zone },
+                insertData );
+
 
             const vmData = {
               'clientId': layoutDoc.clientId,
@@ -2711,6 +2708,7 @@ export async function createCrestPlanogram( req, res ) {
       for ( let index = 0; index < backFixtures.length; index++ ) {
         const fixture = backFixtures[index];
         const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+        if ( !fixtureConfig ) continue;
         const fixtureConfigDoc = fixtureConfig.toObject();
 
         const fixtureData = {
@@ -2812,41 +2810,38 @@ export async function createCrestPlanogram( req, res ) {
           const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === fixture.productZones[i].zoneName );
 
           for ( const vm of vms ) {
-            let vmTemplate = await planoProductService.findOne( { productName: vm.productName, fixtureConfigId: fixtureConfig._id } );
-            if ( !vmTemplate ) {
-              let configData = vmConfig[0];
+            let configData = vmConfig[0];
 
-              if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
-                configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
-              }
-
-              if ( vm.productName !== 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
-                configData = vmConfig.find( ( config ) => config.vmNumber === 2 );
-              }
-
-              const insertData = {
-                'clientId': '11',
-                'productId': 'VMCR',
-                'type': 'vm',
-                'productName': vm.productName,
-                'productHeight': {
-                  'value': configData.vmHeightmm,
-                  'unit': 'mm',
-                },
-                'productWidth': {
-                  'value': configData.vmWidthmm,
-                  'unit': 'mm',
-                },
-                'startYPosition': configData.startShelf,
-                'endYPosition': configData.endShelf,
-                'xZone': configData.zone,
-                'fixtureConfigId': fixtureConfig._id,
-              };
-
-              vmTemplate = await planoProductService.upsertOne(
-                  { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
-                  insertData );
+            if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+              configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
             }
+
+
+            if ( !configData ) continue;
+            const insertData = {
+              'clientId': '11',
+              'productId': 'VMCR',
+              'type': 'vm',
+              'productName': vm.productName,
+              'productHeight': {
+                'value': configData.vmHeightmm,
+                'unit': 'mm',
+              },
+              'productWidth': {
+                'value': configData.vmWidthmm,
+                'unit': 'mm',
+              },
+              'startYPosition': configData.startShelf,
+              'endYPosition': configData.endShelf,
+              'xZone': configData.zone,
+              'fixtureConfigId': fixtureConfig._id,
+            };
+
+            const vmTemplate = await planoProductService.upsertOne(
+                { 'productName': vm.productName, 'fixtureConfigId': fixtureConfig._id, 'productHeight.value': configData.vmHeightmm,
+                  'productWidth.value': configData.vmWidthmm, 'startYPosition': configData.startShelf, 'endYPosition': configData.endShelf, 'xZone': configData.zone },
+                insertData );
+
 
             const vmData = {
               'clientId': layoutDoc.clientId,
@@ -2873,6 +2868,7 @@ export async function createCrestPlanogram( req, res ) {
       for ( let index = 0; index < rightFixtures.length; index++ ) {
         const fixture = rightFixtures[index];
         const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+        if ( !fixtureConfig ) continue;
         const fixtureConfigDoc = fixtureConfig.toObject();
 
         const fixtureData = {
@@ -2974,41 +2970,40 @@ export async function createCrestPlanogram( req, res ) {
           const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === fixture.productZones[i].zoneName );
 
           for ( const vm of vms ) {
-            let vmTemplate = await planoProductService.findOne( { productName: vm.productName, fixtureConfigId: fixtureConfig._id } );
-            if ( !vmTemplate ) {
-              let configData = vmConfig[0];
+            let configData = vmConfig[0];
 
-              if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
-                configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
-              }
 
-              if ( vm.productName !== 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
-                configData = vmConfig.find( ( config ) => config.vmNumber === 2 );
-              }
-
-              const insertData = {
-                'clientId': '11',
-                'productId': 'VMCR',
-                'type': 'vm',
-                'productName': vm.productName,
-                'productHeight': {
-                  'value': configData.vmHeightmm,
-                  'unit': 'mm',
-                },
-                'productWidth': {
-                  'value': configData.vmWidthmm,
-                  'unit': 'mm',
-                },
-                'startYPosition': configData.startShelf,
-                'endYPosition': configData.endShelf,
-                'xZone': configData.zone,
-                'fixtureConfigId': fixtureConfig._id,
-              };
-
-              vmTemplate = await planoProductService.upsertOne(
-                  { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
-                  insertData );
+            if ( vm.productName === 'Creatr' && fixture.productZones[i].zoneName === 'Mid' ) {
+              configData = vmConfig.find( ( config ) => config.vmNumber === 3 );
             }
+
+
+            if ( !configData ) continue;
+
+            const insertData = {
+              'clientId': '11',
+              'productId': 'VMCR',
+              'type': 'vm',
+              'productName': vm.productName,
+              'productHeight': {
+                'value': configData.vmHeightmm,
+                'unit': 'mm',
+              },
+              'productWidth': {
+                'value': configData.vmWidthmm,
+                'unit': 'mm',
+              },
+              'startYPosition': configData.startShelf,
+              'endYPosition': configData.endShelf,
+              'xZone': configData.zone,
+              'fixtureConfigId': fixtureConfig._id,
+            };
+
+            const vmTemplate = await planoProductService.upsertOne(
+                { 'productName': vm.productName, 'fixtureConfigId': fixtureConfig._id, 'productHeight.value': configData.vmHeightmm,
+                  'productWidth.value': configData.vmWidthmm, 'startYPosition': configData.startShelf, 'endYPosition': configData.endShelf, 'xZone': configData.zone },
+                insertData );
+
 
             const vmData = {
               'clientId': layoutDoc.clientId,
@@ -3053,6 +3048,7 @@ export async function createCrestPlanogram( req, res ) {
         const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
 
         const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.main } );
+        if ( !fixtureConfig ) continue;
         const fixtureConfigDoc = fixtureConfig.toObject();
 
         const fixtureData = {
@@ -3148,34 +3144,33 @@ export async function createCrestPlanogram( req, res ) {
         const vmConfig = fixtureConfigDoc.vmConfig;
 
         if ( vm ) {
-          let vmTemplate1 = await planoProductService.findOne( { productName: vm.name, fixtureConfigId: fixtureConfig._id } );
-          if ( !vmTemplate1 ) {
-            const configData1 = vmConfig[0];
+          const configData1 = vmConfig[0];
 
 
-            const insertData1 = {
-              'clientId': '11',
-              'productId': 'VMCR',
-              'type': 'vm',
-              'productName': vm.name,
-              'productHeight': {
-                'value': configData1.vmHeightmm,
-                'unit': 'mm',
-              },
-              'productWidth': {
-                'value': configData1.vmWidthmm,
-                'unit': 'mm',
-              },
-              'startYPosition': configData1.startShelf,
-              'endYPosition': configData1.endShelf,
-              'xZone': configData1.zone,
-              'fixtureConfigId': fixtureConfig._id,
-            };
+          const insertData1 = {
+            'clientId': '11',
+            'productId': 'VMCR',
+            'type': 'vm',
+            'productName': vm.name,
+            'productHeight': {
+              'value': configData1.vmHeightmm,
+              'unit': 'mm',
+            },
+            'productWidth': {
+              'value': configData1.vmWidthmm,
+              'unit': 'mm',
+            },
+            'startYPosition': configData1.startShelf,
+            'endYPosition': configData1.endShelf,
+            'xZone': configData1.zone,
+            'fixtureConfigId': fixtureConfig._id,
+          };
 
-            vmTemplate1 = await planoProductService.upsertOne(
-                { productName: vm.productName, fixtureConfigId: fixtureConfig._id },
-                insertData1 );
-          }
+          const vmTemplate1 = await planoProductService.upsertOne(
+              { 'productName': vm.name, 'fixtureConfigId': fixtureConfig._id, 'productHeight.value': configData1.vmHeightmm,
+                'productWidth.value': configData1.vmWidthmm, 'startYPosition': configData1.startShelf, 'endYPosition': configData1.endShelf, 'xZone': configData1.zone },
+              insertData1 );
+
 
           const vmData1 = {
             'clientId': layoutDoc.clientId,
@@ -3196,34 +3191,33 @@ export async function createCrestPlanogram( req, res ) {
               vmData1,
           );
 
-          let vmTemplate2 = await planoProductService.findOne( { productName: ' ', fixtureConfigId: fixtureConfig._id } );
-          if ( !vmTemplate2 ) {
-            const configData2 = vmConfig[1];
+          const configData2 = vmConfig[1];
+
+          const insertData2 = {
+            'clientId': '11',
+            'productId': 'VMCR',
+            'type': 'vm',
+            'productName': ' ',
+            'productHeight': {
+              'value': configData2.vmHeightmm,
+              'unit': 'mm',
+            },
+            'productWidth': {
+              'value': configData2.vmWidthmm,
+              'unit': 'mm',
+            },
+            'startYPosition': configData2.startShelf,
+            'endYPosition': configData2.endShelf,
+            'xZone': configData2.zone,
+            'fixtureConfigId': fixtureConfig._id,
+          };
 
 
-            const insertData2 = {
-              'clientId': '11',
-              'productId': 'VMCR',
-              'type': 'vm',
-              'productName': ' ',
-              'productHeight': {
-                'value': configData2.vmHeightmm,
-                'unit': 'mm',
-              },
-              'productWidth': {
-                'value': configData2.vmWidthmm,
-                'unit': 'mm',
-              },
-              'startYPosition': configData2.startShelf,
-              'endYPosition': configData2.endShelf,
-              'xZone': configData2.zone,
-              'fixtureConfigId': fixtureConfig._id,
-            };
+          const vmTemplate2 = await planoProductService.upsertOne(
+              { 'productName': ' ', 'fixtureConfigId': fixtureConfig._id, 'productHeight.value': configData2.vmHeightmm,
+                'productWidth.value': configData2.vmWidthmm, 'startYPosition': configData2.startShelf, 'endYPosition': configData2.endShelf, 'xZone': configData2.zone },
+              insertData2 );
 
-            vmTemplate2 = await planoProductService.upsertOne(
-                { productName: ' ', fixtureConfigId: fixtureConfig._id },
-                insertData2 );
-          }
 
           const vmData2 = {
             'clientId': layoutDoc.clientId,
