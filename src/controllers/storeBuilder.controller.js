@@ -2651,7 +2651,8 @@ export const getFixtureTypes = async ( req, res ) => {
       {
         $group: {
           '_id': null,
-          'fixtureCategory': { '$push': { $concat: [ '$_id', '-', { $toString: '$fixtureLength.value' }, '$fixtureLength.unit' ] } },
+          'fixtureCategoryFt': { '$push': { $concat: [ '$_id', '-', { $toString: '$fixtureLength.value' }, '$fixtureLength.unit' ] } },
+          'fixtureCategory': { '$push': '$_id' },
         },
       },
       {
