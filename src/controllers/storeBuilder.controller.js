@@ -559,7 +559,7 @@ export async function storeFixturesv1( req, res ) {
             { storeId: { $in: req.body.id } },
           ],
         },
-        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1 },
+        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1, validateShelfSections: 1 },
     );
 
     if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
@@ -2005,7 +2005,7 @@ export async function storeFixturesTask( req, res ) {
             { storeId: { $in: req.body.id } },
           ],
         },
-        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1 },
+        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, validateShelfSections: 1 },
     );
 
     if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
@@ -2864,4 +2864,3 @@ export async function storeLayoutElements( req, res ) {
     return res.sendError( e, 500 );
   }
 }
-

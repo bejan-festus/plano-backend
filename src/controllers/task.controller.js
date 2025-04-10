@@ -596,7 +596,7 @@ export async function getFixtureDetails( req, res ) {
 
 export async function getVmDetails( req, res ) {
   try {
-    let getVms = await planoProductService.find( { type: 'vm' }, { productName: 1 } );
+    let getVms = await planoProductService.find( { type: 'vm', productName: { $ne: ' ' } }, { productName: 1 } );
     if ( !getVms.length ) {
       return res.sendError( 'No data found', 204 );
     }
