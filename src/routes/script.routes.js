@@ -23,4 +23,5 @@ scriptRouter
     .post( '/getVmTaskData', scriptController.getVmTaskData )
     .post( '/updateVmData', scriptController.updateVmData )
     .post( '/createCrestPlanogram', scriptController.createCrestPlanogram )
+    .post( '/updatelayout', scriptController.updatelayout )
     .post( '/updateCrestVms', scriptController.updateCrestVms );
