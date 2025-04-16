@@ -3689,6 +3689,10 @@ export async function updatelayout( req, res ) {
                 ...( key == 'floor' ) ? { header: '', footer: '' } : {},
               };
               fixtureDetails.splice( fixtureIndex, 1 );
+              let matchFixtureIndex = matchingFixtures.findIndex( ( fix ) => fix._id.toString() == fixture.fixtureId.toString() );
+              if ( matchFixtureIndex != -1 ) {
+                matchingFixtures.splice( matchFixtureIndex, 1 );
+              }
               if ( maxFixtureNumber < parseInt( fixture.position ) ) {
                 details.associatedElementFixtureNumber = maxFixtureNumber + 1;
                 matchingFixtures.splice( maxFixtureNumber, 0, details );
@@ -3699,6 +3703,7 @@ export async function updatelayout( req, res ) {
               }
             }
           }
+          console.log( matchingFixtures );
           let fixIdList = matchingFixtures.map( ( mixFixture ) => mixFixture._id.toString() );
           fixtureDetails = fixtureDetails.filter( ( fixt ) => !fixIdList.includes( fixt._id.toString() ) );
           fixtureDetails.push( ...matchingFixtures );
@@ -3757,7 +3762,10 @@ export async function updatelayout( req, res ) {
             let fixtureDoc = await storeFixtureService.create( fixtureData );
             if ( fixtureDoc ) {
               let productCount = 0;
-              fixtureDetails.splice( parseInt( fixture.position ) - 1, 0, JSON.parse( JSON.stringify( fixtureDoc ) ) );
+              matchingFixtures.splice( parseInt( fixture.position ) - 1, 0, JSON.parse( JSON.stringify( fixtureDoc ) ) );
+              let fixIdList = matchingFixtures.map( ( mixFixture ) => mixFixture._id.toString() );
+              fixtureDetails = fixtureDetails.filter( ( fixt ) => !fixIdList.includes( fixt._id.toString() ) );
+              fixtureDetails.push( ...matchingFixtures );
               let shelfDetails = layoutAnswer.shlef[fixtureIndex];
               for ( let i=0; i<shelfDetails.count; i++ ) {
                 const insertData = {
@@ -3810,6 +3818,9 @@ export async function updatelayout( req, res ) {
           };
 
           await storeFixtureService.updateOne( { _id: element._id }, data );
+          if ( key == 'floor' ) {
+            await storeFixtureService.removeKeys( { _id: element._id }, { $unset: { header: '', footer: '', associatedElementType: '', associatedElementNumber: '' } } );
+          }
         }
       }
       await updatePlanoFixtureLayout( layout.planoId, layout.floorId );

@@ -51,3 +51,7 @@ export async function upsertOne( query, record ) {
       { upsert: true, new: true },
   );
 }
+
+export async function removeKeys( query, data ) {
+  return model.storeFixtureModel.updateOne( query, data );
+}
