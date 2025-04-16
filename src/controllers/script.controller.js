@@ -3703,7 +3703,6 @@ export async function updatelayout( req, res ) {
               }
             }
           }
-          console.log( matchingFixtures );
           let fixIdList = matchingFixtures.map( ( mixFixture ) => mixFixture._id.toString() );
           fixtureDetails = fixtureDetails.filter( ( fixt ) => !fixIdList.includes( fixt._id.toString() ) );
           fixtureDetails.push( ...matchingFixtures );
