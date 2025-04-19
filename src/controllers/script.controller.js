@@ -3309,7 +3309,6 @@ export async function updatePlanoFixtureLayout( planoId, floorId ) {
     const planoDoc = insertedPlano.toObject();
 
     const fixtureData = await storeFixtureService.findAndSort( { planoId: planoId, floorId: floorId }, {}, { fixtureNumber: 1 } );
-    console.log( fixtureData, 'data' );
 
     const leftFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 1 );
     const rightFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 3 );
@@ -3636,7 +3635,7 @@ export async function updatelayout( req, res ) {
     for ( let layout of getLayoutTaskDetails ) {
       let layoutAnswer = layout.answers[1];
       let planoDetails = await planoService.findOne( { _id: layout.planoId } );
-      let fixtureDetails = await storeFixtureService.find( { planoId: layout.planoId, floorId: layout.floorId } );
+      let fixtureDetails = await storeFixtureService.findAndSort( { planoId: layout.planoId, floorId: layout.floorId }, {}, { fixtureNumber: 1 } );
       if ( layoutAnswer?.extraFixture?.length ) {
         let deletedFixtureList = layoutAnswer.extraFixture.map( ( fixture ) => fixture.fixtureId );
         fixtureDetails = fixtureDetails.filter( ( fixture ) => !deletedFixtureList.includes( fixture._id.toString() ) );
@@ -3665,16 +3664,17 @@ export async function updatelayout( req, res ) {
             elementNumber = key.split( ' ' )[1];
             matchingFixtures = fixtureDetails.filter(
                 ( elementFixture ) =>
-                  elementFixture.associatedElementType === elementType &&
-                  elementFixture.associatedElementNumber === parseInt( elementNumber ),
+                  elementFixture.associatedElementType == elementType &&
+                  elementFixture.associatedElementNumber == elementNumber,
             );
           } else {
             matchingFixtures = fixtureDetails.filter(
                 ( elementFixture ) =>
-                  elementFixture.fixtureType === 'floor',
+                  elementFixture.fixtureType == 'floor',
             );
           }
           if ( matchingFixtures.length ) {
+            matchingFixtures.sort( ( a, b ) => a.associatedElementFixtureNumber - b.associatedElementFixtureNumber );
             maxFixtureNumber = Math.max(
                 ...matchingFixtures.map( ( f ) => f.associatedElementFixtureNumber ),
             );
@@ -3710,14 +3710,27 @@ export async function updatelayout( req, res ) {
       }
       if ( layoutAnswer?.correctedFixture?.length ) {
         for ( let [ fixtureIndex, fixture ] of layoutAnswer.correctedFixture.entries() ) {
-          const matchingFixtures = fixtureDetails.filter(
-              ( elementFixture ) =>
-                elementFixture.associatedElementType === fixture.alignment.split( ' ' )[0] &&
-                elementFixture.associatedElementNumber === parseInt( fixture.alignment.split( ' ' )[1] ),
-          );
-          const maxFixtureNumber = Math.max(
-              ...matchingFixtures.map( ( f ) => f.associatedElementFixtureNumber ),
-          );
+          let matchingFixtures;
+          let maxFixtureNumber = 0;
+          if ( fixture.alignment != 'centre' ) {
+            let elementType = fixture.alignment.split( ' ' )[0];
+            let elementNumber = fixture.alignment.split( ' ' )[1];
+            matchingFixtures = fixtureDetails.filter(
+                ( elementFixture ) =>
+                  elementFixture.associatedElementType == elementType &&
+                elementFixture.associatedElementNumber == elementNumber,
+            );
+          } else {
+            matchingFixtures = fixtureDetails.filter(
+                ( elementFixture ) =>
+                  elementFixture.fixtureType == 'floor',
+            );
+          }
+          if ( matchingFixtures.length ) {
+            maxFixtureNumber = Math.max(
+                ...matchingFixtures.map( ( f ) => f.associatedElementFixtureNumber ),
+            );
+          }
           const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
           if ( fixtureConfig ) {
             const fixtureConfigDoc = fixtureConfig.toObject();
