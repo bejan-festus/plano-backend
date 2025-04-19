@@ -3635,7 +3635,7 @@ export async function updatelayout( req, res ) {
     for ( let layout of getLayoutTaskDetails ) {
       let layoutAnswer = layout.answers[1];
       let planoDetails = await planoService.findOne( { _id: layout.planoId } );
-      let fixtureDetails = await storeFixtureService.find( { planoId: layout.planoId, floorId: layout.floorId } );
+      let fixtureDetails = await storeFixtureService.findAndSort( { planoId: layout.planoId, floorId: layout.floorId }, {}, { fixtureNumber: 1 } );
       if ( layoutAnswer?.extraFixture?.length ) {
         let deletedFixtureList = layoutAnswer.extraFixture.map( ( fixture ) => fixture.fixtureId );
         fixtureDetails = fixtureDetails.filter( ( fixture ) => !deletedFixtureList.includes( fixture._id.toString() ) );
@@ -3674,6 +3674,7 @@ export async function updatelayout( req, res ) {
             );
           }
           if ( matchingFixtures.length ) {
+            matchingFixtures.sort( ( a, b ) => a.associatedElementFixtureNumber - b.associatedElementFixtureNumber );
             maxFixtureNumber = Math.max(
                 ...matchingFixtures.map( ( f ) => f.associatedElementFixtureNumber ),
             );
