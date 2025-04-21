@@ -15,6 +15,10 @@ export async function insertMany( data ) {
   return model.planoProductModel.insertMany( data );
 }
 
+export async function deleteMany( data ) {
+  return model.planoProductModel.deleteMany( data );
+}
+
 
 export async function aggregate( query ) {
   return model.planoProductModel.aggregate( query );

@@ -36,6 +36,10 @@ export async function deleteOne( query ) {
   return model.storeFixtureModel.deleteOne( query );
 }
 
+export async function deleteMany( query ) {
+  return model.storeFixtureModel.deleteMany( query );
+}
+
 export async function findAndSort( query={}, field={}, sortField={} ) {
   return model.storeFixtureModel.find( query, field ).sort( sortField );
 }
@@ -46,4 +50,8 @@ export async function upsertOne( query, record ) {
       record,
       { upsert: true, new: true },
   );
+}
+
+export async function removeKeys( query, data ) {
+  return model.storeFixtureModel.updateOne( query, data );
 }

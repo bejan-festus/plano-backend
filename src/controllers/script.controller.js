@@ -18,6 +18,7 @@ import JSZip from 'jszip';
 import { signedUrl } from 'tango-app-api-middleware';
 import fs from 'fs';
 import https from 'https';
+import dayjs from 'dayjs';
 
 
 export async function getStoreNames( req, res ) {
@@ -3548,3 +3549,558 @@ async function downloadCrestImages() {
 }
 
 // downloadCrestImages();
+export async function updatePlanoFixtureLayout( planoId, floorId ) {
+  try {
+    console.log( 'dfghj' );
+    const constantFixtureLength = 1220;
+    const constantDetailedFixtureLength = 1220;
+
+    const constantFixtureWidth = 610;
+    const constantDetailedFixtureWidth = 1524;
+
+    const mmToFeet = 305;
+
+    function roundToTwo( num ) {
+      return Math.round( num * 100 ) / 100;
+    }
+
+    const insertedPlano = await planoService.findOne( { _id: planoId } );
+
+    const planoDoc = insertedPlano.toObject();
+
+    const fixtureData = await storeFixtureService.findAndSort( { planoId: planoId, floorId: floorId }, {}, { fixtureNumber: 1 } );
+
+    const leftFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 1 );
+    const rightFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 3 );
+    const backFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 2 );
+    const floorFixtures = fixtureData.filter( ( fixture ) => fixture.fixtureType == 'floor' );
+
+    // console.log( leftFixtures, 'left' );
+    // console.log( rightFixtures, 'rightFixtures' );
+    // console.log( backFixtures, 'backFixtures' );
+    // console.log( floorFixtures, 'floorFixtures' );
+
+    const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+    const leftXDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+    const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
+    const leftYDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantDetailedFixtureWidth / mmToFeet ) ) ) : 0;
+
+    const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+    const rightXDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+    const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+    const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
+
+    const maxFixturesPerRow = floorFixtures.length/2;
+    const totalRows = 2;
+
+    const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+    const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
+
+    const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( 2 * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
+    const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( 2 * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
+
+    const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+    const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
+
+    const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
+    const backYDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantDetailedFixtureWidth / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth )/mmToFeet ) ) ): 0;
+
+    const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
+    const maxXDetailedDistance = Math.max( leftXDetailedDistanceFeet, rightXDetailedDistanceFeet, floorXDetailedDistanceFeet );
+
+    const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
+    const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
+
+    const finalXDistance = roundToTwo( ( maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance ) );
+    const finalXDetailedDistance = roundToTwo( ( maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance ) );
+
+    const finalYDistance = roundToTwo( ( maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) ) ) );
+    const finalYDetailedDistance = roundToTwo( ( maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) ) ) );
+
+    const floorInsertData = {
+      storeName: planoDoc.storeName,
+      storeId: planoDoc.storeId,
+      layoutName: `${planoDoc.storeName} - Layout`,
+      clientId: '11',
+      floorNumber: 1,
+      floorName: 'floor 1',
+      layoutPolygon: [
+        {
+          elementType: 'wall',
+          distance: finalXDistance,
+          unit: 'ft',
+          direction: 'right',
+          angle: 90,
+          elementNumber: 1,
+          detailedDistance: finalXDetailedDistance,
+        },
+        {
+          elementType: 'wall',
+          distance: finalYDistance,
+          unit: 'ft',
+          direction: 'down',
+          angle: 90,
+          elementNumber: 2,
+          detailedDistance: finalYDetailedDistance,
+        },
+        {
+          elementType: 'wall',
+          distance: finalXDistance,
+          unit: 'ft',
+          direction: 'left',
+          angle: 90,
+          elementNumber: 3,
+          detailedDistance: finalXDetailedDistance,
+        },
+        {
+          elementType: 'wall',
+          distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+          unit: 'ft',
+          direction: 'up',
+          angle: 90,
+          elementNumber: 4,
+          detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+        },
+        {
+          elementType: 'entrance',
+          distance: roundToTwo( ( ( finalYDistance * 20 ) / 100 ) ),
+          unit: 'ft',
+          direction: 'up',
+          angle: 90,
+          elementNumber: 1,
+          detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
+        },
+        {
+          elementType: 'wall',
+          distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+          unit: 'ft',
+          direction: 'up',
+          angle: 90,
+          elementNumber: 5,
+          detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+        },
+      ],
+      createdBy: new mongoose.Types.ObjectId( '66a78cd82734f4f857cd6db6' ),
+      createdByName: 'Bejan',
+      createdByEmail: 'bejan@tangotech.co.in',
+      status: 'completed',
+      planoId: planoDoc._id,
+    };
+
+    await storeBuilderService.upsertOne( { planoId: planoDoc._id }, floorInsertData );
+
+    for ( let index = 0; index < leftFixtures.length; index++ ) {
+      const fixture = leftFixtures[index];
+
+      const fixtureData = {
+        'fixtureHeight': {
+          'value': 0,
+          'unit': 'mm',
+        },
+        'fixtureLength': {
+          'value': constantFixtureLength,
+          'unit': 'mm',
+        },
+        'fixtureWidth': {
+          'value': constantFixtureWidth,
+          'unit': 'mm',
+        },
+        'relativePosition': {
+          'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+          'y': 0,
+          'unit': 'ft',
+        },
+        'detailedFixtureLength': {
+          'value': constantDetailedFixtureLength,
+          'unit': 'mm',
+        },
+        'detailedFixtureWidth': {
+          'value': constantDetailedFixtureWidth,
+          'unit': 'mm',
+        },
+        'relativeDetailedPosition': {
+          'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+          'y': 0,
+          'unit': 'ft',
+        },
+      };
+
+      await storeFixtureService.updateOne(
+          {
+            _id: fixture._id,
+          },
+          fixtureData );
+    }
+
+    for ( let index = 0; index < backFixtures.length; index++ ) {
+      const fixture = backFixtures[index];
+
+      const fixtureData = {
+        'fixtureHeight': {
+          'value': 0,
+          'unit': 'mm',
+        },
+        'fixtureLength': {
+          'value': constantFixtureWidth,
+          'unit': 'mm',
+        },
+        'fixtureWidth': {
+          'value': constantFixtureLength,
+          'unit': 'mm',
+        },
+        'relativePosition': {
+          'x': roundToTwo( ( finalXDistance - ( constantFixtureWidth/mmToFeet ) ) ),
+          'y': roundToTwo( ( ( index * ( ( constantFixtureLength/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantFixtureWidth/mmToFeet ) ) ),
+          'unit': 'ft',
+        },
+        'detailedFixtureLength': {
+          'value': constantDetailedFixtureLength,
+          'unit': 'mm',
+        },
+        'detailedFixtureWidth': {
+          'value': constantDetailedFixtureWidth,
+          'unit': 'mm',
+        },
+        'relativeDetailedPosition': {
+          'x': roundToTwo( ( finalXDetailedDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
+          'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
+          'unit': 'ft',
+        },
+      };
+
+      await storeFixtureService.updateOne(
+          {
+            _id: fixture._id,
+          },
+          fixtureData );
+    }
+
+    for ( let index = 0; index < rightFixtures.length; index++ ) {
+      const fixture = rightFixtures[index];
+
+      const fixtureData = {
+        'fixtureHeight': {
+          'value': 0,
+          'unit': 'mm',
+        },
+        'fixtureLength': {
+          'value': constantFixtureLength,
+          'unit': 'mm',
+        },
+        'fixtureWidth': {
+          'value': constantFixtureWidth,
+          'unit': 'mm',
+        },
+        'relativePosition': {
+          'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+          'y': roundToTwo( ( finalYDistance - ( constantFixtureWidth / mmToFeet ) ) ),
+          'unit': 'ft',
+        },
+        'detailedFixtureLength': {
+          'value': constantDetailedFixtureLength,
+          'unit': 'mm',
+        },
+        'detailedFixtureWidth': {
+          'value': constantDetailedFixtureWidth,
+          'unit': 'mm',
+        },
+        'relativeDetailedPosition': {
+          'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+          'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
+          'unit': 'ft',
+        },
+      };
+
+      await storeFixtureService.updateOne(
+          {
+            _id: fixture._id,
+          },
+          fixtureData );
+    }
+
+    for ( let index = 0; index < floorFixtures.length; index++ ) {
+      const fixture = floorFixtures[index];
+      const centerRow = Math.floor( totalRows / 2 );
+
+      const startingX =roundToTwo( ( ( finalXDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) ) );
+      const detailedStartingX = roundToTwo( ( ( finalXDetailedDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ) );
+
+      const startingY = ( finalYDistance / 2 ) - ( centerRow * ( constantFixtureWidth / mmToFeet ) );
+      const detailedStartingY = ( finalYDetailedDistance / 2 ) - ( centerRow * ( constantDetailedFixtureWidth / mmToFeet ) );
+
+      const colIndex = Math.floor( index / 2 );
+      const rowIndex = index % 2 === 0 ? 1 : 0;
+
+
+      const xPos = roundToTwo( ( startingX + colIndex * ( constantFixtureLength / mmToFeet ) ) );
+      const yPos = roundToTwo( ( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) ) );
+
+      const detailedXPos = roundToTwo( ( detailedStartingX + colIndex * ( constantDetailedFixtureLength / mmToFeet ) ) );
+      const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
+
+
+      const fixtureData = {
+        'fixtureHeight': {
+          'value': 0,
+          'unit': 'mm',
+        },
+        'fixtureLength': {
+          'value': constantFixtureLength,
+          'unit': 'mm',
+        },
+        'fixtureWidth': {
+          'value': constantFixtureWidth,
+          'unit': 'mm',
+        },
+        'relativePosition': {
+          'x': xPos,
+          'y': yPos,
+          'unit': 'ft',
+        },
+        'detailedFixtureLength': {
+          'value': constantDetailedFixtureLength,
+          'unit': 'mm',
+        },
+        'detailedFixtureWidth': {
+          'value': constantDetailedFixtureWidth,
+          'unit': 'mm',
+        },
+        'relativeDetailedPosition': {
+          'x': detailedXPos,
+          'y': detailedYPos,
+          'unit': 'ft',
+        },
+      };
+
+      await storeFixtureService.updateOne(
+          {
+            _id: fixture._id,
+          },
+          fixtureData );
+    }
+  } catch ( e ) {
+    logger.error( { functionName: 'createCrestPlanogram', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function updatelayout( req, res ) {
+  try {
+    let getLayoutTaskDetails = await planoTaskService.find( { date_string: dayjs().format( 'YYYY-MM-DD' ), status: 'incomplete', type: 'layout' } );
+    if ( !getLayoutTaskDetails.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    for ( let layout of getLayoutTaskDetails ) {
+      let layoutAnswer = layout.answers[1];
+      let planoDetails = await planoService.findOne( { _id: layout.planoId } );
+      let fixtureDetails = await storeFixtureService.findAndSort( { planoId: layout.planoId, floorId: layout.floorId }, {}, { fixtureNumber: 1 } );
+      if ( layoutAnswer?.extraFixture?.length ) {
+        let deletedFixtureList = layoutAnswer.extraFixture.map( ( fixture ) => fixture.fixtureId );
+        fixtureDetails = fixtureDetails.filter( ( fixture ) => !deletedFixtureList.includes( fixture._id.toString() ) );
+        await storeFixtureService.deleteMany( { _id: { $in: deletedFixtureList } } );
+        await fixtureShelfService.deleteMany( { fixtureId: { $in: deletedFixtureList } } );
+        await planoMappingService.deleteMany( { fixtureId: { $in: deletedFixtureList } } );
+      }
+      if ( layoutAnswer?.wronglyLocatedFixtures?.length ) {
+        layoutAnswer.wronglyLocatedFixtures.sort( ( a, b ) => a.position - b.position );
+        let elementsGroup = layoutAnswer.wronglyLocatedFixtures.reduce( ( acc, ele ) => {
+          ele.location = ele?.location == 'centre' ? 'floor' : ele.location;
+          if ( !acc[ele?.location] ) {
+            acc[ele.location] = [ ele ];
+          } else {
+            acc[ele.location].push( ele );
+          }
+          return acc;
+        }, {} );
+        Object.entries( elementsGroup ).forEach( async ( [ key, values ] ) => {
+          let matchingFixtures = [];
+          let maxFixtureNumber = 0;
+          let elementType = '';
+          let elementNumber = 0;
+          if ( key != 'floor' ) {
+            elementType = key.split( ' ' )[0];
+            elementNumber = key.split( ' ' )[1];
+            matchingFixtures = fixtureDetails.filter(
+                ( elementFixture ) =>
+                  elementFixture.associatedElementType == elementType &&
+                  elementFixture.associatedElementNumber == elementNumber,
+            );
+          } else {
+            matchingFixtures = fixtureDetails.filter(
+                ( elementFixture ) =>
+                  elementFixture.fixtureType == 'floor',
+            );
+          }
+          if ( matchingFixtures.length ) {
+            matchingFixtures.sort( ( a, b ) => a.associatedElementFixtureNumber - b.associatedElementFixtureNumber );
+            maxFixtureNumber = Math.max(
+                ...matchingFixtures.map( ( f ) => f.associatedElementFixtureNumber ),
+            );
+          }
+          for ( let fixture of values ) {
+            let fixtureIndex = fixtureDetails.findIndex( ( fix ) => fix._id.toString() == fixture.fixtureId.toString() );
+            if ( fixtureIndex != -1 ) {
+              let details = {
+                ...fixtureDetails[fixtureIndex].toObject(),
+                fixtureType: key != 'floor' ? 'wall' : 'floor',
+                associatedElementType: elementType, associatedElementNumber: elementNumber,
+                ...( key == 'floor' ) ? { header: '', footer: '' } : {},
+              };
+              fixtureDetails.splice( fixtureIndex, 1 );
+              let matchFixtureIndex = matchingFixtures.findIndex( ( fix ) => fix._id.toString() == fixture.fixtureId.toString() );
+              if ( matchFixtureIndex != -1 ) {
+                matchingFixtures.splice( matchFixtureIndex, 1 );
+              }
+              if ( maxFixtureNumber < parseInt( fixture.position ) ) {
+                details.associatedElementFixtureNumber = maxFixtureNumber + 1;
+                matchingFixtures.splice( maxFixtureNumber, 0, details );
+                maxFixtureNumber = maxFixtureNumber + 1;
+              } else {
+                details.associatedElementFixtureNumber = parseInt( fixture.position );
+                matchingFixtures.splice( parseInt( fixture.position ) - 1, 0, details );
+              }
+            }
+          }
+          let fixIdList = matchingFixtures.map( ( mixFixture ) => mixFixture._id.toString() );
+          fixtureDetails = fixtureDetails.filter( ( fixt ) => !fixIdList.includes( fixt._id.toString() ) );
+          fixtureDetails.push( ...matchingFixtures );
+        } );
+      }
+      if ( layoutAnswer?.correctedFixture?.length ) {
+        for ( let [ fixtureIndex, fixture ] of layoutAnswer.correctedFixture.entries() ) {
+          let matchingFixtures;
+          let maxFixtureNumber = 0;
+          if ( fixture.alignment != 'centre' ) {
+            let elementType = fixture.alignment.split( ' ' )[0];
+            let elementNumber = fixture.alignment.split( ' ' )[1];
+            matchingFixtures = fixtureDetails.filter(
+                ( elementFixture ) =>
+                  elementFixture.associatedElementType == elementType &&
+                elementFixture.associatedElementNumber == elementNumber,
+            );
+          } else {
+            matchingFixtures = fixtureDetails.filter(
+                ( elementFixture ) =>
+                  elementFixture.fixtureType == 'floor',
+            );
+          }
+          if ( matchingFixtures.length ) {
+            maxFixtureNumber = Math.max(
+                ...matchingFixtures.map( ( f ) => f.associatedElementFixtureNumber ),
+            );
+          }
+          const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+          if ( fixtureConfig ) {
+            const fixtureConfigDoc = fixtureConfig.toObject();
+            const constantFixtureLength = 1220;
+            const constantFixtureWidth = 610;
+            const fixtureData = {
+              'clientId': planoDetails.clientId,
+              'storeName': planoDetails.storeName,
+              'storeId': planoDetails.storeId,
+              'planoId': layout.planoId,
+              'floorId': layout.floorId,
+              'fixtureName': `Fixture ${fixtureDetails.length + 1} - ${fixture.fixtureType}`,
+              'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
+              'fixtureBrandCategory': fixture.fixtureCategory.length ? ( fixture.fixtureCategory.length > 1 ? fixture.fixtureCategory.join( ' + ' ) : fixture.fixtureCategory[0] ) : undefined,
+              'fixtureBrandSubCategory': fixture.fixtureCategory.length ? ( fixture.fixtureCategory.length > 1 ? fixture.fixtureCategory.join( ' + ' ) : fixture.fixtureCategory[0] ) : undefined,
+              'fixtureCode': fixtureConfigDoc?.fixtureCode,
+              'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+              'fixtureType': fixture.alignment != 'centre' ? 'wall' : 'floor',
+              'fixtureHeight': {
+                'value': 0,
+                'unit': 'mm',
+              },
+              'fixtureLength': {
+                'value': constantFixtureLength,
+                'unit': 'mm',
+              },
+              'fixtureWidth': {
+                'value': constantFixtureWidth,
+                'unit': 'mm',
+              },
+              ...( fixture.alignment != 'centre' ) ? { 'associatedElementType': fixture.alignment.split( ' ' )[0] } :{},
+              ...( fixture.alignment != 'centre' ) ? { 'associatedElementNumber': fixture.alignment.split( ' ' )[1] } :{},
+              'fixtureNumber': fixtureDetails.length + 1,
+              'productResolutionLevel': 'L2',
+              'associatedElementFixtureNumber': maxFixtureNumber + 1,
+              ...( fixture.alignment != 'centre' ) ? { 'header': fixture.fixtureCategory.length ? ( fixture.fixtureCategory.length > 1 ? fixture.fixtureCategory.join( ' + ' ) : fixture.fixtureCategory[0] ) : undefined } : {},
+              ...( fixture.alignment != 'centre' ) ? { 'footer': 'Storage Box' } : {},
+              'fixtureConfigId': fixtureConfigDoc._id,
+            };
+
+            let fixtureDoc = await storeFixtureService.create( fixtureData );
+            if ( fixtureDoc ) {
+              let productCount = 0;
+              matchingFixtures.splice( parseInt( fixture.position ) - 1, 0, JSON.parse( JSON.stringify( fixtureDoc ) ) );
+              let fixIdList = matchingFixtures.map( ( mixFixture ) => mixFixture._id.toString() );
+              fixtureDetails = fixtureDetails.filter( ( fixt ) => !fixIdList.includes( fixt._id.toString() ) );
+              fixtureDetails.push( ...matchingFixtures );
+              let shelfDetails = layoutAnswer.shlef[fixtureIndex];
+              for ( let i=0; i<shelfDetails.count; i++ ) {
+                const insertData = {
+                  'clientId': planoDetails.clientId,
+                  'storeName': planoDetails.storeName,
+                  'storeId': planoDetails.storeId,
+                  'planoId': planoDetails._id,
+                  'floorId': layout.floorId,
+                  'fixtureId': fixtureDoc._id,
+                  'shelfNumber': i + 1,
+                  'shelfOrder': 'LTR',
+                  'shelfCapacity': shelfDetails.values.value[i],
+                  'sectionName': shelfDetails.values.subCategory[i].length ? ( shelfDetails.values.subCategory[i].length > 1 ? shelfDetails.values.subCategory[i].join( ' + ' ) : shelfDetails.values.subCategory[i][0] ) : undefined,
+                  'sectionZone': shelfDetails.values.section[i],
+                };
+                productCount = productCount + insertData.shelfCapacity;
+                await fixtureShelfService.create( insertData );
+              }
+              await storeFixtureService.updateOne( { _id: fixtureDoc._id }, { fixtureCapacity: productCount } );
+            }
+          }
+        }
+      }
+      let groupElements = fixtureDetails.reduce( ( acc, ele ) => {
+        let elementDetails = ele?.associatedElementType ? ele?.associatedElementType +' '+ ele?.associatedElementNumber : 'floor';
+        if ( !acc[elementDetails] ) {
+          acc[elementDetails] = [ ele ];
+        } else {
+          acc[elementDetails].push( ele );
+        }
+        return acc;
+      }, {} );
+      let fixtureNumber = 0;
+      for ( const [ key, values ] of Object.entries( groupElements ) ) {
+        for ( let elementIndex = 0; elementIndex < values.length; elementIndex++ ) {
+          const element = values[elementIndex];
+
+          let name = element.fixtureName.split( ' ' );
+          name[1] = elementIndex + 1;
+
+          const data = {
+            fixtureNumber: ++fixtureNumber,
+            associatedElementFixtureNumber: elementIndex + 1,
+            fixtureName: name.join( ' ' ),
+            associatedElementType: element.associatedElementType,
+            associatedElementNumber: element.associatedElementNumber,
+            fixtureType: element.fixtureType,
+            header: element.header,
+            footer: element.footer,
+          };
+
+          await storeFixtureService.updateOne( { _id: element._id }, data );
+          if ( key == 'floor' ) {
+            await storeFixtureService.removeKeys( { _id: element._id }, { $unset: { header: '', footer: '', associatedElementType: '', associatedElementNumber: '' } } );
+          }
+        }
+      }
+      await updatePlanoFixtureLayout( layout.planoId, layout.floorId );
+    }
+    return res.sendSuccess( 'Layout updated sucessfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updatelayout', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
