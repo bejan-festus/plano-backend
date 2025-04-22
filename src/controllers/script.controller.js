@@ -3655,6 +3655,11 @@ export async function updatelayout( req, res ) {
           return acc;
         }, {} );
         Object.entries( elementsGroup ).forEach( async ( [ key, values ] ) => {
+          let removeFixtures = layoutAnswer.wronglyLocatedFixtures.filter( ( rmFx ) => {
+            if ( rmFx.fixtureElement == key && rmFx.location != key ) {
+              return rmFx;
+            }
+          } ).map( ( fxtu ) => fxtu.fixtureId );
           let matchingFixtures = [];
           let maxFixtureNumber = 0;
           let elementType = '';
@@ -3675,6 +3680,7 @@ export async function updatelayout( req, res ) {
           }
           if ( matchingFixtures.length ) {
             matchingFixtures.sort( ( a, b ) => a.associatedElementFixtureNumber - b.associatedElementFixtureNumber );
+            matchingFixtures = matchingFixtures.filter( ( fxt ) => !removeFixtures.includes( fxt._id.toString() ) );
             maxFixtureNumber = Math.max(
                 ...matchingFixtures.map( ( f ) => f.associatedElementFixtureNumber ),
             );
