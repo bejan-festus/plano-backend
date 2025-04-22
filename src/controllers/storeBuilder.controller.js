@@ -578,12 +578,12 @@ export async function storeFixturesv1( req, res ) {
                 let productCapacity = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
-                      const fixtures = await storeFixtureService.find( {
+                      const fixtures = await storeFixtureService.findAndSort( {
                         floorId: floor._id,
                         associatedElementType: element.elementType,
                         associatedElementNumber: element.elementNumber,
                         fixtureType: 'wall',
-                      }, { shelfcount: 0 } );
+                      }, { shelfcount: 0 }, { fixtureNumber: 1 } );
 
                       const fixturesWithStatus = await Promise.all(
                           fixtures.map( async ( fixture ) => {
@@ -2023,12 +2023,12 @@ export async function storeFixturesTask( req, res ) {
                 let productCapacity = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
-                      const fixtures = await storeFixtureService.find( {
+                      const fixtures = await storeFixtureService.findAndSort( {
                         floorId: floor._id,
                         associatedElementType: element.elementType,
                         associatedElementNumber: element.elementNumber,
                         fixtureType: 'wall',
-                      }, { shelfcount: 0 } );
+                      }, { shelfcount: 0 }, { fixtureNumber: 1 } );
 
                       const fixturesWithStatus = await Promise.all(
                           fixtures.map( async ( fixture ) => {
