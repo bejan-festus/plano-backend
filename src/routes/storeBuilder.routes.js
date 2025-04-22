@@ -10,7 +10,7 @@ export const storeBuilderRouter = express.Router();
 storeBuilderRouter
     .post( '/createStoreLayout', isAllowedSessionHandler, validate( validateDtos.createBuilder ), storeBuilderController.createStoreBuilder )
     .post( '/updateStoreLayout', isAllowedSessionHandler, validate( validateDtos.updateStoreLayout ), storeBuilderController.updateStoreLayout )
-    .post( '/storeLayoutList', isAllowedSessionHandler, validate( validateDtos.storeLayoutList ), storeBuilderController.getLayoutList )
+    .post( '/storeLayoutList', validate( validateDtos.storeLayoutList ), storeBuilderController.getLayoutList )
     .post( '/updateFloor', isAllowedSessionHandler, validate( validateDtos.updateFloor ), storeBuilderController.updateFloor )
     .post( '/uploadBulkStore', isAllowedSessionHandler, storeBuilderController.uploadBulkStore )
     .post( '/uploadFile', isAllowedSessionHandler, storeBuilderController.uploadFile )
@@ -23,7 +23,7 @@ storeBuilderRouter
     // .post( '/FixtureShelfDetails', storeBuilderController.fixtureShelfProduct )
     // .post( '/scan', storeBuilderController.scan )
     .post( '/storeLayout', isAllowedSessionHandler, validate( validateDtos.storeList ), storeBuilderController.storeLayout )
-    .post( '/storeFixtures', isAllowedSessionHandler, validate( validateDtos.storeList ), storeBuilderController.storeFixturesv1 )
+    .post( '/storeFixtures', validate( validateDtos.storeList ), storeBuilderController.storeFixturesv1 )
     .post( '/FixtureShelfDetails', isAllowedSessionHandler, validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv1 )
     .post( '/scan', isAllowedSessionHandler, storeBuilderController.scanv1 )
     .post( '/updateMissing', isAllowedSessionHandler, storeBuilderController.updateMissing )

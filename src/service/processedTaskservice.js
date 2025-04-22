@@ -16,6 +16,10 @@ export async function deleteMany( query = {} ) {
   return model.taskProcessedModel.deleteMany( query );
 }
 
+export async function aggregate( query = {} ) {
+  return model.taskProcessedModel.aggregate( query );
+}
+
 export async function find( query = {}, field = {} ) {
   return model.taskProcessedModel.find( query, field );
 }
