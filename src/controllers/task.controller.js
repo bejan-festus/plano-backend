@@ -711,7 +711,9 @@ export async function taskSubmitDetails( req, res ) {
     ];
 
     let processedTaskDetails = await planoTaskService.aggregate( query );
-    return res.sendSuccess( processedTaskDetails );
+    let completeStore = [ ...new Set( processedTaskDetails.filter( ( ele ) => ele.status == 'complete' ).map( ( ele ) => ele.storeName ) ) ];
+    let incompleteStore = [ ...new Set( processedTaskDetails.filter( ( ele ) => ele.status == 'incomplete' ).map( ( ele ) => ele.storeName ) ) ];
+    return res.sendSuccess( { complete: { count: completeStore.length, storeList: completeStore }, incompleteStore: { count: incompleteStore.length, storeList: incompleteStore }, data: processedTaskDetails } );
   } catch ( e ) {
     logger.error( { functioName: 'taskSubmitDetails', error: e } );
     return res.sendError( e, 500 );

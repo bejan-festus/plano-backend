@@ -19,6 +19,12 @@ import { signedUrl } from 'tango-app-api-middleware';
 import fs from 'fs';
 import https from 'https';
 import dayjs from 'dayjs';
+import os from 'os';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath( import.meta.url );
+const __dirname = path.dirname( __filename );
 
 
 export async function getStoreNames( req, res ) {
@@ -3334,7 +3340,7 @@ async function filterStores() {
 }
 
 import fsp from 'fs/promises';
-import path from 'path';
+
 import sharp from 'sharp';
 
 
@@ -3565,330 +3571,332 @@ export async function updatePlanoFixtureLayout( planoId, floorId ) {
     }
 
     const insertedPlano = await planoService.findOne( { _id: planoId } );
+    if ( insertedPlano ) {
+      const planoDoc = insertedPlano.toObject();
 
-    const planoDoc = insertedPlano.toObject();
+      const fixtureData = await storeFixtureService.findAndSort( { planoId: planoId, floorId: floorId }, {}, { fixtureNumber: 1 } );
 
-    const fixtureData = await storeFixtureService.findAndSort( { planoId: planoId, floorId: floorId }, {}, { fixtureNumber: 1 } );
+      const leftFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 1 );
+      const rightFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 3 );
+      const backFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 2 );
+      const floorFixtures = fixtureData.filter( ( fixture ) => fixture.fixtureType == 'floor' );
 
-    const leftFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 1 );
-    const rightFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 3 );
-    const backFixtures = fixtureData.filter( ( fixture ) => fixture.associatedElementType == 'wall' && fixture.associatedElementNumber == 2 );
-    const floorFixtures = fixtureData.filter( ( fixture ) => fixture.fixtureType == 'floor' );
+      // console.log( leftFixtures, 'left' );
+      // console.log( rightFixtures, 'rightFixtures' );
+      // console.log( backFixtures, 'backFixtures' );
+      // console.log( floorFixtures, 'floorFixtures' );
 
-    // console.log( leftFixtures, 'left' );
-    // console.log( rightFixtures, 'rightFixtures' );
-    // console.log( backFixtures, 'backFixtures' );
-    // console.log( floorFixtures, 'floorFixtures' );
+      const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const leftXDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
 
-    const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
-    const leftXDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+      const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
+      const leftYDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantDetailedFixtureWidth / mmToFeet ) ) ) : 0;
 
-    const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
-    const leftYDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantDetailedFixtureWidth / mmToFeet ) ) ) : 0;
+      const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const rightXDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
 
-    const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
-    const rightXDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+      const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+      const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
 
-    const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
-    const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
+      const maxFixturesPerRow = floorFixtures.length/2;
+      const totalRows = 2;
 
-    const maxFixturesPerRow = floorFixtures.length/2;
-    const totalRows = 2;
+      const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+      const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
 
-    const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantFixtureLength / mmToFeet ) ) ) : 0;
-    const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
+      const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( 2 * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
+      const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( 2 * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
 
-    const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( 2 * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
-    const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( 2 * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
+      const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+      const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
 
-    const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
-    const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
+      const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
+      const backYDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantDetailedFixtureWidth / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth )/mmToFeet ) ) ): 0;
 
-    const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
-    const backYDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantDetailedFixtureWidth / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth )/mmToFeet ) ) ): 0;
+      const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
+      const maxXDetailedDistance = Math.max( leftXDetailedDistanceFeet, rightXDetailedDistanceFeet, floorXDetailedDistanceFeet );
 
-    const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
-    const maxXDetailedDistance = Math.max( leftXDetailedDistanceFeet, rightXDetailedDistanceFeet, floorXDetailedDistanceFeet );
+      const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
+      const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
 
-    const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
-    const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
+      const finalXDistance = roundToTwo( ( maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance ) );
+      const finalXDetailedDistance = roundToTwo( ( maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance ) );
 
-    const finalXDistance = roundToTwo( ( maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance ) );
-    const finalXDetailedDistance = roundToTwo( ( maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance ) );
+      const finalYDistance = roundToTwo( ( maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) ) ) );
+      const finalYDetailedDistance = roundToTwo( ( maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) ) ) );
 
-    const finalYDistance = roundToTwo( ( maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) ) ) );
-    const finalYDetailedDistance = roundToTwo( ( maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) ) ) );
-
-    const floorInsertData = {
-      storeName: planoDoc.storeName,
-      storeId: planoDoc.storeId,
-      layoutName: `${planoDoc.storeName} - Layout`,
-      clientId: '11',
-      floorNumber: 1,
-      floorName: 'floor 1',
-      layoutPolygon: [
-        {
-          elementType: 'wall',
-          distance: finalXDistance,
-          unit: 'ft',
-          direction: 'right',
-          angle: 90,
-          elementNumber: 1,
-          detailedDistance: finalXDetailedDistance,
-        },
-        {
-          elementType: 'wall',
-          distance: finalYDistance,
-          unit: 'ft',
-          direction: 'down',
-          angle: 90,
-          elementNumber: 2,
-          detailedDistance: finalYDetailedDistance,
-        },
-        {
-          elementType: 'wall',
-          distance: finalXDistance,
-          unit: 'ft',
-          direction: 'left',
-          angle: 90,
-          elementNumber: 3,
-          detailedDistance: finalXDetailedDistance,
-        },
-        {
-          elementType: 'wall',
-          distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
-          unit: 'ft',
-          direction: 'up',
-          angle: 90,
-          elementNumber: 4,
-          detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
-        },
-        {
-          elementType: 'entrance',
-          distance: roundToTwo( ( ( finalYDistance * 20 ) / 100 ) ),
-          unit: 'ft',
-          direction: 'up',
-          angle: 90,
-          elementNumber: 1,
-          detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
-        },
-        {
-          elementType: 'wall',
-          distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
-          unit: 'ft',
-          direction: 'up',
-          angle: 90,
-          elementNumber: 5,
-          detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
-        },
-      ],
-      createdBy: new mongoose.Types.ObjectId( '66a78cd82734f4f857cd6db6' ),
-      createdByName: 'Bejan',
-      createdByEmail: 'bejan@tangotech.co.in',
-      status: 'completed',
-      planoId: planoDoc._id,
-    };
-
-    await storeBuilderService.upsertOne( { planoId: planoDoc._id }, floorInsertData );
-
-    for ( let index = 0; index < leftFixtures.length; index++ ) {
-      const fixture = leftFixtures[index];
-
-      const fixtureData = {
-        'fixtureHeight': {
-          'value': 0,
-          'unit': 'mm',
-        },
-        'fixtureLength': {
-          'value': constantFixtureLength,
-          'unit': 'mm',
-        },
-        'fixtureWidth': {
-          'value': constantFixtureWidth,
-          'unit': 'mm',
-        },
-        'relativePosition': {
-          'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
-          'y': 0,
-          'unit': 'ft',
-        },
-        'detailedFixtureLength': {
-          'value': constantDetailedFixtureLength,
-          'unit': 'mm',
-        },
-        'detailedFixtureWidth': {
-          'value': constantDetailedFixtureWidth,
-          'unit': 'mm',
-        },
-        'relativeDetailedPosition': {
-          'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
-          'y': 0,
-          'unit': 'ft',
-        },
+      const floorInsertData = {
+        storeName: planoDoc.storeName,
+        storeId: planoDoc.storeId,
+        layoutName: `${planoDoc.storeName} - Layout`,
+        clientId: '11',
+        floorNumber: 1,
+        floorName: 'floor 1',
+        layoutPolygon: [
+          {
+            elementType: 'wall',
+            distance: finalXDistance,
+            unit: 'ft',
+            direction: 'right',
+            angle: 90,
+            elementNumber: 1,
+            detailedDistance: finalXDetailedDistance,
+          },
+          {
+            elementType: 'wall',
+            distance: finalYDistance,
+            unit: 'ft',
+            direction: 'down',
+            angle: 90,
+            elementNumber: 2,
+            detailedDistance: finalYDetailedDistance,
+          },
+          {
+            elementType: 'wall',
+            distance: finalXDistance,
+            unit: 'ft',
+            direction: 'left',
+            angle: 90,
+            elementNumber: 3,
+            detailedDistance: finalXDetailedDistance,
+          },
+          {
+            elementType: 'wall',
+            distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 4,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+          },
+          {
+            elementType: 'entrance',
+            distance: roundToTwo( ( ( finalYDistance * 20 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 1,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
+          },
+          {
+            elementType: 'wall',
+            distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+            unit: 'ft',
+            direction: 'up',
+            angle: 90,
+            elementNumber: 5,
+            detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+          },
+        ],
+        createdBy: new mongoose.Types.ObjectId( '66a78cd82734f4f857cd6db6' ),
+        createdByName: 'Bejan',
+        createdByEmail: 'bejan@tangotech.co.in',
+        status: 'completed',
+        planoId: planoDoc._id,
       };
 
-      await storeFixtureService.updateOne(
-          {
-            _id: fixture._id,
+      await storeBuilderService.upsertOne( { planoId: planoDoc._id }, floorInsertData );
+
+      for ( let index = 0; index < leftFixtures.length; index++ ) {
+        const fixture = leftFixtures[index];
+
+        const fixtureData = {
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
           },
-          fixtureData );
-    }
-
-    for ( let index = 0; index < backFixtures.length; index++ ) {
-      const fixture = backFixtures[index];
-
-      const fixtureData = {
-        'fixtureHeight': {
-          'value': 0,
-          'unit': 'mm',
-        },
-        'fixtureLength': {
-          'value': constantFixtureWidth,
-          'unit': 'mm',
-        },
-        'fixtureWidth': {
-          'value': constantFixtureLength,
-          'unit': 'mm',
-        },
-        'relativePosition': {
-          'x': roundToTwo( ( finalXDistance - ( constantFixtureWidth/mmToFeet ) ) ),
-          'y': roundToTwo( ( ( index * ( ( constantFixtureLength/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantFixtureWidth/mmToFeet ) ) ),
-          'unit': 'ft',
-        },
-        'detailedFixtureLength': {
-          'value': constantDetailedFixtureLength,
-          'unit': 'mm',
-        },
-        'detailedFixtureWidth': {
-          'value': constantDetailedFixtureWidth,
-          'unit': 'mm',
-        },
-        'relativeDetailedPosition': {
-          'x': roundToTwo( ( finalXDetailedDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
-          'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
-          'unit': 'ft',
-        },
-      };
-
-      await storeFixtureService.updateOne(
-          {
-            _id: fixture._id,
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
           },
-          fixtureData );
-    }
-
-    for ( let index = 0; index < rightFixtures.length; index++ ) {
-      const fixture = rightFixtures[index];
-
-      const fixtureData = {
-        'fixtureHeight': {
-          'value': 0,
-          'unit': 'mm',
-        },
-        'fixtureLength': {
-          'value': constantFixtureLength,
-          'unit': 'mm',
-        },
-        'fixtureWidth': {
-          'value': constantFixtureWidth,
-          'unit': 'mm',
-        },
-        'relativePosition': {
-          'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
-          'y': roundToTwo( ( finalYDistance - ( constantFixtureWidth / mmToFeet ) ) ),
-          'unit': 'ft',
-        },
-        'detailedFixtureLength': {
-          'value': constantDetailedFixtureLength,
-          'unit': 'mm',
-        },
-        'detailedFixtureWidth': {
-          'value': constantDetailedFixtureWidth,
-          'unit': 'mm',
-        },
-        'relativeDetailedPosition': {
-          'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
-          'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
-          'unit': 'ft',
-        },
-      };
-
-      await storeFixtureService.updateOne(
-          {
-            _id: fixture._id,
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
           },
-          fixtureData );
-    }
-
-    for ( let index = 0; index < floorFixtures.length; index++ ) {
-      const fixture = floorFixtures[index];
-      const centerRow = Math.floor( totalRows / 2 );
-
-      const startingX =roundToTwo( ( ( finalXDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) ) );
-      const detailedStartingX = roundToTwo( ( ( finalXDetailedDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ) );
-
-      const startingY = ( finalYDistance / 2 ) - ( centerRow * ( constantFixtureWidth / mmToFeet ) );
-      const detailedStartingY = ( finalYDetailedDistance / 2 ) - ( centerRow * ( constantDetailedFixtureWidth / mmToFeet ) );
-
-      const colIndex = Math.floor( index / 2 );
-      const rowIndex = index % 2 === 0 ? 1 : 0;
-
-
-      const xPos = roundToTwo( ( startingX + colIndex * ( constantFixtureLength / mmToFeet ) ) );
-      const yPos = roundToTwo( ( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) ) );
-
-      const detailedXPos = roundToTwo( ( detailedStartingX + colIndex * ( constantDetailedFixtureLength / mmToFeet ) ) );
-      const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
-
-
-      const fixtureData = {
-        'fixtureHeight': {
-          'value': 0,
-          'unit': 'mm',
-        },
-        'fixtureLength': {
-          'value': constantFixtureLength,
-          'unit': 'mm',
-        },
-        'fixtureWidth': {
-          'value': constantFixtureWidth,
-          'unit': 'mm',
-        },
-        'relativePosition': {
-          'x': xPos,
-          'y': yPos,
-          'unit': 'ft',
-        },
-        'detailedFixtureLength': {
-          'value': constantDetailedFixtureLength,
-          'unit': 'mm',
-        },
-        'detailedFixtureWidth': {
-          'value': constantDetailedFixtureWidth,
-          'unit': 'mm',
-        },
-        'relativeDetailedPosition': {
-          'x': detailedXPos,
-          'y': detailedYPos,
-          'unit': 'ft',
-        },
-      };
-
-      await storeFixtureService.updateOne(
-          {
-            _id: fixture._id,
+          'relativePosition': {
+            'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+            'y': 0,
+            'unit': 'ft',
           },
-          fixtureData );
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+            'y': 0,
+            'unit': 'ft',
+          },
+        };
+
+        await storeFixtureService.updateOne(
+            {
+              _id: fixture._id,
+            },
+            fixtureData );
+      }
+
+      for ( let index = 0; index < backFixtures.length; index++ ) {
+        const fixture = backFixtures[index];
+
+        const fixtureData = {
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'relativePosition': {
+            'x': roundToTwo( ( finalXDistance - ( constantFixtureWidth/mmToFeet ) ) ),
+            'y': roundToTwo( ( ( index * ( ( constantFixtureLength/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantFixtureWidth/mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( finalXDetailedDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
+            'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+        };
+
+        await storeFixtureService.updateOne(
+            {
+              _id: fixture._id,
+            },
+            fixtureData );
+      }
+
+      for ( let index = 0; index < rightFixtures.length; index++ ) {
+        const fixture = rightFixtures[index];
+
+        const fixtureData = {
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativePosition': {
+            'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+            'y': roundToTwo( ( finalYDistance - ( constantFixtureWidth / mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+            'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
+            'unit': 'ft',
+          },
+        };
+
+        await storeFixtureService.updateOne(
+            {
+              _id: fixture._id,
+            },
+            fixtureData );
+      }
+
+      for ( let index = 0; index < floorFixtures.length; index++ ) {
+        const fixture = floorFixtures[index];
+        const centerRow = Math.floor( totalRows / 2 );
+
+        const startingX =roundToTwo( ( ( finalXDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) ) );
+        const detailedStartingX = roundToTwo( ( ( finalXDetailedDistance / 2 ) - ( ( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ) );
+
+        const startingY = ( finalYDistance / 2 ) - ( centerRow * ( constantFixtureWidth / mmToFeet ) );
+        const detailedStartingY = ( finalYDetailedDistance / 2 ) - ( centerRow * ( constantDetailedFixtureWidth / mmToFeet ) );
+
+        const colIndex = Math.floor( index / 2 );
+        const rowIndex = index % 2 === 0 ? 1 : 0;
+
+
+        const xPos = roundToTwo( ( startingX + colIndex * ( constantFixtureLength / mmToFeet ) ) );
+        const yPos = roundToTwo( ( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) ) );
+
+        const detailedXPos = roundToTwo( ( detailedStartingX + colIndex * ( constantDetailedFixtureLength / mmToFeet ) ) );
+        const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
+
+
+        const fixtureData = {
+          'fixtureHeight': {
+            'value': 0,
+            'unit': 'mm',
+          },
+          'fixtureLength': {
+            'value': constantFixtureLength,
+            'unit': 'mm',
+          },
+          'fixtureWidth': {
+            'value': constantFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativePosition': {
+            'x': xPos,
+            'y': yPos,
+            'unit': 'ft',
+          },
+          'detailedFixtureLength': {
+            'value': constantDetailedFixtureLength,
+            'unit': 'mm',
+          },
+          'detailedFixtureWidth': {
+            'value': constantDetailedFixtureWidth,
+            'unit': 'mm',
+          },
+          'relativeDetailedPosition': {
+            'x': detailedXPos,
+            'y': detailedYPos,
+            'unit': 'ft',
+          },
+        };
+
+        await storeFixtureService.updateOne(
+            {
+              _id: fixture._id,
+            },
+            fixtureData );
+      }
     }
   } catch ( e ) {
+    console.log( e );
     logger.error( { functionName: 'createCrestPlanogram', error: e } );
-    return res.sendError( e.message || 'Internal Server Error', 500 );
+    return false;
   }
 }
 
 export async function updatelayout( req, res ) {
   try {
-    let getLayoutTaskDetails = await planoTaskService.find( { date_string: dayjs().format( 'YYYY-MM-DD' ), status: 'incomplete', type: 'layout' } );
+    let getLayoutTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.date }, status: 'incomplete', type: 'layout' } );
     if ( !getLayoutTaskDetails.length ) {
       return res.sendError( 'No data found', 204 );
     }
@@ -4110,3 +4118,185 @@ export async function updatelayout( req, res ) {
   }
 }
 
+
+export async function downloadPlanoImage( req, res ) {
+  try {
+    let query = [
+      {
+        $match: {
+          date_string: { $gte: req.body.fromDate, $lte: req.body.toDate },
+          type: 'layout',
+          status: 'incomplete',
+        },
+      },
+      {
+        $lookup: {
+          from: 'planograms',
+          let: { plano_id: '$planoId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: [ '$_id', '$$plano_id' ] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                storeName: 1,
+                _id: 0,
+              },
+            },
+          ],
+          as: 'planogram',
+        },
+      },
+      { $unwind: { path: '$planogram', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          storeName: '$planogram.storeName',
+          answers: 1,
+          type: 1,
+          status: 1,
+          planoId: 1,
+          floorId: 1,
+        },
+      },
+    ];
+
+    let taskDetails = await planoTaskService.aggregate( query );
+    if ( !taskDetails.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    let planoList = taskDetails.map( ( ele ) => ele.planoId );
+    let storeList = taskDetails.map( ( ele ) => ele.storeName );
+    async function sleep( ms ) {
+      return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+    }
+
+    async function openPlanoUrls( planoList ) {
+      for ( let id of planoList ) {
+        const url = `http://localhost:8080/#/plano?planoId=${id}&token&url=http://localhost:3008`;
+        const driver = await new Builder().forBrowser( 'chrome' ).build();
+
+        try {
+          await driver.get( url );
+          await sleep( 20000 );
+        } catch ( err ) {
+          console.error( `Error while opening planoId ${id}:`, err );
+        } finally {
+          try {
+            if ( driver && await driver.getSession() ) {
+              await driver.quit();
+            }
+          } catch ( quitErr ) {
+            console.warn( `Error while quitting driver for planoId ${id}:`, quitErr );
+          }
+        }
+      }
+    }
+    if ( !req.body?.merge ) {
+      const downloadsPath = path.join( os.homedir(), 'Downloads' );
+      const targetFolder = path.join( __dirname, '..', '..', `${req.body.file}Images` );
+      await openPlanoUrls( planoList );
+      if ( !fs.existsSync( targetFolder ) ) {
+        fs.mkdirSync( targetFolder, { recursive: true } );
+        console.log( 'Created folder:', targetFolder );
+      }
+      fs.readdir( downloadsPath, async ( err, files ) => {
+        if ( err ) {
+          return console.error( 'Failed to read Downloads folder:', err );
+        }
+        console.log( files );
+        for ( let file of files ) {
+          let fileName = file.split( '.' )[0];
+          const sourcePath = path.join( downloadsPath, file );
+          const targetPath = path.join( targetFolder, file );
+          if ( storeList.includes( fileName ) ) {
+            if ( fs.existsSync( sourcePath ) ) {
+              let chckFixtureCount = await storeFixtureService.findAndSort( { storeName: fileName }, { associatedElementFixtureNumber: 1 }, { associatedElementFixtureNumber: -1 } );
+              console.log( chckFixtureCount[0].associatedElementFixtureNumber );
+              if ( chckFixtureCount[0].associatedElementFixtureNumber < 10 ) {
+                sharp( sourcePath )
+                    .extract( { left: 750, top: 30, width: 6500, height: 3200 } )
+                    .toFile( targetPath )
+                    .then( () => {
+                      fs.unlinkSync( sourcePath );
+                      console.log( 'Image cropped successfully!' );
+                    } )
+                    .catch( ( err ) => {
+                      console.error( 'Error cropping image:', err );
+                    } );
+              } else {
+                fs.copyFile( sourcePath, targetPath, ( err ) => {
+                  if ( err ) {
+                    fs.unlinkSync( sourcePath );
+                    console.error( 'Error copying file:', err );
+                  } else {
+                    console.log( `File moved from Downloads to ${targetFolder}` );
+                  }
+                } );
+              }
+            } else {
+              console.warn( 'File not found in Downloads:', fileName );
+            }
+          }
+        }
+      } );
+    }
+
+    if ( req.body?.merge ) {
+      const targetFolder = path.join( __dirname, '..', '..', `mergedImages` );
+      if ( !fs.existsSync( targetFolder ) ) {
+        fs.mkdirSync( targetFolder, { recursive: true } );
+        console.log( 'Created folder:', targetFolder );
+      }
+      for ( let store of storeList ) {
+        if ( store != undefined ) {
+          const image1 = path.join( __dirname, '..', '..', `oldImages/${store}.png` );
+          const image2 = path.join( __dirname, '..', '..', `newImages/${store}.png` );
+
+          const output = path.join( __dirname, '..', '..', `mergedImages/${store}merged.png` );
+
+
+          const [ img1, img2 ] = await Promise.all( [
+            sharp( image1 ),
+            sharp( image2 ),
+          ] );
+
+          const [ meta1, meta2 ] = await Promise.all( [ img1.metadata(), img2.metadata() ] );
+
+          const canvasWidth = meta1.width + meta2.width;
+          const canvasHeight = Math.max( meta1.height, meta2.height );
+
+          const [ img1Buffer, img2Buffer ] = await Promise.all( [
+            img1.toBuffer(),
+            img2.toBuffer(),
+          ] );
+
+          await sharp( {
+            create: {
+              width: canvasWidth,
+              height: canvasHeight,
+              channels: 3,
+              background: { r: 255, g: 255, b: 255 },
+            },
+          } )
+              .composite( [
+                { input: img1Buffer, top: 0, left: 0 },
+                { input: img2Buffer, top: 0, left: meta1.width },
+              ] )
+              .toFile( output );
+
+          console.log( 'Images merged successfully!' );
+        }
+      }
+    }
+    return res.sendSuccess( 'Image Generated SuccessFully' );
+  } catch ( e ) {
+    console.log( e );
+    return res.sendError( e, 500 );
+  }
+}

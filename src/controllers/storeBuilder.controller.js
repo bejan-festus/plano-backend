@@ -17,9 +17,6 @@ import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import * as planoStaticData from '../service/planoStaticData.service.js';
 
 
-import path from 'path';
-
-
 dayjs.extend( utc );
 dayjs.extend( customParseFormat );
 
