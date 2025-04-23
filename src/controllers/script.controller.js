@@ -4220,7 +4220,7 @@ export async function downloadPlanoImage( req, res ) {
               console.log( chckFixtureCount[0].associatedElementFixtureNumber );
               if ( chckFixtureCount[0].associatedElementFixtureNumber < 10 ) {
                 sharp( sourcePath )
-                    .extract( { left: 750, top: 30, width: 6500, height: 3200 } )
+                    .extract( { left: 1200, top: 30, width: 3800, height: 3200 } )
                     .toFile( targetPath )
                     .then( () => {
                       fs.unlinkSync( sourcePath );
