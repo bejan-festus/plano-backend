@@ -19,3 +19,7 @@ export async function find( query={}, field={} ) {
 export async function count( data ) {
   return model.planoTaskCompliance.countDocuments( data );
 }
+
+export async function aggregate( query ) {
+  return model.planoTaskCompliance.aggregate( query );
+}
