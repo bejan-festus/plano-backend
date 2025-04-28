@@ -23,6 +23,8 @@ scriptRouter
     .post( '/getVmTaskData', scriptController.getVmTaskData )
     .post( '/updateVmData', scriptController.updateVmData )
     .post( '/createCrestPlanogram', scriptController.createCrestPlanogram )
+    .post( '/updateCrestPlanogram', scriptController.updateCrestPlanogram )
     .post( '/updatelayout', scriptController.updatelayout )
     .post( '/updateCrestVms', scriptController.updateCrestVms )
-    .post( '/downloadPlanoImages', scriptController.downloadPlanoImage );
+    .post( '/downloadPlanoImages', scriptController.downloadPlanoImage )
+    .post( '/getVideoUrls', scriptController.getVideoLinks );
