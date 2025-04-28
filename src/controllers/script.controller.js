@@ -4216,29 +4216,29 @@ export async function downloadPlanoImage( req, res ) {
           const targetPath = path.join( targetFolder, file );
           if ( storeList.includes( fileName ) ) {
             if ( fs.existsSync( sourcePath ) ) {
-              let chckFixtureCount = await storeFixtureService.findAndSort( { storeName: fileName }, { associatedElementFixtureNumber: 1 }, { associatedElementFixtureNumber: -1 } );
-              console.log( chckFixtureCount[0].associatedElementFixtureNumber );
-              if ( chckFixtureCount[0].associatedElementFixtureNumber < 10 ) {
-                sharp( sourcePath )
-                    .extract( { left: 1200, top: 30, width: 3800, height: 3200 } )
-                    .toFile( targetPath )
-                    .then( () => {
-                      fs.unlinkSync( sourcePath );
-                      console.log( 'Image cropped successfully!' );
-                    } )
-                    .catch( ( err ) => {
-                      console.error( 'Error cropping image:', err );
-                    } );
-              } else {
-                fs.copyFile( sourcePath, targetPath, ( err ) => {
-                  if ( err ) {
-                    fs.unlinkSync( sourcePath );
-                    console.error( 'Error copying file:', err );
-                  } else {
-                    console.log( `File moved from Downloads to ${targetFolder}` );
-                  }
-                } );
-              }
+              // let chckFixtureCount = await storeFixtureService.findAndSort( { storeName: fileName }, { associatedElementFixtureNumber: 1 }, { associatedElementFixtureNumber: -1 } );
+              // console.log( chckFixtureCount[0].associatedElementFixtureNumber );
+              // if ( chckFixtureCount[0].associatedElementFixtureNumber < 10 ) {
+              //   sharp( sourcePath )
+              //       .extract( { left: 1200, top: 30, width: 3800, height: 3200 } )
+              //       .toFile( targetPath )
+              //       .then( () => {
+              //         fs.unlinkSync( sourcePath );
+              //         console.log( 'Image cropped successfully!' );
+              //       } )
+              //       .catch( ( err ) => {
+              //         console.error( 'Error cropping image:', err );
+              //       } );
+              // } else {
+              fs.copyFile( sourcePath, targetPath, ( err ) => {
+                if ( err ) {
+                  fs.unlinkSync( sourcePath );
+                  console.error( 'Error copying file:', err );
+                } else {
+                  console.log( `File moved from Downloads to ${targetFolder}` );
+                }
+              } );
+              // }
             } else {
               console.warn( 'File not found in Downloads:', fileName );
             }

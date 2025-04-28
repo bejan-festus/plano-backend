@@ -380,8 +380,8 @@ export async function getTaskDetails( req, res ) {
     if ( !req.query.storeId ) {
       return res.sendError( 'Store id is required', 400 );
     }
-    let date = req.query?.date || dayjs().format( 'YYYY-MM-DD' );
-    let getDetails = await processedService.find( { store_id: req.query.storeId, date_string: date, isPlano: true, checklistStatus: { $ne: 'submit' }, userId: req.user._id }, { checkListName: 1, taskType: '$planoType', checklistStatus: 1 } );
+    // let date = req.query?.date || dayjs().format( 'YYYY-MM-DD' );
+    // let getDetails = await processedService.find( { store_id: req.query.storeId, date_string: date, isPlano: true, checklistStatus: { $ne: 'submit' }, userId: req.user._id }, { checkListName: 1, taskType: '$planoType', checklistStatus: 1 } );
     return res.sendSuccess( [] );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
