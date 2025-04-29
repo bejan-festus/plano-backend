@@ -4,7 +4,7 @@ import * as storeService from '../service/store.service.js';
 import * as processedChecklistService from '../service/processedchecklist.service.js';
 import * as userService from '../service/user.service.js';
 import dayjs from 'dayjs';
-import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
+import { logger, fileUpload, signedUrl, download } from 'tango-app-api-middleware';
 import * as planoTaskService from '../service/planoTask.service.js';
 import * as planoService from '../service/planogram.service.js';
 import * as checklistService from '../service/checklist.service.js';
@@ -624,6 +624,7 @@ export async function generatetaskDetails( req, res ) {
         $match: {
           date_iso: { $gte: new Date( req.body.fromDate ), $lte: new Date( req.body.toDate ) },
           isPlano: true,
+          planoType: 'layout',
         },
       },
       {
@@ -662,7 +663,7 @@ export async function generatetaskDetails( req, res ) {
         },
       },
     ];
-
+    console.log( JSON.stringify( query ) );
     let taskDetails = await processedService.aggregate( query );
     let processedTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.fromDate, $lte: req.body.toDate }, type: 'layout', status: 'incomplete' } );
     processedTaskDetails.forEach( ( item ) => {
@@ -675,21 +676,22 @@ export async function generatetaskDetails( req, res ) {
     taskDetails.forEach( ( ele ) => {
       delete ele.planoId;
     } );
-    let completeStore = [ ...new Set( taskDetails.filter( ( ele ) => ele.checklistStatus.includes( 'submit' ) ).map( ( ele ) => ele.storeName ) ) ];
+    // console.log( taskDetails );
+    // let completeStore = [ ...new Set( taskDetails.filter( ( ele ) => ele.checklistStatus.includes( 'submit' ) ).map( ( ele ) => ele.storeName ) ) ];
 
-    let incompleteStore = [ ...new Set( taskDetails.filter( ( ele ) => !ele.checklistStatus.includes( 'submit' ) ).map( ( ele ) => {
-      return { storeName: ele.storeName, checklistStatus: ele.checklistStatus[ele.checklistStatus.length-1] };
-    } ) ) ];
+    // let incompleteStore = [ ...new Set( taskDetails.filter( ( ele ) => !ele.checklistStatus.includes( 'submit' ) ).map( ( ele ) => {
+    //   return { storeName: ele.storeName, checklistStatus: ele.checklistStatus[ele.checklistStatus.length-1] };
+    // } ) ) ];
 
-    incompleteStore = incompleteStore.filter( ( ele ) => !completeStore.includes( ele ) );
+    // incompleteStore = incompleteStore.filter( ( ele ) => !completeStore.includes( ele ) );
 
     if ( !taskDetails.length ) {
       return res.sendError( 'No date found', 204 );
     }
 
-    return res.sendSuccess( { completeCount: completeStore.length, store: completeStore, incompleteStore: incompleteStore, incompleteStoreCount: incompleteStore.length } );
+    // return res.sendSuccess( { completeCount: completeStore.length, store: completeStore, incompleteStore: incompleteStore, incompleteStoreCount: incompleteStore.length } );
 
-    // await download( taskDetails, res );
+    await download( taskDetails, res );
   } catch ( e ) {
     logger.error( { functioName: 'generatetaskDetails', error: e } );
     return res.sendError( e, 500 );
