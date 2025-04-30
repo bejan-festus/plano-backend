@@ -4316,99 +4316,92 @@ export async function updateCrestPlanogram( req, res ) {
     async function fetchStoreData( store, bearerToken, res ) {
       const payload = JSON.stringify( { store_id: store.toObject().storeName } );
 
-      const options = {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength( payload ),
-        },
-      };
-
-      return new Promise( ( resolve ) => {
-        const req1 = https.request( layoutApiUrl, options, ( res1 ) => {
-          let data = '';
-          res1.on( 'data', ( chunk ) => {
-            data += chunk;
-          } );
-
-          res1.on( 'end', async () => {
-            let jsonData = null;
-            try {
-              jsonData = JSON.parse( data );
-            } catch ( parseError ) {
-              logger.error( { functionName: `Warning: Received invalid JSON for store ${store.toObject().storeName}`, error: parseError } );
-              console.warn( `Warning: Received invalid JSON for store ${store.toObject().storeName}` );
-              return resolve( { storeName: store.toObject().storeName, data: null } );
-            }
-
-            try {
-              const result = { storeName: store.toObject().storeName, data: jsonData };
-              if ( jsonData.result === 'Token is invalid or expired' ) {
-                console.log( 'Token expired, retrying...' );
-                try {
-                  const newToken = await fetchNewToken();
-
-                  staticToken = newToken;
-
-                  const retryData = await fetchStoreData( store, newToken, res );
-                  return resolve( retryData );
-                } catch ( retryError ) {
-                  logger.error( { functionName: 'Failed to refresh token', error: retryError } );
-                  console.log( retryError );
-                  return res.sendError( 'Failed to refresh token', 401 );
-                }
-              }
-
-              return resolve( result );
-            } catch ( error ) {
-              logger.error( { functionName: 'Unexpected error during fetchStoreData handling:', error: error } );
-              console.error( 'Unexpected error during fetchStoreData handling:', error );
-              return resolve( { storeName: store.toObject().storeName, data: null } );
-            }
-          } );
+      try {
+        const response = await fetch( layoutApiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${bearerToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength( payload ),
+          },
+          body: payload,
         } );
 
-        req1.on( 'error', ( error ) => {
-          logger.error( { functionName: `Error fetching data for ${store.toObject().storeName}:`, error: error } );
-          console.error( `Error fetching data for ${store.toObject().storeName}:`, error.message );
-          return resolve( { storeName: store.toObject().storeName, data: null } );
-        } );
+        const data = await response.text();
+        let jsonData = null;
 
-        req1.write( payload );
-        req1.end();
-      } );
+        try {
+          jsonData = JSON.parse( data );
+        } catch ( parseError ) {
+          logger.error( { functionName: `Warning: Received invalid JSON for store ${store.toObject().storeName}`, error: parseError } );
+          console.warn( `Warning: Received invalid JSON for store ${store.toObject().storeName}` );
+          return { storeName: store.toObject().storeName, data: null };
+        }
+
+        if ( jsonData.result === 'Token is invalid or expired' ) {
+          console.log( 'Token expired, retrying...' );
+          try {
+            const newToken = await fetchNewToken();
+            staticToken = newToken;
+            return await fetchStoreData( store, newToken, res );
+          } catch ( retryError ) {
+            logger.error( { functionName: 'Failed to refresh token', error: retryError } );
+            console.log( retryError );
+            return res.sendError( 'Failed to refresh token', 401 );
+          }
+        }
+
+        return { storeName: store.toObject().storeName, data: jsonData };
+      } catch ( error ) {
+        logger.error( { functionName: `Error fetching data for ${store.toObject().storeName}:`, error } );
+        console.error( `Error fetching data for ${store.toObject().storeName}:`, error.message );
+        return { storeName: store.toObject().storeName, data: null };
+      }
     }
 
 
-    async function fetchNewToken() {
+    const fetchNewToken = async () => {
       const fetchWithCookies = fetchCookie( fetch );
+
+      const email = 'tango.lenskart@getcrest.ai';
+      const password = 'Tangolenskart@123';
+
+      const credentials = JSON.stringify( { email, password } );
 
       const invalidateUrl = 'https://app.getcrest.ai/api/ms_iam/user/session/override/';
       const tokenUrl = 'https://app.getcrest.ai/api/ms_iam/token/';
 
-      const invalidate = await fetchWithCookies( invalidateUrl, {
-        'method': 'POST',
-        'headers': { 'Content-Type': 'application/json' },
-        'body': JSON.stringify( { 'email': 'tango.lenskart@getcrest.ai', 'password': 'Tangolenskart@123' } ),
-      } );
+      try {
+        const invalidateRes = await fetchWithCookies( invalidateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: credentials,
+        } );
 
-      const invalidateData = await invalidate.json();
+        const invalidateData = await invalidateRes.json();
+        console.log( 'Invalidate response:', invalidateData );
 
-      console.log( invalidateData );
+        console.log( 'Fetching new token...' );
+        const tokenRes = await fetchWithCookies( tokenUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+          },
+          body: credentials,
+        } );
 
-      console.log( 'Fetching new token...' );
-      const res = await fetchWithCookies( tokenUrl, {
-        'method': 'POST',
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'headers': { 'Content-Type': 'application/json' },
-        'body': JSON.stringify( { 'email': 'tango.lenskart@getcrest.ai', 'password': 'Tangolenskart@123' } ),
-      } );
+        const tokenData = await tokenRes.json();
+        console.log( 'Token response:', tokenData );
 
-      const token = await res.json();
-      console.log( token );
-      return token.access;
-    }
+        return tokenData.access;
+      } catch ( error ) {
+        console.error( 'Error fetching new token:', error );
+        throw error;
+      }
+    };
 
     const storeList = await storeService.find( { clientId: '11' } );
 
@@ -4426,8 +4419,6 @@ export async function updateCrestPlanogram( req, res ) {
 
     for ( let i = 0; i < storeList.length; i++ ) {
       const storeData = await fetchStoreData( storeList[i], staticToken, res );
-
-      console.log(storeData.storeName)
 
       if ( storeData?.data?.message !== 'SUCCESS' ) continue;
 
