@@ -4430,7 +4430,7 @@ export async function updateCrestPlanogram( req, res ) {
       }
     };
 
-    const storeList = await storeService.find( { clientId: '11' } );
+    let storeList = await storeService.find( { ...( req?.body?.storeName ) ? { storeName: req?.body?.storeName } : {}, clientId: '11' } );
 
     const constantFixtureLength = 1220;
     const constantDetailedFixtureLength = 1220;
