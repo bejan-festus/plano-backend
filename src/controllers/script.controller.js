@@ -4216,35 +4216,36 @@ export async function downloadPlanoImage( req, res ) {
           const targetPath = path.join( targetFolder, file );
           if ( storeList.includes( fileName ) ) {
             if ( fs.existsSync( sourcePath ) ) {
-              let chckFixtureCount = await storeFixtureService.findAndSort( { storeName: fileName }, { associatedElementFixtureNumber: 1 }, { associatedElementFixtureNumber: -1 } );
-              console.log( chckFixtureCount[0].associatedElementFixtureNumber );
-              if ( chckFixtureCount[0].associatedElementFixtureNumber < 10 ) {
-                sharp( sourcePath )
-                    .extract( { left: 1200, top: 30, width: 3800, height: 3200 } )
-                    .toFile( targetPath )
-                    .then( () => {
-                      fs.unlinkSync( sourcePath );
-                      console.log( 'Image cropped successfully!' );
-                    } )
-                    .catch( ( err ) => {
-                      console.error( 'Error cropping image:', err );
-                    } );
-              } else {
-                fs.copyFile( sourcePath, targetPath, ( err ) => {
-                  if ( err ) {
-                    fs.unlinkSync( sourcePath );
-                    console.error( 'Error copying file:', err );
-                  } else {
-                    console.log( `File moved from Downloads to ${targetFolder}` );
-                  }
-                } );
-              }
+              // let chckFixtureCount = await storeFixtureService.findAndSort( { storeName: fileName }, { associatedElementFixtureNumber: 1 }, { associatedElementFixtureNumber: -1 } );
+              // console.log( chckFixtureCount[0].associatedElementFixtureNumber );
+              // if ( chckFixtureCount[0].associatedElementFixtureNumber < 10 ) {
+              //   sharp( sourcePath )
+              //       .extract( { left: 1200, top: 30, width: 3800, height: 3200 } )
+              //       .toFile( targetPath )
+              //       .then( () => {
+              //         fs.unlinkSync( sourcePath );
+              //         console.log( 'Image cropped successfully!' );
+              //       } )
+              //       .catch( ( err ) => {
+              //         console.error( 'Error cropping image:', err );
+              //       } );
+              // } else {
+              fs.copyFile( sourcePath, targetPath, ( err ) => {
+                if ( err ) {
+                  console.error( 'Error copying file:', err );
+                } else {
+                  fs.unlinkSync( sourcePath );
+                  console.log( `File moved from Downloads to ${targetFolder}` );
+                }
+              } );
+              // }
             } else {
               console.warn( 'File not found in Downloads:', fileName );
             }
           }
         }
       } );
+      return res.sendSuccess( 'Image Generated SuccessFully' );
     }
 
     if ( req.body?.merge ) {
@@ -4253,12 +4254,13 @@ export async function downloadPlanoImage( req, res ) {
         fs.mkdirSync( targetFolder, { recursive: true } );
         console.log( 'Created folder:', targetFolder );
       }
+      let spacing = 500;
       for ( let store of storeList ) {
         if ( store != undefined ) {
           const image1 = path.join( __dirname, '..', '..', `oldImages/${store}.png` );
           const image2 = path.join( __dirname, '..', '..', `newImages/${store}.png` );
 
-          const output = path.join( __dirname, '..', '..', `mergedImages/${store}merged.png` );
+          const output = path.join( targetFolder, `/${store}.png` );
 
 
           const [ img1, img2 ] = await Promise.all( [
@@ -4268,7 +4270,7 @@ export async function downloadPlanoImage( req, res ) {
 
           const [ meta1, meta2 ] = await Promise.all( [ img1.metadata(), img2.metadata() ] );
 
-          const canvasWidth = meta1.width + meta2.width;
+          const canvasWidth = meta1.width + meta2.width + spacing;
           const canvasHeight = Math.max( meta1.height, meta2.height );
 
           const [ img1Buffer, img2Buffer ] = await Promise.all( [
@@ -4280,21 +4282,46 @@ export async function downloadPlanoImage( req, res ) {
             create: {
               width: canvasWidth,
               height: canvasHeight,
-              channels: 3,
+              channels: 4,
               background: { r: 255, g: 255, b: 255 },
             },
           } )
               .composite( [
                 { input: img1Buffer, top: 0, left: 0 },
-                { input: img2Buffer, top: 0, left: meta1.width },
+                { input: img2Buffer, top: 0, left: meta1.width + spacing },
               ] )
               .toFile( output );
 
           console.log( 'Images merged successfully!' );
         }
       }
+      let zip = new JSZip;
+      const promises = storeList.map( async ( store ) => {
+        try {
+          const file = fs.readFileSync( `${targetFolder}/${store}.png` );
+          zip.file( `${store}.png`, file );
+        } catch ( err ) {
+          console.error( `Error reading ${store}.png:`, err );
+        }
+      } );
+
+      await Promise.all( promises );
+
+      const zipBuffer = await zip.generateAsync( { type: 'nodebuffer' } );
+
+      res.set( {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': 'attachment; filename=download.zip',
+      } );
+
+      let rmFolderList = [ 'oldImages', 'newImages', 'mergedImages' ];
+      for ( let folder of rmFolderList ) {
+        const filePath = path.join( __dirname, '..', '..', folder );
+        fs.rm( filePath, { recursive: true, force: true } );
+      }
+
+      return res.send( zipBuffer );
     }
-    return res.sendSuccess( 'Image Generated SuccessFully' );
   } catch ( e ) {
     console.log( e );
     return res.sendError( e, 500 );
@@ -4403,7 +4430,7 @@ export async function updateCrestPlanogram( req, res ) {
       }
     };
 
-    const storeList = await storeService.find( { clientId: '11' } );
+    let storeList = await storeService.find( { ...( req?.body?.storeName ) ? { storeName: req?.body?.storeName } : {}, clientId: '11' } );
 
     const constantFixtureLength = 1220;
     const constantDetailedFixtureLength = 1220;
