@@ -1,23 +1,20 @@
-import * as storeBuilderService from '../service/storeBuilder.service.js';
-import * as storeService from '../service/store.service.js';
-import * as planoService from '../service/planogram.service.js';
 import { logger } from 'tango-app-api-middleware';
-import * as storeFixtureService from '../service/storeFixture.service.js';
-import * as fixtureShelfService from '../service/fixtureShelf.service.js';
-import * as planoProductService from '../service/planoProduct.service.js';
-import * as planoMappingService from '../service/planoMapping.service.js';
-import * as planoComplianceService from '../service/planoCompliance.service.js';
-import * as planoTaskComplianceService from '../service/planoTask.service.js';
-import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
-import * as fixtureConfigService from '../service/fixtureConfig.service.js';
-import * as planoStaticData from '../service/planoStaticData.service.js';
+import * as planoLibraryService from '../service/planoLibrary.service.js';
+import xlsx from 'xlsx';
 
 
-export async function sample( req, res ) {
+export async function fixtureBulkUpload( req, res ) {
   try {
-
+    if ( !req?.files?.file ) {
+      return res.sendError( 'Please upload a file', 400 );
+    }
+    const workbook = xlsx.read( req?.files?.file, { type: 'buffer' } );
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json( worksheet );
   } catch ( e ) {
-    logger.error( { functionName: 'sample', error: e } );
+    console.log( e );
+    logger.error( { functionName: 'fixtureBulkUpload', error: e } );
     return res.sendError( e, 500 );
   }
 }
