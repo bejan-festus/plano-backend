@@ -553,7 +553,7 @@ export async function storeFixturesv1( req, res ) {
         {
           $or: [
             { _id: { $in: planoIds } },
-            { storeName: { $in: req.body.id } },
+            { storeId: { $in: req.body.id } },
           ],
         },
         { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1, validateShelfSections: 1 },
