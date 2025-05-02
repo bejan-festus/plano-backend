@@ -4314,7 +4314,7 @@ export async function updateCrestPlanogram( req, res ) {
     let staticToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1NTE3MjQxLCJpYXQiOjE3NDU1MTM2NDEsImp0aSI6Ijg3MWVlNTA3ODY2OTQ5OTVhMTQ0YTk4NzQyNzY0MzEzIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.eGzTMGwwstr13M0Hu1Ls5-gkE_oSPMJJBL2wgygT6Ac';
 
     async function fetchStoreData( store, bearerToken, res ) {
-      const payload = JSON.stringify( { store_id: store.toObject().storeName } );
+      const payload = JSON.stringify( { store_id: store.toObject().storeName?.toUpperCase() } );
 
       try {
         const response = await fetch( layoutApiUrl, {
@@ -5336,7 +5336,7 @@ export async function updateCrestPlanogram( req, res ) {
 
       const now = Date.now();
       const elapsedMinutes = ( now - startTime ) / 1000 / 60;
-      console.log( `Store name: ${storeData.storeName}, Iteration ${i + 1}: total elapsed time = ${elapsedMinutes.toFixed( 2 )} minutes` );
+      console.log( `Store name: ${storeData.storeName}, Iteration ${i + 1}/${storeList?.length}: total elapsed time = ${elapsedMinutes.toFixed( 2 )} minutes` );
     }
 
     res.sendSuccess( 'Updated Successfully' );
