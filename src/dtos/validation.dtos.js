@@ -89,4 +89,50 @@ export const updateStatus = {
   body: updateStatusSchema,
 };
 
+export const createFixtureSchema = joi.object( {
+  fixtureName: joi.string().required(),
+  fixtureType: joi.string().required(),
+  clientId: joi.string().required(),
+} );
+
+export const createFixture = {
+  body: createFixtureSchema,
+};
+
+export const updateFixtureSchema = joi.object( {
+  fixtureWidth: joi.number().optional(),
+  fixtureHeight: joi.number().optional(),
+  fixtureName: joi.number().optional(),
+  fixtureLength: joi.number().optional(),
+  shelfCount: joi.number().optional(),
+  shelfConfig: joi.array().optional(),
+  panelConfig: joi.array().optional(),
+  status: joi.string().required(),
+} );
+
+export const fixtureIdSchema = joi.object( {
+  fixtureId: joi.string().required(),
+} );
+
+export const updateFixture = {
+  body: updateFixtureSchema,
+  params: fixtureIdSchema,
+};
+export const fixtureListSchema = joi.object( {
+  clientId: joi.string().required(),
+  limit: joi.number().required(),
+  offset: joi.number().required(),
+  sortColumnName: joi.string().required().allow( '' ),
+  sortBy: joi.number().required().allow( '' ),
+  searchValue: joi.string().required().allow( '' ),
+  filter: joi.object( {
+    status: joi.array().items( joi.any() ).min( 0 ),
+    type: joi.array().items( joi.any() ).min( 0 ),
+    size: joi.array().items( joi.any() ).min( 0 ),
+  } ).required(),
+} );
+
+export const fixtureList = {
+  body: fixtureListSchema,
+};
 
