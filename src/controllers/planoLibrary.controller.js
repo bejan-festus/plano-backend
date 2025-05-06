@@ -64,10 +64,9 @@ async function getMaxFixtureLibCode() {
   try {
     let getFixtureLibDetails = await planoLibraryService.find( {}, { fixtureLibCode: 1 } );
     if ( !getFixtureLibDetails.length ) {
-      return 'FX 01';
+      return 'FX01';
     } else {
-      let numList = getFixtureLibDetails.map( ( ele ) => ele.fixtureLibCode.split( ' ' ).slice( 2 ).join( ' ' ) );
-      console.log( numList );
+      let numList = getFixtureLibDetails.map( ( ele ) => ele.fixtureLibCode.substring( 2 ) );
       let missingNum = [];
       for ( let i=1; i<=getFixtureLibDetails.length; i++ ) {
         let numPad = String( i ).padStart( 2, '0' );
@@ -76,9 +75,9 @@ async function getMaxFixtureLibCode() {
         }
       }
       if ( missingNum.length ) {
-        return 'FX '+ missingNum[0];
+        return 'FX'+ missingNum[0];
       } else {
-        return 'FX '+ String( parseInt( getFixtureLibDetails.length+1 ) ).padStart( 2, '0' );
+        return 'FX'+ String( parseInt( getFixtureLibDetails.length+1 ) ).padStart( 2, '0' );
       }
     }
   } catch ( e ) {
