@@ -4,6 +4,10 @@ export const findOne = async ( query={}, field={} ) => {
   return await model.fixtureLibraryModel.findOne( query, field );
 };
 
+export const findAndSort = async ( query={}, field={}, sort={} ) => {
+  return await model.fixtureLibraryModel.findOne( query, field ).sort( sort ).collation( { locale: 'en_US', numericOrdering: true } );
+};
+
 export const find = async ( query={}, field={} ) => {
   return await model.fixtureLibraryModel.find( query, field );
 };

@@ -16,7 +16,8 @@ export async function fixtureBulkUpload( req, res ) {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json( worksheet );
     let fixtureData = [];
-    data.forEach( ( ele ) => {
+    let FixLibCode = await getMaxFixtureLibCode();
+    data.forEach( async ( ele ) => {
       let fixtureEle = {
         clientId: req.body.clientId,
         fixtureCategory: ele['Fixture Name'],
@@ -30,6 +31,7 @@ export async function fixtureBulkUpload( req, res ) {
           unit: 'ft',
         },
         shelfConfig: [],
+        ...( ele.fixtureLibCode ) ? { fixtureLibCode: FixLibCode } : {},
       };
       for ( let i=1; i<=ele['Shelf Count']; i++ ) {
         let shelfType = `Shelf${i} Type`;
@@ -43,7 +45,11 @@ export async function fixtureBulkUpload( req, res ) {
           productPerTray: ele[shelfType] == 'Tray' ? ele[shelfProducts] : 0,
         } );
       }
-      fixtureData.push( fixtureEle );
+      if ( ele?.fixtureLibCode ) {
+        await planoLibraryService.updateOne( { fixtureLibCode: ele.fixtureLibCode }, fixtureEle );
+      } else {
+        fixtureData.push( fixtureEle );
+      }
     } );
     await planoLibraryService.insertMany( fixtureData );
     return res.sendSuccess( 'FIxture library created successfully' );
@@ -54,12 +60,41 @@ export async function fixtureBulkUpload( req, res ) {
   }
 }
 
+async function getMaxFixtureLibCode() {
+  try {
+    let getFixtureLibDetails = await planoLibraryService.find( {}, { fixtureLibCode: 1 } );
+    if ( !getFixtureLibDetails.length ) {
+      return 'FX 01';
+    } else {
+      let numList = getFixtureLibDetails.map( ( ele ) => ele.fixtureLibCode.split( ' ' ).slice( 2 ).join( ' ' ) );
+      console.log( numList );
+      let missingNum = [];
+      for ( let i=1; i<=getFixtureLibDetails.length; i++ ) {
+        let numPad = String( i ).padStart( 2, '0' );
+        if ( !numList.includes( numPad ) ) {
+          missingNum.push( numPad );
+        }
+      }
+      if ( missingNum.length ) {
+        return 'FX '+ missingNum[0];
+      } else {
+        return 'FX '+ String( parseInt( getFixtureLibDetails.length+1 ) ).padStart( 2, '0' );
+      }
+    }
+  } catch ( e ) {
+    logger.error( { functionName: 'getMaxFixtureLibCode', error: e } );
+    return false;
+  }
+}
+
 export async function createFixture( req, res ) {
   try {
+    let FixLibCode = await getMaxFixtureLibCode();
     let data ={
       clientId: req.body.clientId,
       fixtureCategory: req.body.fixtureName,
       fixtureType: req.body.fixtureType,
+      fixtureLibCode: FixLibCode,
     };
     let fixtLibraryDetails = await planoLibraryService.create( data );
     return res.sendSuccess( { message: 'Fixture library created successfully', data: fixtLibraryDetails } );
