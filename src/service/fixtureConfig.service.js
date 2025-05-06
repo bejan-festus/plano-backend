@@ -19,3 +19,7 @@ export async function aggregate( query ) {
 export async function updateOne( query, record ) {
   return model.fixtureConfigModel.updateOne( query, { $set: record } );
 }
+
+export async function count( query ) {
+  return model.fixtureConfigModel.countDocuments( query );
+}
