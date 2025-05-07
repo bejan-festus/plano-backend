@@ -447,7 +447,7 @@ export async function updateStatus( req, res ) {
     let submitTimeString = currentDateTime.format( 'hh:mm A, DD MMM YYYY' );
     await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status, ...( req.body.status == 'inprogress' ) ? { startTime_string: submitTimeString } : { submitTime_string: submitTimeString } } );
     if ( req.body.status == 'submit' ) {
-      await processedService.deleteMany( { _id: req.body.taskId, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } } );
+      await processedService.deleteMany( { planoId: taskDetails.planoId, userEmail: taskDetails.userEmail, store_id: taskDetails.store_id, floorId: taskDetails.floorId, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } } );
     }
     return res.sendSuccess( 'Task status updated successfully' );
   } catch ( e ) {

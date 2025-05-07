@@ -1,25 +1,15 @@
 import { logger } from 'tango-app-api-middleware';
 import * as planoLibraryService from '../service/planoLibrary.service.js';
-// import * as fixtureService from '../service/storeFixture.service.js';
-// import * as planoService from '../service/planogram.service.js';
 import * as fixtureTemplateService from '../service/fixtureConfig.service.js';
 import xlsx from 'xlsx';
 
-
 export async function fixtureBulkUpload( req, res ) {
   try {
-    if ( !req?.files?.file ) {
-      return res.sendError( 'Please upload a file', 400 );
-    }
-    const workbook = xlsx.read( req?.files?.file?.data, { type: 'buffer' } );
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json( worksheet );
-    let fixtureData = [];
+    let inputData = req.body;
     let FixLibCode = await getMaxFixtureLibCode();
-    data.forEach( async ( ele ) => {
+    inputData.fixtureData.forEach( async ( ele ) => {
       let fixtureEle = {
-        clientId: req.body.clientId,
+        clientId: inputData.clientId,
         fixtureCategory: ele['Fixture Name'],
         fixtureType: ele['Fixture Type'],
         fixtureHeight: {
@@ -37,12 +27,13 @@ export async function fixtureBulkUpload( req, res ) {
         let shelfType = `Shelf${i} Type`;
         let TrayRow = `Tray${i} Row`;
         let shelfProducts = `Shelf${i} Product Capacity`;
+        let panelName=`Panel${i} Name`;
         fixtureEle.shelfConfig.push( {
           shelfType: ele[shelfType].toLowerCase(),
           shelfNumber: i,
-          productPerShelf: ele[shelfType] == 'Shelf' ? ele[shelfProducts] : ele[TrayRow]*ele[shelfProducts],
+          label: ele[panelName],
+          productPerShelf: ele[shelfProducts],
           trayRows: ele[shelfType] == 'Shelf' ? 0 : ele[TrayRow],
-          productPerTray: ele[shelfType] == 'Tray' ? ele[shelfProducts] : 0,
         } );
       }
       if ( ele?.fixtureLibCode ) {
@@ -135,9 +126,9 @@ export async function updateFixture( req, res ) {
           unit: 'ft',
         },
       } : {},
-      ...( fixtureLibraryDetails.fixtureType == 'wall' ) ? {
-        shelfConfig: req.body.shelfConfig,
-      } : { panelConfig: req.body.panelConfig },
+      shelfConfig: req.body.shelfConfig,
+      header: req.body.header,
+      footer: req.body.footer,
       status: req.body.status,
       updatedAt: new Date(),
     };
@@ -189,6 +180,49 @@ export async function FixtureLibraryList( req, res ) {
       { $match: matchStage },
       {
         $lookup: {
+          from: 'fixtureconfigs',
+          let: { libraryId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [ '$fixtureLibraryId', '$$libraryId' ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                templateId: { $push: '$_id' },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                templateId: 1,
+              },
+            },
+          ],
+          as: 'fixtureTemplate',
+        },
+      },
+      {
+        $project: {
+          fixtureWidth: 1,
+          fixtureHeight: 1,
+          fixtureLength: 1,
+          shelfConfig: 1,
+          fixtureCategory: 1,
+          clientId: 1,
+          fixtureType: 1,
+          status: 1,
+          header: 1,
+          footer: 1,
+          templateId: { $ifNull: [ { $arrayElemAt: [ '$fixtureTemplate.templateId', 0 ] }, [] ] },
+        },
+      },
+      {
+        $lookup: {
           from: 'storefixtures',
           let: { libraryId: '$_id' },
           pipeline: [
@@ -215,7 +249,6 @@ export async function FixtureLibraryList( req, res ) {
           as: 'storeFixtureDetails',
         },
       },
-
       {
         $project: {
           fixtureWidth: 1,
@@ -226,10 +259,12 @@ export async function FixtureLibraryList( req, res ) {
           clientId: 1,
           fixtureType: 1,
           status: 1,
-          planoId: { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] },
+          templateId: 1,
+          header: 1,
+          footer: 1,
+          planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
         },
       },
-
       {
         $lookup: {
           from: 'planograms',
@@ -252,7 +287,6 @@ export async function FixtureLibraryList( req, res ) {
           as: 'planoStatus',
         },
       },
-
       {
         $project: {
           fixtureWidth: 1,
@@ -262,6 +296,11 @@ export async function FixtureLibraryList( req, res ) {
           shelfConfig: 1,
           fixtureCategory: 1,
           clientId: 1,
+          planoId: 1,
+          templateId: 1,
+          header: 1,
+          footer: 1,
+          planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
             $cond: {
               if: { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] },
@@ -317,7 +356,29 @@ export async function FixtureLibraryList( req, res ) {
       count: fixtureDetails[0].count[0].total,
       data: fixtureDetails[0].fixtureData,
     };
-    return res.sendSuccess( result );
+    if ( !req.body.export ) {
+      return res.sendSuccess( result );
+    } else {
+      // Sample data
+      const data = [
+        [ 'Editable', 'Non-editable', 'Dropdown' ],
+        [ 'You can edit', 'Locked', 'Option 1' ],
+        [ 'You can edit', 'Locked', 'Option 2' ],
+      ];
+
+      // Create workbook and worksheet
+      const ws = xlsx.utils.aoa_to_sheet( data );
+      const wb = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet( wb, ws, 'Sheet1' );
+
+      // Write to buffer
+      const buffer = xlsx.write( wb, { bookType: 'xlsx', type: 'buffer' } );
+
+      // Example: send as HTTP response (Express)
+      res.setHeader( 'Content-Disposition', 'attachment; filename="output.xlsx"' );
+      res.setHeader( 'Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
+      return res.send( buffer );
+    }
   } catch ( e ) {
     console.log( e );
     logger.error( { functionName: 'updateFixture', error: e } );
@@ -336,6 +397,8 @@ export async function duplicateFixture( req, res ) {
     }
     fixtureLibDetails = fixtureLibDetails.toObject();
     delete fixtureLibDetails._id;
+    let FixLibCode = await getMaxFixtureLibCode();
+    fixtureLibDetails.fixtureLibCode = FixLibCode;
     await planoLibraryService.create( fixtureLibDetails );
     return res.sendSuccess( 'Fixture duplicated successfully' );
   } catch ( e ) {

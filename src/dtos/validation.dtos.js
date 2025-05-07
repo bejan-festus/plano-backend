@@ -130,6 +130,7 @@ export const fixtureListSchema = joi.object( {
     type: joi.array().items( joi.any() ).min( 0 ),
     size: joi.array().items( joi.any() ).min( 0 ),
   } ).required(),
+  export: joi.boolean().required(),
 } );
 
 export const fixtureList = {
