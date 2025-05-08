@@ -71,7 +71,7 @@ export async function fixtureBulkUpload( req, res ) {
       await planoLibraryService.deleteMany( { _id: { $in: deleteList } } );
     }
     await planoLibraryService.insertMany( fixtureData );
-    return res.sendSuccess( 'FIxture library created successfully' );
+    return res.sendSuccess( 'Fixture library created successfully' );
   } catch ( e ) {
     console.log( e );
     logger.error( { functionName: 'fixtureBulkUpload', error: e } );
@@ -131,41 +131,7 @@ export async function updateFixture( req, res ) {
     }
 
     let fixtureData = {
-      ...( req.body.fixtureHeight ) ? {
-        fixtureHeight: {
-          value: req.body.fixtureHeight,
-          unit: 'ft',
-        },
-      } : {},
-      ...( req.body.fixtureHeight ) ? {
-        fixtureLength: {
-          value: req.body.fixtureHeight,
-          unit: 'ft',
-        },
-      } : {},
-      ...( req.body.fixtureWidth ) ? {
-        fixtureWidth: {
-          value: req.body.fixtureWidth,
-          unit: 'ft',
-        },
-      } : {},
-      ...( req.body.headerHeight ) ? {
-        'header.height': {
-          value: req.body.headerHeight,
-          unit: 'ft',
-        },
-      } : {},
-      ...( req.body.footerHeight ) ? {
-        'footer.height': {
-          value: req.body.footerHeight,
-          unit: 'ft',
-        },
-      } : {},
-      fixtureCategory: req.body.fixtureCategory,
-      shelfConfig: req.body.shelfConfig,
-      header: req.body.header,
-      footer: req.body.footer,
-      status: req.body.status,
+      ...req.body,
       updatedAt: new Date(),
     };
     await planoLibraryService.updateOne( { _id: req.params.fixtureId }, fixtureData );
