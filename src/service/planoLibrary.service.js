@@ -24,6 +24,10 @@ export const insertMany = async ( data = [] ) => {
   return await model.fixtureLibraryModel.insertMany( data );
 };
 
+export const deleteMany = async ( data = [] ) => {
+  return await model.fixtureLibraryModel.deleteMany( data );
+};
+
 export const create = async ( data = {} ) => {
   return await model.fixtureLibraryModel.create( data );
 };

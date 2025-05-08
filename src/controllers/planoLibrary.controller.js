@@ -1,56 +1,75 @@
 import { logger } from 'tango-app-api-middleware';
 import * as planoLibraryService from '../service/planoLibrary.service.js';
-// import * as fixtureService from '../service/storeFixture.service.js';
-// import * as planoService from '../service/planogram.service.js';
 import * as fixtureTemplateService from '../service/fixtureConfig.service.js';
-import xlsx from 'xlsx';
-
+import ExcelJS from 'exceljs';
+import mongoose from 'mongoose';
+const ObjectId = mongoose.Types.ObjectId;
 
 export async function fixtureBulkUpload( req, res ) {
   try {
-    if ( !req?.files?.file ) {
-      return res.sendError( 'Please upload a file', 400 );
-    }
-    const workbook = xlsx.read( req?.files?.file?.data, { type: 'buffer' } );
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json( worksheet );
-    let fixtureData = [];
-    let FixLibCode = await getMaxFixtureLibCode();
-    data.forEach( async ( ele ) => {
-      let fixtureEle = {
-        clientId: req.body.clientId,
-        fixtureCategory: ele['Fixture Name'],
-        fixtureType: ele['Fixture Type'],
-        fixtureHeight: {
-          value: ele['Height(ft)'],
-          unit: 'ft',
-        },
-        fixtureWidth: {
-          value: ele['width(ft)'],
-          unit: 'ft',
-        },
-        shelfConfig: [],
-        ...( ele.fixtureLibCode ) ? { fixtureLibCode: FixLibCode } : {},
-      };
-      for ( let i=1; i<=ele['Shelf Count']; i++ ) {
-        let shelfType = `Shelf${i} Type`;
-        let TrayRow = `Tray${i} Row`;
-        let shelfProducts = `Shelf${i} Product Capacity`;
-        fixtureEle.shelfConfig.push( {
-          shelfType: ele[shelfType].toLowerCase(),
-          shelfNumber: i,
-          productPerShelf: ele[shelfType] == 'Shelf' ? ele[shelfProducts] : ele[TrayRow]*ele[shelfProducts],
-          trayRows: ele[shelfType] == 'Shelf' ? 0 : ele[TrayRow],
-          productPerTray: ele[shelfType] == 'Tray' ? ele[shelfProducts] : 0,
-        } );
+    let inputData = req.body;
+    let groupedData = inputData.fixtureData.reduce( ( acc, ele ) => {
+      let element = ele.fixtureName +'-'+ele.width;
+      if ( !acc[element] ) {
+        acc[element] = {
+          'clientId': inputData.clientId,
+          'fixtureCategory': ele.fixtureName,
+          'fixtureType': ele.fixtureType,
+          'fixtureLength': {
+            value: ele.height,
+            unit: 'ft',
+          },
+          'fixtureWidth': {
+            value: ele.width,
+            unit: 'ft',
+          },
+          'fixtureLibCode': ele?.FixLibCode || '',
+          'header.height': {
+            value: ele.headerHeight,
+            unit: 'ft',
+          },
+          'footer.height': {
+            value: ele.footerHeight,
+            unit: 'ft',
+          },
+          'shelfConfig': [
+            {
+              shelfNumber: ele.shelfNumber,
+              shelfType: ele.shelfType,
+              trayRow: ele.shelfType =='shelf' ? 0 : ele.trayRows,
+              productPerShelf: ele.productPerShelf,
+              label: ele.shelfName,
+            },
+          ],
+          'status': ele?.FixLibCode ? inputData.updateFixtureStatus : inputData.newFixtureStatus,
+        };
+      } else {
+        acc[element].shelfConfig.push(
+            {
+              shelfNumber: ele.shelfNumber,
+              shelfType: ele.shelfType,
+              trayRow: ele.trayRows,
+              productPerShelf: ele.productPerShelf,
+              label: ele.shelfName,
+            },
+        );
       }
-      if ( ele?.fixtureLibCode ) {
+      return acc;
+    }, {} );
+    let fixtureData = [];
+    await Promise.all( Object.keys( groupedData ).map( async ( ele ) => {
+      if ( groupedData[ele]?.fixtureLibCode ) {
         await planoLibraryService.updateOne( { fixtureLibCode: ele.fixtureLibCode }, fixtureEle );
       } else {
-        fixtureData.push( fixtureEle );
+        let FixLibCode = await getMaxFixtureLibCode();
+        groupedData[ele].fixtureLibCode = FixLibCode;
+        fixtureData.push( groupedData[ele] );
       }
-    } );
+    } ) );
+    let deleteList = inputData.deleteFixtureList.map( ( ele ) => new ObjectId( ele ) );
+    if ( deleteList.length ) {
+      await planoLibraryService.deleteMany( { _id: { $in: deleteList } } );
+    }
     await planoLibraryService.insertMany( fixtureData );
     return res.sendSuccess( 'FIxture library created successfully' );
   } catch ( e ) {
@@ -81,6 +100,7 @@ async function getMaxFixtureLibCode() {
       }
     }
   } catch ( e ) {
+    console.log( e );
     logger.error( { functionName: 'getMaxFixtureLibCode', error: e } );
     return false;
   }
@@ -91,12 +111,12 @@ export async function createFixture( req, res ) {
     let FixLibCode = await getMaxFixtureLibCode();
     let data ={
       clientId: req.body.clientId,
-      fixtureCategory: req.body.fixtureName,
+      fixtureCategory: req.body.fixtureCategory,
       fixtureType: req.body.fixtureType,
       fixtureLibCode: FixLibCode,
     };
     let fixtLibraryDetails = await planoLibraryService.create( data );
-    return res.sendSuccess( { message: 'Fixture library created successfully', data: fixtLibraryDetails } );
+    return res.sendSuccess( fixtLibraryDetails );
   } catch ( e ) {
     logger.error( { functionName: 'createFixture', error: e } );
     return res.sendError( e, 500 );
@@ -109,12 +129,6 @@ export async function updateFixture( req, res ) {
     if ( !fixtureLibraryDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-    if ( fixtureLibraryDetails.fixtureType == 'floor' ) {
-      req.body.panelConfig = req.body.panelConfig.map( ( ele ) => {
-        ele = { ...ele, productPerPanel: ele.panelRow * ele.productPerPanelRow };
-        return ele;
-      } );
-    }
 
     let fixtureData = {
       ...( req.body.fixtureHeight ) ? {
@@ -123,9 +137,9 @@ export async function updateFixture( req, res ) {
           unit: 'ft',
         },
       } : {},
-      ...( req.body.fixtureLength ) ? {
+      ...( req.body.fixtureHeight ) ? {
         fixtureLength: {
-          value: req.body.fixtureLength,
+          value: req.body.fixtureHeight,
           unit: 'ft',
         },
       } : {},
@@ -135,9 +149,22 @@ export async function updateFixture( req, res ) {
           unit: 'ft',
         },
       } : {},
-      ...( fixtureLibraryDetails.fixtureType == 'wall' ) ? {
-        shelfConfig: req.body.shelfConfig,
-      } : { panelConfig: req.body.panelConfig },
+      ...( req.body.headerHeight ) ? {
+        'header.height': {
+          value: req.body.headerHeight,
+          unit: 'ft',
+        },
+      } : {},
+      ...( req.body.footerHeight ) ? {
+        'footer.height': {
+          value: req.body.footerHeight,
+          unit: 'ft',
+        },
+      } : {},
+      fixtureCategory: req.body.fixtureCategory,
+      shelfConfig: req.body.shelfConfig,
+      header: req.body.header,
+      footer: req.body.footer,
       status: req.body.status,
       updatedAt: new Date(),
     };
@@ -189,6 +216,50 @@ export async function FixtureLibraryList( req, res ) {
       { $match: matchStage },
       {
         $lookup: {
+          from: 'fixtureconfigs',
+          let: { libraryId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [ '$fixtureLibraryId', '$$libraryId' ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                templateId: { $push: '$_id' },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                templateId: 1,
+              },
+            },
+          ],
+          as: 'fixtureTemplate',
+        },
+      },
+      {
+        $project: {
+          fixtureWidth: 1,
+          fixtureHeight: 1,
+          fixtureLength: 1,
+          shelfConfig: 1,
+          fixtureCategory: 1,
+          clientId: 1,
+          fixtureType: 1,
+          status: 1,
+          header: 1,
+          footer: 1,
+          fixtureLibCode: 1,
+          templateId: { $ifNull: [ { $arrayElemAt: [ '$fixtureTemplate.templateId', 0 ] }, [] ] },
+        },
+      },
+      {
+        $lookup: {
           from: 'storefixtures',
           let: { libraryId: '$_id' },
           pipeline: [
@@ -215,7 +286,6 @@ export async function FixtureLibraryList( req, res ) {
           as: 'storeFixtureDetails',
         },
       },
-
       {
         $project: {
           fixtureWidth: 1,
@@ -226,10 +296,13 @@ export async function FixtureLibraryList( req, res ) {
           clientId: 1,
           fixtureType: 1,
           status: 1,
-          planoId: { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] },
+          templateId: 1,
+          header: 1,
+          footer: 1,
+          fixtureLibCode: 1,
+          planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
         },
       },
-
       {
         $lookup: {
           from: 'planograms',
@@ -252,7 +325,6 @@ export async function FixtureLibraryList( req, res ) {
           as: 'planoStatus',
         },
       },
-
       {
         $project: {
           fixtureWidth: 1,
@@ -262,6 +334,12 @@ export async function FixtureLibraryList( req, res ) {
           shelfConfig: 1,
           fixtureCategory: 1,
           clientId: 1,
+          planoId: 1,
+          templateId: 1,
+          header: 1,
+          footer: 1,
+          fixtureLibCode: 1,
+          planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
             $cond: {
               if: { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] },
@@ -308,7 +386,6 @@ export async function FixtureLibraryList( req, res ) {
           },
         },
     );
-    console.log( JSON.stringify( query ) );
     let fixtureDetails = await planoLibraryService.aggregate( query );
     if ( !fixtureDetails[0]?.fixtureData.length ) {
       return res.sendError( 'No data found', 204 );
@@ -317,7 +394,116 @@ export async function FixtureLibraryList( req, res ) {
       count: fixtureDetails[0].count[0].total,
       data: fixtureDetails[0].fixtureData,
     };
-    return res.sendSuccess( result );
+    if ( !req.body.export ) {
+      return res.sendSuccess( result );
+    } else {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet( 'Fixture Library' );
+
+      sheet.getRow( 1 ).values = [ 'Fixture Code', 'Fixture Name', 'Fixture Type', 'Fixture Height(ft)', 'Fixture Width(ft)', 'Fixture Header height(ft)', 'Fixture Footer Height(ft)', 'Shelf Number', 'Shelf Type', 'Tray Rows', 'Product Per Shelf/Tray', 'Shelf Name' ];
+
+      let rowStart = 2;
+      let lockedRowNumber = [];
+
+      if ( req.body.emptyDownload ) {
+        result.data = [];
+      }
+      for ( let i=0; i<result.data.length; i++ ) {
+        let height = 0;
+        let width = 0;
+        let headerHeight = 0;
+        let footerHeight = 0;
+        if ( result.data[i]?.fixtureHeight ) {
+          height = result.data[i].fixtureHeight.value;
+        }
+        if ( result.data[i]?.fixtureWidth ) {
+          width = result.data[i].fixtureWidth.value;
+        }
+        if ( result.data[i]?.header?.height?.value ) {
+          headerHeight = result.data[i].header.height.value;
+        }
+        if ( result.data[i]?.footer?.height?.value ) {
+          footerHeight = result.data[i].footer.height.value;
+        }
+        if ( !result.data[i].shelfConfig.length ) {
+          sheet.getRow( rowStart ).values = [ result.data[i]?.fixtureLibCode || '', result.data[i]?.fixtureCategory || '', result.data[i]?.fixtureType || 'Wall', height, width, headerHeight, footerHeight, 0, 'Shlef', 0, 0, '' ];
+          if ( result.data[i].status == 'active' || result.data[i].templateId.length ) {
+            lockedRowNumber.push( rowStart );
+          }
+          rowStart = rowStart + 1;
+        }
+
+        result.data[i].shelfConfig.forEach( ( shelf ) => {
+          sheet.getRow( rowStart ).values = [ result.data[i]?.fixtureLibCode || '', result.data[i]?.fixtureCategory || '', result.data[i]?.fixtureType || 'Wall', height, width, headerHeight, footerHeight, shelf?.shelfNumber || 0, shelf?.shelfType || 'Shelf', shelf?.trayRows || 0, shelf?.productPerShelf || 0, shelf?.label || '' ];
+          if ( result.data[i].status == 'active' || result.data[i].templateId.length ) {
+            lockedRowNumber.push( rowStart );
+          }
+          rowStart = rowStart + 1;
+        } );
+      }
+
+
+      const maxRows = 1048576;
+
+      let unlockCellValues = 20000;
+      let splitLoop = [];
+
+      for ( let i=1; i<=unlockCellValues; i+=2000 ) {
+        splitLoop.push( { start: i, end: i + 1999 } );
+      }
+
+      await Promise.all( splitLoop.map( ( item ) => {
+        for ( let i=item.start; i<=item.end; i++ ) {
+          const row = sheet.getRow( i );
+          if ( i > rowStart - 1 ) {
+            row.values = [ '', '', '', '', '', '', '', '', '', '', '', '' ];
+          }
+          if ( !lockedRowNumber.includes( i ) && i != 1 ) {
+            row.eachCell( ( cell ) => {
+              const columnLetter = cell.address.replace( /[0-9]/g, '' );
+              if ( columnLetter != 'A' ) {
+                cell.protection = { locked: false };
+              }
+            } );
+          }
+        }
+      } ) );
+
+
+      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ '"Wall,Floor"' ] }, { key: `I2:I${maxRows}`, optionList: [ '"Shelf,Tray"' ] } ];
+
+      dropDownRange.forEach( ( ele ) => {
+        sheet.dataValidations.add( ele.key, {
+          type: 'list',
+          allowBlank: true,
+          formulae: ele.optionList,
+          showErrorMessage: true,
+          errorTitle: 'Invalid Choice',
+          error: 'Please select from the dropdown list.',
+        } );
+      } );
+
+
+      await sheet.protect( 'password123', {
+        selectLockedCells: false,
+        selectUnlockedCells: true,
+      } );
+
+      sheet.columns.forEach( ( column ) => {
+        let maxLength = 10;
+        column.eachCell( { includeEmpty: true }, ( cell ) => {
+          const cellValue = cell.value ? cell.value.toString() : '';
+          if ( cellValue.length > maxLength ) {
+            maxLength = cellValue.length;
+          }
+        } );
+        column.width = maxLength + 2;
+      } );
+      const buffer = await workbook.xlsx.writeBuffer();
+      res.setHeader( 'Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
+      res.setHeader( 'Content-Disposition', 'attachment; filename="Fixture Library.xlsx"' );
+      return res.send( buffer );
+    }
   } catch ( e ) {
     console.log( e );
     logger.error( { functionName: 'updateFixture', error: e } );
@@ -336,6 +522,8 @@ export async function duplicateFixture( req, res ) {
     }
     fixtureLibDetails = fixtureLibDetails.toObject();
     delete fixtureLibDetails._id;
+    let FixLibCode = await getMaxFixtureLibCode();
+    fixtureLibDetails.fixtureLibCode = FixLibCode;
     await planoLibraryService.create( fixtureLibDetails );
     return res.sendSuccess( 'Fixture duplicated successfully' );
   } catch ( e ) {
