@@ -490,8 +490,8 @@ export async function duplicateFixture( req, res ) {
     delete fixtureLibDetails._id;
     let FixLibCode = await getMaxFixtureLibCode();
     fixtureLibDetails.fixtureLibCode = FixLibCode;
-    await planoLibraryService.create( fixtureLibDetails );
-    return res.sendSuccess( 'Fixture duplicated successfully' );
+    let duplicateData = await planoLibraryService.create( fixtureLibDetails );
+    return res.sendSuccess( { message: 'Fixture duplicated successfully', id: duplicateData._id } );
   } catch ( e ) {
     logger.error( { functionName: 'duplicateFixture', error: e } );
     return res.sendError( e, 500 );

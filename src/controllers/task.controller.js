@@ -201,7 +201,7 @@ export async function createTask( req, res ) {
       let storeDetails = await storeService.aggregate( query );
       await Promise.all( storeDetails.map( async ( store ) => {
         let getUserEmail = req.body.stores.find( ( ele ) => ele.store.toLowerCase() == store.storeName.toLowerCase() );
-        let planoDetails = await planoService.findOne( { storeId: store.storeId } );
+        let planoDetails = await planoService.findOne( { storeName: store.storeId } );
         if ( planoDetails ) {
           if ( getUserEmail ) {
             let query = [
@@ -623,6 +623,7 @@ export async function generatetaskDetails( req, res ) {
       {
         $match: {
           date_iso: { $gte: new Date( req.body.fromDate ), $lte: new Date( req.body.toDate ) },
+          storeName: { $in: req.body.storeId },
           isPlano: true,
           planoType: 'layout',
         },
@@ -688,7 +689,13 @@ export async function generatetaskDetails( req, res ) {
       return res.sendError( 'No date found', 204 );
     }
 
-    return res.sendSuccess( { completeCount: completeStore.length, store: completeStore, incompleteStore: incompleteStore, incompleteStoreCount: incompleteStore.length } );
+    completeStore = completeStore.map( ( item ) => {
+      return { storeName: item, checklistStatus: 'submit' };
+    } );
+
+    let data = [ ...completeStore, ...incompleteStore ];
+
+    return res.sendSuccess( data );
 
     // await download( taskDetails, res );
   } catch ( e ) {
