@@ -10,6 +10,8 @@ import * as planoService from '../service/planogram.service.js';
 import * as checklistService from '../service/checklist.service.js';
 import timeZone from 'dayjs/plugin/timezone.js';
 import * as planoProductService from '../service/planoProduct.service.js';
+import mongoose from 'mongoose';
+const ObjectId = mongoose.Types.ObjectId;
 dayjs.extend( timeZone );
 
 async function createUser( data ) {
@@ -623,9 +625,30 @@ export async function generatetaskDetails( req, res ) {
       {
         $match: {
           date_iso: { $gte: new Date( req.body.fromDate ), $lte: new Date( req.body.toDate ) },
-          storeName: { $in: req.body.storeId },
           isPlano: true,
           planoType: 'layout',
+          userEmail: { $nin: [ 'sandeep.pal@yopmail.com', 'balaji@tangotech.co.in', 'gowri@tangotech.co.in', 'gowri@yopmail.com' ] },
+          // checklistStatus: { $ne: 'submit' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'checklistassignconfigs',
+          let: { storeId: '$store_id', email: '$userEmail' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: [ '$checkListId', new ObjectId( '6789e3c7a5683c58215ec089' ) ] },
+                    { $eq: [ '$store_id', '$$storeId' ] },
+                    { $eq: [ '$userEmail', '$$email' ] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'assignUser',
         },
       },
       {
@@ -649,7 +672,7 @@ export async function generatetaskDetails( req, res ) {
       },
       {
         $group: {
-          _id: '$store_id',
+          _id: '$planoId',
           count: { $sum: 1 },
           storeName: { $first: '$storeName' },
           checklistStatus: { $push: '$checklistStatus' },
@@ -664,7 +687,6 @@ export async function generatetaskDetails( req, res ) {
         },
       },
     ];
-    console.log( JSON.stringify( query ) );
     let taskDetails = await processedService.aggregate( query );
     let processedTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.fromDate, $lte: req.body.toDate }, type: 'layout', status: 'incomplete' } );
     processedTaskDetails.forEach( ( item ) => {
@@ -679,11 +701,23 @@ export async function generatetaskDetails( req, res ) {
     } );
     let completeStore = [ ...new Set( taskDetails.filter( ( ele ) => ele.checklistStatus.includes( 'submit' ) ).map( ( ele ) => ele.storeName ) ) ];
 
-    let incompleteStore = [ ...new Set( taskDetails.filter( ( ele ) => !ele.checklistStatus.includes( 'submit' ) ).map( ( ele ) => {
-      return { storeName: ele.storeName, checklistStatus: ele.checklistStatus[ele.checklistStatus.length-1] };
-    } ) ) ];
+    let incompleteStore = taskDetails.filter( ( ele ) => !ele.checklistStatus.includes( 'submit' ) );
 
-    incompleteStore = incompleteStore.filter( ( ele ) => !completeStore.includes( ele ) );
+    incompleteStore = incompleteStore.reduce( ( acc, ele ) => {
+      if ( !acc[ele.storeName] ) {
+        acc[ele.storeName] = {
+          storeName: ele.storeName,
+          status: ele.checklistStatus[ele.checklistStatus.length - 1],
+        };
+      }
+      return acc;
+    }, {} );
+
+    incompleteStore = Object.values( incompleteStore );
+    console.log( incompleteStore );
+
+
+    incompleteStore = incompleteStore.filter( ( ele ) => !completeStore.includes( ele.storeName ) );
 
     if ( !taskDetails.length ) {
       return res.sendError( 'No date found', 204 );
@@ -695,10 +729,11 @@ export async function generatetaskDetails( req, res ) {
 
     let data = [ ...completeStore, ...incompleteStore ];
 
-    return res.sendSuccess( data );
+    return res.sendSuccess( { count: data.length, completeStore: completeStore.length, incompleteStore: incompleteStore.length, data } );
 
     // await download( taskDetails, res );
   } catch ( e ) {
+    console.log( e );
     logger.error( { functioName: 'generatetaskDetails', error: e } );
     return res.sendError( e, 500 );
   }
@@ -711,20 +746,33 @@ export async function taskSubmitDetails( req, res ) {
         $match: {
           date_string: { $gte: req.body.fromDate, $lte: req.body.toDate },
           type: 'layout',
+          status: req.body.status,
+        },
+      },
+      {
+        $group: {
+          _id: '',
+          planoId: { $addToSet: '$planoId' },
         },
       },
       {
         $lookup: {
-          from: 'planograms',
+          from: 'processedtasks',
           let: { plano_id: '$planoId' },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: [ '$_id', '$$plano_id' ] },
+                    { $in: [ '$planoId', '$$plano_id' ] },
                   ],
                 },
+              },
+            },
+            {
+              $group: {
+                _id: '$planoId',
+                storeName: { $first: '$storeName' },
               },
             },
             {
@@ -740,41 +788,15 @@ export async function taskSubmitDetails( req, res ) {
       { $unwind: { path: '$planogram', preserveNullAndEmptyArrays: true } },
       {
         $project: {
+          _id: 0,
           storeName: '$planogram.storeName',
-          answers: 1,
-          type: 1,
-          status: 1,
-          planoId: 1,
-          floorId: 1,
-        },
-      },
-      {
-        $group: {
-          _id: '$planoId',
-          storeName: { $first: '$storeName' },
-          answers: { $last: '$answers' },
-          type: { $last: '$type' },
-          status: { $last: '$status' },
-          floorId: { $last: '$floorId' },
-        },
-      },
-      {
-        $project: {
-          storeName: 1,
-          answers: 1,
-          type: 1,
-          status: 1,
-          planoId: '$_id',
-          floorId: 1,
         },
       },
     ];
 
     let processedTaskDetails = await planoTaskService.aggregate( query );
-    let completeStore = [ ...new Set( processedTaskDetails.filter( ( ele ) => ele.status == 'complete' ).map( ( ele ) => ele.storeName ) ) ];
-    let incompleteStore = [ ...new Set( processedTaskDetails.filter( ( ele ) => ele.status == 'incomplete' ).map( ( ele ) => ele.storeName ) ) ];
-    incompleteStore = incompleteStore.filter( ( ele ) => !completeStore.includes( ele ) );
-    return res.sendSuccess( { complete: { count: completeStore.length, storeList: completeStore }, incompleteStore: { count: incompleteStore.length, storeList: incompleteStore }, data: processedTaskDetails } );
+    processedTaskDetails = processedTaskDetails.map( ( ele ) => ele.storeName );
+    return res.sendSuccess( { count: processedTaskDetails.length, data: processedTaskDetails } );
   } catch ( e ) {
     logger.error( { functioName: 'taskSubmitDetails', error: e } );
     return res.sendError( e, 500 );
