@@ -216,7 +216,7 @@ export async function createTask( req, res ) {
                 {
                   $match: {
                     clientId: req.body.clientId,
-                    email: getUserEmail.email.toLowerCase(),
+                    emailLower: getUserEmail.email.toLowerCase(),
                   },
                 },
               ];
