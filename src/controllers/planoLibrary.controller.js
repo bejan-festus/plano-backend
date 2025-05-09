@@ -162,8 +162,8 @@ export async function getFixture( req, res ) {
 export async function FixtureLibraryList( req, res ) {
   try {
     let limit = req.body?.limit || 10;
-    let page = req.body?.offset || 0;
-    let skip = limit * page;
+    let page = req.body?.offset || 1;
+    let skip = limit * ( page - 1 );
 
     const matchStage = {
       clientId: req.body.clientId,
@@ -347,7 +347,9 @@ export async function FixtureLibraryList( req, res ) {
     query.push(
         {
           $facet: {
-            fixtureData: [ { $skip: skip }, { $limit: limit } ],
+            ...( !req.body?.export ) ? {
+              fixtureData: [ { $skip: skip }, { $limit: limit } ],
+            } : { fixtureData: [ { $skip: skip } ] },
             count: [ { $count: 'total' } ],
           },
         },
@@ -515,6 +517,24 @@ export async function deleteFixture( req, res ) {
     return res.sendSuccess( 'Fixture deleted successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'deleteFixture', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function getFixLibWidth( req, res ) {
+  try {
+    if ( !req.query?.clientId ) {
+      return res.sendError( 'Client id is required', 400 );
+    }
+    let getLibDetails = await planoLibraryService.find( { clientId: req.query.clientId }, { fixtureWidth: 1 } );
+    if ( !getLibDetails ) {
+      return res.sendError( 'No data content', 204 );
+    }
+
+    getLibDetails = getLibDetails.map( ( item ) => item.fixtureWidth.value +' '+item.fixtureWidth.unit );
+    return res.sendSuccess( getLibDetails );
+  } catch ( e ) {
+    logger.error( { functionName: 'getFixLibWidth', error: e } );
     return res.sendError( e, 500 );
   }
 }

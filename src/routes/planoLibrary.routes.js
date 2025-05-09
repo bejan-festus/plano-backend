@@ -13,4 +13,5 @@ planoLibraryRouter
     .get( '/fixtureDetails/:fixtureId', isAllowedSessionHandler, planoLibraryController.getFixture )
     .post( '/fixtureList', isAllowedSessionHandler, validate( validateDtos.fixtureList ), planoLibraryController.FixtureLibraryList )
     .post( '/duplicateFixture', isAllowedSessionHandler, planoLibraryController.duplicateFixture )
-    .post( '/deleteFixture', isAllowedSessionHandler, planoLibraryController.deleteFixture );
+    .post( '/deleteFixture', isAllowedSessionHandler, planoLibraryController.deleteFixture )
+    .get( '/librarySizeList', isAllowedSessionHandler, planoLibraryController.getFixLibWidth );
