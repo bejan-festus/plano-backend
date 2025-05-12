@@ -5,7 +5,7 @@ export const findOne = async ( query={}, field={} ) => {
 };
 
 export const findAndSort = async ( query={}, field={}, sort={} ) => {
-  return await model.fixtureLibraryModel.findOne( query, field ).sort( sort ).collation( { locale: 'en_US', numericOrdering: true } );
+  return await model.fixtureLibraryModel.find( query, field ).sort( sort ).collation( { locale: 'en_US', numericOrdering: true } );
 };
 
 export const find = async ( query={}, field={} ) => {

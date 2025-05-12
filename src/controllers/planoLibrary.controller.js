@@ -9,14 +9,13 @@ export async function fixtureBulkUpload( req, res ) {
   try {
     let inputData = req.body;
     let groupedData = inputData.fixtureData.reduce( ( acc, ele ) => {
-      let element = ele.fixtureName +'-'+ele.width;
-      if ( !acc[element] ) {
-        acc[element] = {
+      if ( !acc[ele.fixtureName] ) {
+        acc[ele.fixtureName] = {
           'clientId': inputData.clientId,
           'fixtureCategory': ele.fixtureName,
           'fixtureType': ele.fixtureType,
           'fixtureLength': {
-            value: ele.height,
+            value: ele.length,
             unit: 'ft',
           },
           'fixtureWidth': {
@@ -44,7 +43,7 @@ export async function fixtureBulkUpload( req, res ) {
           'status': ele?.FixLibCode ? inputData.updateFixtureStatus : inputData.newFixtureStatus,
         };
       } else {
-        acc[element].shelfConfig.push(
+        acc[ele.fixtureName].shelfConfig.push(
             {
               shelfNumber: ele.shelfNumber,
               shelfType: ele.shelfType,
@@ -109,6 +108,22 @@ async function getMaxFixtureLibCode() {
 export async function createFixture( req, res ) {
   try {
     let FixLibCode = await getMaxFixtureLibCode();
+    let query = [
+      {
+        $addFields: {
+          fixtureCategoryLower: { $toLower: '$fixtureCategory' },
+        },
+      },
+      {
+        $match: {
+          fixtureCategoryLower: req.body.fixtureCategory.toLowerCase(),
+        },
+      },
+    ];
+    let fixLibDetails = await planoLibraryService.aggregate( query );
+    if ( fixLibDetails.length ) {
+      return res.sendError( `Fixture Name ${req.body.fixtureCategory} already Exists`, 400 );
+    }
     let data ={
       clientId: req.body.clientId,
       fixtureCategory: req.body.fixtureCategory,
@@ -381,8 +396,8 @@ export async function FixtureLibraryList( req, res ) {
         let width = 0;
         let headerHeight = 0;
         let footerHeight = 0;
-        if ( result.data[i]?.fixtureHeight ) {
-          height = result.data[i].fixtureHeight.value;
+        if ( result.data[i]?.fixtureLength ) {
+          height = result.data[i].fixtureLength.value;
         }
         if ( result.data[i]?.fixtureWidth ) {
           width = result.data[i].fixtureWidth.value;
@@ -438,7 +453,7 @@ export async function FixtureLibraryList( req, res ) {
       } ) );
 
 
-      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ '"Wall,Floor"' ] }, { key: `I2:I${maxRows}`, optionList: [ '"Shelf,Tray"' ] } ];
+      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ '"wall,floor"' ] }, { key: `I2:I${maxRows}`, optionList: [ '"shelf,tray"' ] } ];
 
       dropDownRange.forEach( ( ele ) => {
         sheet.dataValidations.add( ele.key, {
@@ -490,6 +505,17 @@ export async function duplicateFixture( req, res ) {
     }
     fixtureLibDetails = fixtureLibDetails.toObject();
     delete fixtureLibDetails._id;
+    let getAllLibraryList = await planoLibraryService.findAndSort( { fixtureCategory: { $regex: fixtureLibDetails.fixtureCategory.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), $options: 'i' } }, { fixtureCategory: 1 }, { fixtureCategory: -1 } );
+    let counter = 1;
+    let newFixName = fixtureLibDetails.fixtureCategory + ` (${counter})`;
+    if ( getAllLibraryList?.length ) {
+      let fixtureNameList = getAllLibraryList.map( ( ele ) => ele.fixtureCategory );
+      while ( fixtureNameList.includes( newFixName ) ) {
+        newFixName = fixtureLibDetails.fixtureCategory + ` (${counter})`;
+        counter++;
+      }
+    }
+    fixtureLibDetails.fixtureCategory = newFixName;
     let FixLibCode = await getMaxFixtureLibCode();
     fixtureLibDetails.fixtureLibCode = FixLibCode;
     let duplicateData = await planoLibraryService.create( fixtureLibDetails );
