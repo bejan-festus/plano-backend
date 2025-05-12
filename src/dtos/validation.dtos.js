@@ -100,14 +100,16 @@ export const createFixture = {
 };
 
 export const updateFixtureSchema = joi.object( {
-  fixtureWidth: joi.number().optional(),
-  fixtureHeight: joi.number().optional(),
+  fixtureWidth: joi.object().optional(),
+  fixtureHeight: joi.object().optional(),
   fixtureCategory: joi.string().optional(),
-  fixtureLength: joi.number().optional(),
-  headerHeight: joi.number().optional(),
-  footerHeight: joi.number().optional(),
+  fixtureLength: joi.object().optional(),
+  header: joi.object().optional(),
+  footer: joi.object().optional(),
   shelfConfig: joi.array().optional(),
   status: joi.string().required(),
+  fixtureCapacity: joi.number().required(),
+  isBodyEnabled: joi.boolean().required(),
 } );
 
 export const fixtureIdSchema = joi.object( {

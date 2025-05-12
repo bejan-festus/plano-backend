@@ -9,14 +9,13 @@ export async function fixtureBulkUpload( req, res ) {
   try {
     let inputData = req.body;
     let groupedData = inputData.fixtureData.reduce( ( acc, ele ) => {
-      let element = ele.fixtureName +'-'+ele.width;
-      if ( !acc[element] ) {
-        acc[element] = {
+      if ( !acc[ele.fixtureName] ) {
+        acc[ele.fixtureName] = {
           'clientId': inputData.clientId,
           'fixtureCategory': ele.fixtureName,
           'fixtureType': ele.fixtureType,
           'fixtureLength': {
-            value: ele.height,
+            value: ele.length,
             unit: 'ft',
           },
           'fixtureWidth': {
@@ -44,7 +43,7 @@ export async function fixtureBulkUpload( req, res ) {
           'status': ele?.FixLibCode ? inputData.updateFixtureStatus : inputData.newFixtureStatus,
         };
       } else {
-        acc[element].shelfConfig.push(
+        acc[ele.fixtureName].shelfConfig.push(
             {
               shelfNumber: ele.shelfNumber,
               shelfType: ele.shelfType,
@@ -71,7 +70,7 @@ export async function fixtureBulkUpload( req, res ) {
       await planoLibraryService.deleteMany( { _id: { $in: deleteList } } );
     }
     await planoLibraryService.insertMany( fixtureData );
-    return res.sendSuccess( 'FIxture library created successfully' );
+    return res.sendSuccess( 'Fixture library created successfully' );
   } catch ( e ) {
     console.log( e );
     logger.error( { functionName: 'fixtureBulkUpload', error: e } );
@@ -109,6 +108,22 @@ async function getMaxFixtureLibCode() {
 export async function createFixture( req, res ) {
   try {
     let FixLibCode = await getMaxFixtureLibCode();
+    let query = [
+      {
+        $addFields: {
+          fixtureCategoryLower: { $toLower: '$fixtureCategory' },
+        },
+      },
+      {
+        $match: {
+          fixtureCategoryLower: req.body.fixtureCategory.toLowerCase(),
+        },
+      },
+    ];
+    let fixLibDetails = await planoLibraryService.aggregate( query );
+    if ( fixLibDetails.length ) {
+      return res.sendError( `Fixture Name ${req.body.fixtureCategory} already Exists`, 400 );
+    }
     let data ={
       clientId: req.body.clientId,
       fixtureCategory: req.body.fixtureCategory,
@@ -131,41 +146,7 @@ export async function updateFixture( req, res ) {
     }
 
     let fixtureData = {
-      ...( req.body.fixtureHeight ) ? {
-        fixtureHeight: {
-          value: req.body.fixtureHeight,
-          unit: 'ft',
-        },
-      } : {},
-      ...( req.body.fixtureHeight ) ? {
-        fixtureLength: {
-          value: req.body.fixtureHeight,
-          unit: 'ft',
-        },
-      } : {},
-      ...( req.body.fixtureWidth ) ? {
-        fixtureWidth: {
-          value: req.body.fixtureWidth,
-          unit: 'ft',
-        },
-      } : {},
-      ...( req.body.headerHeight ) ? {
-        'header.height': {
-          value: req.body.headerHeight,
-          unit: 'ft',
-        },
-      } : {},
-      ...( req.body.footerHeight ) ? {
-        'footer.height': {
-          value: req.body.footerHeight,
-          unit: 'ft',
-        },
-      } : {},
-      fixtureCategory: req.body.fixtureCategory,
-      shelfConfig: req.body.shelfConfig,
-      header: req.body.header,
-      footer: req.body.footer,
-      status: req.body.status,
+      ...req.body,
       updatedAt: new Date(),
     };
     await planoLibraryService.updateOne( { _id: req.params.fixtureId }, fixtureData );
@@ -196,8 +177,8 @@ export async function getFixture( req, res ) {
 export async function FixtureLibraryList( req, res ) {
   try {
     let limit = req.body?.limit || 10;
-    let page = req.body?.offset || 0;
-    let skip = limit * page;
+    let page = req.body?.offset || 1;
+    let skip = limit * ( page - 1 );
 
     const matchStage = {
       clientId: req.body.clientId,
@@ -381,7 +362,9 @@ export async function FixtureLibraryList( req, res ) {
     query.push(
         {
           $facet: {
-            fixtureData: [ { $skip: skip }, { $limit: limit } ],
+            ...( !req.body?.export ) ? {
+              fixtureData: [ { $skip: skip }, { $limit: limit } ],
+            } : { fixtureData: [ { $skip: skip } ] },
             count: [ { $count: 'total' } ],
           },
         },
@@ -413,8 +396,8 @@ export async function FixtureLibraryList( req, res ) {
         let width = 0;
         let headerHeight = 0;
         let footerHeight = 0;
-        if ( result.data[i]?.fixtureHeight ) {
-          height = result.data[i].fixtureHeight.value;
+        if ( result.data[i]?.fixtureLength ) {
+          height = result.data[i].fixtureLength.value;
         }
         if ( result.data[i]?.fixtureWidth ) {
           width = result.data[i].fixtureWidth.value;
@@ -470,7 +453,7 @@ export async function FixtureLibraryList( req, res ) {
       } ) );
 
 
-      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ '"Wall,Floor"' ] }, { key: `I2:I${maxRows}`, optionList: [ '"Shelf,Tray"' ] } ];
+      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ '"wall,floor"' ] }, { key: `I2:I${maxRows}`, optionList: [ '"shelf,tray"' ] } ];
 
       dropDownRange.forEach( ( ele ) => {
         sheet.dataValidations.add( ele.key, {
@@ -522,10 +505,21 @@ export async function duplicateFixture( req, res ) {
     }
     fixtureLibDetails = fixtureLibDetails.toObject();
     delete fixtureLibDetails._id;
+    let getAllLibraryList = await planoLibraryService.findAndSort( { fixtureCategory: { $regex: fixtureLibDetails.fixtureCategory.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), $options: 'i' } }, { fixtureCategory: 1 }, { fixtureCategory: -1 } );
+    let counter = 1;
+    let newFixName = fixtureLibDetails.fixtureCategory + ` (${counter})`;
+    if ( getAllLibraryList?.length ) {
+      let fixtureNameList = getAllLibraryList.map( ( ele ) => ele.fixtureCategory );
+      while ( fixtureNameList.includes( newFixName ) ) {
+        newFixName = fixtureLibDetails.fixtureCategory + ` (${counter})`;
+        counter++;
+      }
+    }
+    fixtureLibDetails.fixtureCategory = newFixName;
     let FixLibCode = await getMaxFixtureLibCode();
     fixtureLibDetails.fixtureLibCode = FixLibCode;
-    await planoLibraryService.create( fixtureLibDetails );
-    return res.sendSuccess( 'Fixture duplicated successfully' );
+    let duplicateData = await planoLibraryService.create( fixtureLibDetails );
+    return res.sendSuccess( { message: 'Fixture duplicated successfully', id: duplicateData._id } );
   } catch ( e ) {
     logger.error( { functionName: 'duplicateFixture', error: e } );
     return res.sendError( e, 500 );
@@ -549,6 +543,24 @@ export async function deleteFixture( req, res ) {
     return res.sendSuccess( 'Fixture deleted successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'deleteFixture', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function getFixLibWidth( req, res ) {
+  try {
+    if ( !req.query?.clientId ) {
+      return res.sendError( 'Client id is required', 400 );
+    }
+    let getLibDetails = await planoLibraryService.find( { clientId: req.query.clientId }, { fixtureWidth: 1 } );
+    if ( !getLibDetails ) {
+      return res.sendError( 'No data content', 204 );
+    }
+
+    getLibDetails = getLibDetails.map( ( item ) => item.fixtureWidth.value +' '+item.fixtureWidth.unit );
+    return res.sendSuccess( getLibDetails );
+  } catch ( e ) {
+    logger.error( { functionName: 'getFixLibWidth', error: e } );
     return res.sendError( e, 500 );
   }
 }
