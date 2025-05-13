@@ -4430,11 +4430,7 @@ export async function updateCrestPlanogram( req, res ) {
       }
     };
 
-    let storeList = await storeService.find( { ...( req?.body?.storeName ) ? { storeName: req?.body?.storeName } : { storeName: { $in: [
-      'LKST1030', 'LKST2280', 'LKST266', 'LKST267',
-      'LKST351', 'LKST495', 'LKST599', 'LKST81',
-      'LKST914', 'LKST923', 'LKST970',
-    ] } }, clientId: '11' } );
+    let storeList = await storeService.find( { ...( req?.body?.storeName ) ? { storeName: req?.body?.storeName } : { }, clientId: '11' } );
 
     const constantFixtureLength = 1220;
     const constantDetailedFixtureLength = 1220;
@@ -4519,27 +4515,27 @@ export async function updateCrestPlanogram( req, res ) {
         floorArray.push( 'GROUND' );
       }
 
-      for ( let index = 0; index < floorArray.length; index++ ) {
+      for ( let floorIndex = 0; floorIndex < floorArray.length; floorIndex++ ) {
         const leftWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'LEFT WALL' );
         let leftFixtures = leftWall.flatMap( ( wall ) => wall.fixtures );
         if ( isFloorKeyExist ) {
-          leftFixtures = leftFixtures.filter( ( fixture ) => fixture.floor === floorArray[index] );
+          leftFixtures = leftFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
         }
         const rightWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'RIGHT WALL' );
         let rightFixtures = rightWall.flatMap( ( wall ) => wall.fixtures );
         if ( isFloorKeyExist ) {
-          rightFixtures = rightFixtures.filter( ( fixture ) => fixture.floor === floorArray[index] );
+          rightFixtures = rightFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
         }
         const backWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'RIGHT VERTICAL WALL' );
         let backFixtures = backWall.flatMap( ( wall ) => wall.fixtures );
         if ( isFloorKeyExist ) {
-          backFixtures = backFixtures.filter( ( fixture ) => fixture.floor === floorArray[index] );
+          backFixtures = backFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
         }
         let floorFixtures = storeData.data.result.filter(
             ( entry ) => entry['main'] === 'Euro Center' || entry['main'] === 'Euro Center Dr',
         );
         if ( isFloorKeyExist ) {
-          floorFixtures = floorFixtures.filter( ( fixture ) => fixture.floor === floorArray[index] );
+          floorFixtures = floorFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
         }
 
         const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
@@ -4584,11 +4580,12 @@ export async function updateCrestPlanogram( req, res ) {
 
         const floorInsertData = {
           storeName: planoDoc.storeName,
-          storeId: planoDoc.storeId,
+          storeId: storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
           layoutName: `${planoDoc.storeName} - Layout`,
           clientId: '11',
-          floorNumber: index + 1,
-          floorName: `${floorArray[index].toLowerCase()} floor`,
+          floorNumber: floorIndex + 1,
+          floorName: `${floorArray[floorIndex].toLowerCase()} floor`,
+          crestLayout: true,
           layoutPolygon: [
             {
               elementType: 'wall',
@@ -4652,19 +4649,21 @@ export async function updateCrestPlanogram( req, res ) {
           planoId: planoDoc._id,
         };
 
-        const layoutDoc = await storeBuilderService.upsertOne( { planoId: planoDoc._id, floorNumber: index + 1 }, floorInsertData );
+        const layoutDoc = await storeBuilderService.upsertOne( { planoId: planoDoc._id, floorNumber: floorIndex + 1 }, floorInsertData );
 
         let fixtureCounter = 1;
 
-        const leftFixturePromises = leftFixtures.map( async ( fixture, index ) => {
+        for ( let index = 0; index < leftFixtures.length; index++ ) {
+          const fixture = leftFixtures[index];
+
           const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
-          if ( !fixtureConfig ) return;
+          if ( !fixtureConfig ) continue;
           const fixtureConfigDoc = fixtureConfig.toObject();
 
           const fixtureData = {
             'clientId': layoutDoc.clientId,
             'storeName': layoutDoc.storeName,
-            'storeId': layoutDoc.storeId,
+            'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
             'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
@@ -4722,7 +4721,7 @@ export async function updateCrestPlanogram( req, res ) {
               fixtureData,
           );
 
-          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) return;
+          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
           await Promise.all(
               fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
@@ -4732,7 +4731,7 @@ export async function updateCrestPlanogram( req, res ) {
                 const shelfData = {
                   'clientId': '11',
                   'storeName': layoutDoc.storeName,
-                  'storeId': layoutDoc.storeId,
+                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
                   'planoId': layoutDoc.planoId,
                   'floorId': layoutDoc._id,
                   'fixtureId': createdFixture._id,
@@ -4809,7 +4808,7 @@ export async function updateCrestPlanogram( req, res ) {
                       const vmData = {
                         'clientId': layoutDoc.clientId,
                         'storeName': layoutDoc.storeName,
-                        'storeId': layoutDoc.storeId,
+                        'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
                         'planoId': layoutDoc.planoId,
                         'floorId': layoutDoc._id,
                         'type': 'vm',
@@ -4828,17 +4827,20 @@ export async function updateCrestPlanogram( req, res ) {
                 );
               } ) || [],
           );
-        } );
+        }
 
-        const backFixturePromises = backFixtures.map( async ( fixture, index ) => {
+
+        for ( let index = 0; index < backFixtures.length; index++ ) {
+          const fixture = backFixtures[index];
+
           const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
-          if ( !fixtureConfig ) return;
+          if ( !fixtureConfig ) continue;
           const fixtureConfigDoc = fixtureConfig.toObject();
 
           const fixtureData = {
             'clientId': layoutDoc.clientId,
             'storeName': layoutDoc.storeName,
-            'storeId': layoutDoc.storeId,
+            'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
             'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
@@ -4896,7 +4898,7 @@ export async function updateCrestPlanogram( req, res ) {
               fixtureData,
           );
 
-          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) return;
+          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
           await Promise.all(
               fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
@@ -4906,7 +4908,7 @@ export async function updateCrestPlanogram( req, res ) {
                 const shelfData = {
                   'clientId': '11',
                   'storeName': layoutDoc.storeName,
-                  'storeId': layoutDoc.storeId,
+                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
                   'planoId': layoutDoc.planoId,
                   'floorId': layoutDoc._id,
                   'fixtureId': createdFixture._id,
@@ -4983,7 +4985,7 @@ export async function updateCrestPlanogram( req, res ) {
                       const vmData = {
                         'clientId': layoutDoc.clientId,
                         'storeName': layoutDoc.storeName,
-                        'storeId': layoutDoc.storeId,
+                        'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
                         'planoId': layoutDoc.planoId,
                         'floorId': layoutDoc._id,
                         'type': 'vm',
@@ -5002,17 +5004,19 @@ export async function updateCrestPlanogram( req, res ) {
                 );
               } ) || [],
           );
-        } );
+        }
 
-        const rightFixturePromises = rightFixtures.map( async ( fixture, index ) => {
+        for ( let index = 0; index < rightFixtures.length; index++ ) {
+          const fixture = rightFixtures[index];
+
           const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
-          if ( !fixtureConfig ) return;
+          if ( !fixtureConfig ) continue;
           const fixtureConfigDoc = fixtureConfig.toObject();
 
           const fixtureData = {
             'clientId': layoutDoc.clientId,
             'storeName': layoutDoc.storeName,
-            'storeId': layoutDoc.storeId,
+            'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
             'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
@@ -5070,7 +5074,7 @@ export async function updateCrestPlanogram( req, res ) {
               fixtureData,
           );
 
-          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) return;
+          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
           await Promise.all(
               fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
@@ -5080,7 +5084,7 @@ export async function updateCrestPlanogram( req, res ) {
                 const shelfData = {
                   'clientId': '11',
                   'storeName': layoutDoc.storeName,
-                  'storeId': layoutDoc.storeId,
+                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
                   'planoId': layoutDoc.planoId,
                   'floorId': layoutDoc._id,
                   'fixtureId': createdFixture._id,
@@ -5157,7 +5161,7 @@ export async function updateCrestPlanogram( req, res ) {
                       const vmData = {
                         'clientId': layoutDoc.clientId,
                         'storeName': layoutDoc.storeName,
-                        'storeId': layoutDoc.storeId,
+                        'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
                         'planoId': layoutDoc.planoId,
                         'floorId': layoutDoc._id,
                         'type': 'vm',
@@ -5176,9 +5180,11 @@ export async function updateCrestPlanogram( req, res ) {
                 );
               } ) || [],
           );
-        } );
+        }
 
-        const floorFixturePromises = floorFixtures.map( async ( fixture, index ) => {
+
+        for ( let index = 0; index < floorFixtures.length; index++ ) {
+          const fixture = floorFixtures[index];
           const centerRow = Math.floor( totalRows / 2 );
 
           const startingX = roundToTwo( ( finalXDistance / 2 - ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) );
@@ -5197,14 +5203,14 @@ export async function updateCrestPlanogram( req, res ) {
           const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
 
           const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.main } );
-          if ( !fixtureConfig ) return;
+          if ( !fixtureConfig ) continue;
 
           const fixtureConfigDoc = fixtureConfig.toObject();
 
           const fixtureData = {
             'clientId': layoutDoc.clientId,
             'storeName': layoutDoc.storeName,
-            'storeId': layoutDoc.storeId,
+            'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
             'fixtureName': `Fixture ${index+1} - ${fixture.main}`,
@@ -5259,7 +5265,7 @@ export async function updateCrestPlanogram( req, res ) {
               fixtureData,
           );
 
-          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) return;
+          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
           await Promise.all(
               fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
@@ -5270,7 +5276,7 @@ export async function updateCrestPlanogram( req, res ) {
                 const shelfData = {
                   'clientId': '11',
                   'storeName': layoutDoc.storeName,
-                  'storeId': layoutDoc.storeId,
+                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
                   'planoId': layoutDoc.planoId,
                   'floorId': layoutDoc._id,
                   'fixtureId': createdFixture._id,
@@ -5364,7 +5370,7 @@ export async function updateCrestPlanogram( req, res ) {
             const vmData1 = {
               'clientId': layoutDoc.clientId,
               'storeName': layoutDoc.storeName,
-              'storeId': layoutDoc.storeId,
+              'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
               'planoId': layoutDoc.planoId,
               'floorId': layoutDoc._id,
               'type': 'vm',
@@ -5374,7 +5380,7 @@ export async function updateCrestPlanogram( req, res ) {
             const vmData2 = {
               'clientId': layoutDoc.clientId,
               'storeName': layoutDoc.storeName,
-              'storeId': layoutDoc.storeId,
+              'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
               'planoId': layoutDoc.planoId,
               'floorId': layoutDoc._id,
               'type': 'vm',
@@ -5399,13 +5405,11 @@ export async function updateCrestPlanogram( req, res ) {
               ),
             ] );
           }
-        } );
-
-        await Promise.all( [ ...leftFixturePromises, ...backFixturePromises, ...rightFixturePromises, ...floorFixturePromises ] );
+        }
 
         const now = Date.now();
         const elapsedMinutes = ( now - startTime ) / 1000 / 60;
-        console.log( `Store name: ${storeData.storeName},Floor name: ${floorArray[index]} Iteration ${i + 1}/${storeList?.length}: total elapsed time = ${elapsedMinutes.toFixed( 2 )} minutes` );
+        console.log( `Store name: ${storeData.storeName},Floor name: ${floorArray[floorIndex]} Iteration ${i + 1}/${storeList?.length}: total elapsed time = ${elapsedMinutes.toFixed( 2 )} minutes` );
       }
     }
 
@@ -6770,3 +6774,27 @@ export async function updateExcelPlanogram( req, res ) {
   }
 }
 
+async function downloadImage() {
+  const url = 'https://api.getcrest.ai/api/ms_data_preparation/master_data/attachment/?preview=0&attachment_id=2934';
+
+  try {
+    const response = await fetch( url, {
+      headers: {
+        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3MDMyNDcyLCJpYXQiOjE3NDcwMjg4NzIsImp0aSI6IjZmN2Y0Yzk4OGY5ZjRiYjg5NmNhOTYwNzMyMTVlOTUwIiwidXNlcl9pZCI6MTA4NCwiaWQiOjEwODQsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiYWRtaW4ifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJhZG1pbiJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImFkbWluIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJhZG1pbiJ9XX0.Lt3zT1Rw4KnDWRQ8LWYRVMFPS3PHRRTgHXn6kLG8Uk0',
+        Cookie: 'prod_session_key=w144dqljxlh096487nc33rm09vwtossh; prod_session_key=xn1fry9sekk94hs2hfo78erxcmc8a3am',
+      },
+    } );
+
+    if ( !response.ok ) throw new Error( `HTTP error! Status: ${response.status}` );
+
+    const dest = fs.createWriteStream( '2934.png' );
+    response.body.pipe( dest );
+
+    dest.on( 'finish', () => console.log( 'Image saved as image.jpg' ) );
+    dest.on( 'error', ( err ) => console.error( 'File write error:', err ) );
+  } catch ( err ) {
+    console.error( 'Fetch error:', err );
+  }
+}
+
+// downloadImage();
