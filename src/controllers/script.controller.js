@@ -26,6 +26,10 @@ import path from 'path';
 const __filename = fileURLToPath( import.meta.url );
 const __dirname = path.dirname( __filename );
 
+import dayjs from 'dayjs';
+import timeZone from 'dayjs/plugin/timezone.js';
+dayjs.extend( timeZone );
+
 
 export async function getStoreNames( req, res ) {
   try {
@@ -4430,7 +4434,19 @@ export async function updateCrestPlanogram( req, res ) {
       }
     };
 
-    let storeList = await storeService.find( { ...( req?.body?.storeName ) ? { storeName: req?.body?.storeName } : { }, clientId: '11' } );
+    if ( !req?.body?.storeName ) {
+      return res.sendError( 'No store supplied', 200 );
+    }
+
+    let storeQuery = {
+      clientId: '11',
+      $and: [
+        { storeName: req.body.storeName },
+        { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
+      ],
+    };
+
+    let storeList = await storeService.find( storeQuery );
 
     const constantFixtureLength = 1220;
     const constantDetailedFixtureLength = 1220;
@@ -4456,7 +4472,7 @@ export async function updateCrestPlanogram( req, res ) {
       if ( existingPlanogram ) {
         const checkTaskSubmitted = await planoTaskService.findOne( { planoId: existingPlanogram.toObject()._id } );
 
-        const checkTaskCreated = await processedTaskService.findOne( { storeName: storeData.storeName, date_iso: { $gte: new Date( ), $lte: new Date( ) }, isPlano: true } );
+        const checkTaskCreated = await processedTaskService.findOne( { storeName: storeData.storeName, date_string: dayjs().format( 'YYYY-MM-DD' ), isPlano: true } );
 
         if ( checkTaskSubmitted || checkTaskCreated ) {
           continue;
@@ -5410,6 +5426,7 @@ export async function updateCrestPlanogram( req, res ) {
         const now = Date.now();
         const elapsedMinutes = ( now - startTime ) / 1000 / 60;
         console.log( `Store name: ${storeData.storeName},Floor name: ${floorArray[floorIndex]} Iteration ${i + 1}/${storeList?.length}: total elapsed time = ${elapsedMinutes.toFixed( 2 )} minutes` );
+        logger.info( { functionName: 'updateCrestPlanogram', body: `Store name: ${storeData.storeName},Floor name: ${floorArray[floorIndex]} Iteration ${i + 1}/${storeList?.length}: total elapsed time = ${elapsedMinutes.toFixed( 2 )} minutes` } );
       }
     }
 
@@ -6798,3 +6815,45 @@ async function downloadImage() {
 }
 
 // downloadImage();
+
+export async function recorrectTaskData( req, res ) {
+  if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+    return res.sendError( 'Unauthorized', 401 );
+  }
+  try {
+    const taskData = await planoTaskService.find( { type: 'layout' } );
+
+    for ( let index = 0; index < taskData.length; index++ ) {
+      const task = taskData[index].toObject();
+
+      console.log( { storeName: task.storeName, isPlano: true, date_string: task.date_string } );
+
+      const processedTaskData = await processedTaskService.findOne( { storeName: task.storeName, isPlano: true, date_string: task.date_string } );
+
+      const currentPlano = await planoService.findOne( { storeName: processedTaskData?.toObject().storeName } );
+
+      const currentFloor = await storeBuilderService.findOne( { planoId: currentPlano?.toObject()._id } );
+
+      const updateData = {
+        storeName: currentPlano.toObject().storeName,
+        planoId: currentPlano.toObject()._id,
+        floorId: currentFloor.toObject()._id,
+        taskId: processedTaskData?.toObject()?._id,
+      };
+
+      if ( task.date_string ) {
+        updateData.date_iso = new Date( dayjs().format( task.date_string ) );
+      }
+      console.log( updateData );
+
+      const updateTask = await planoTaskService.updateOne( { _id: task._id }, updateData );
+
+      console.log( updateTask );
+    }
+
+    res.sendSuccess( 'Updated Successfully' );
+  } catch ( e ) {
+    console.log( e );
+    return res.sendError( e, 500 );
+  }
+}
