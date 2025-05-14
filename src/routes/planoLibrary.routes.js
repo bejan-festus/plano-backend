@@ -15,3 +15,24 @@ planoLibraryRouter
     .post( '/duplicateFixture', isAllowedSessionHandler, planoLibraryController.duplicateFixture )
     .post( '/deleteFixture', isAllowedSessionHandler, planoLibraryController.deleteFixture )
     .get( '/librarySizeList', isAllowedSessionHandler, planoLibraryController.getFixLibWidth );
+
+planoLibraryRouter
+    .post( '/addVmType', isAllowedSessionHandler, validate( validateDtos.addVmType ), planoLibraryController.addVmType )
+    .post( '/updateVmType/:id', isAllowedSessionHandler, planoLibraryController.updateVmImage )
+    .get( '/getVmTypeList', isAllowedSessionHandler, planoLibraryController.getVmTypeList )
+    .post( '/deletevmImage', isAllowedSessionHandler, planoLibraryController.deleteVmImage )
+    .post( '/deletevmType', isAllowedSessionHandler, planoLibraryController.deleteVmType );
+
+planoLibraryRouter
+    .get( '/getBrandList', isAllowedSessionHandler, planoLibraryController.getBrandList )
+    .post( '/addUpdateBrand', isAllowedSessionHandler, planoLibraryController.addUpdateBrandList )
+    .post( '/uploadBrandList', isAllowedSessionHandler, planoLibraryController.uploadBrandList )
+    .post( '/taskconfig', isAllowedSessionHandler, planoLibraryController.updateTaskConfig );
+
+planoLibraryRouter
+    .post( '/addUpdateVm', isAllowedSessionHandler, planoLibraryController.addUpdateVm )
+    .post( '/getVmLibList', isAllowedSessionHandler, planoLibraryController.getVmLibList )
+    .post( '/duplicateVmLib', isAllowedSessionHandler, planoLibraryController.duplicateVmLib )
+    .post( '/deleteVmLib', isAllowedSessionHandler, planoLibraryController.deleteVmLibrary )
+    .get( '/getVmDetails', isAllowedSessionHandler, planoLibraryController.getVmDetails );
+

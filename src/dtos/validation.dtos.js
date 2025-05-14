@@ -140,3 +140,11 @@ export const fixtureList = {
   body: fixtureListSchema,
 };
 
+export const addVmTypeSchema = joi.object( {
+  clientId: joi.string().required(),
+  vmData: joi.array().items( joi.any() ).min( 1 ),
+} );
+
+export const addVmType = {
+  body: addVmTypeSchema,
+};
