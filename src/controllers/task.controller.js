@@ -218,7 +218,7 @@ export async function createTask( req, res ) {
                 {
                   $match: {
                     clientId: req.body.clientId,
-                    email: getUserEmail.email.toLowerCase(),
+                    emailLower: getUserEmail.email.toLowerCase(),
                   },
                 },
               ];
@@ -509,6 +509,9 @@ export async function updateAnswers( req, res ) {
     };
 
     await planoTaskService.updateOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
+    // req.body.taskId = taskDetails?._id;
+    // req.body.status = 'submit';
+    // await updateStatus( req, res );
     return res.sendSuccess( 'Fixture details updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateAnswers', error: e } );
