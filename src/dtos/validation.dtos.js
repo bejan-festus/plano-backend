@@ -90,7 +90,7 @@ export const updateStatus = {
 };
 
 export const createFixtureSchema = joi.object( {
-  fixtureName: joi.string().required(),
+  fixtureCategory: joi.string().required(),
   fixtureType: joi.string().required(),
   clientId: joi.string().required(),
 } );
@@ -100,14 +100,16 @@ export const createFixture = {
 };
 
 export const updateFixtureSchema = joi.object( {
-  fixtureWidth: joi.number().optional(),
-  fixtureHeight: joi.number().optional(),
-  fixtureName: joi.number().optional(),
-  fixtureLength: joi.number().optional(),
-  shelfCount: joi.number().optional(),
+  fixtureWidth: joi.object().optional(),
+  fixtureHeight: joi.object().optional(),
+  fixtureCategory: joi.string().optional(),
+  fixtureLength: joi.object().optional(),
+  header: joi.object().optional(),
+  footer: joi.object().optional(),
   shelfConfig: joi.array().optional(),
-  panelConfig: joi.array().optional(),
   status: joi.string().required(),
+  fixtureCapacity: joi.number().required(),
+  isBodyEnabled: joi.boolean().required(),
 } );
 
 export const fixtureIdSchema = joi.object( {
@@ -130,6 +132,8 @@ export const fixtureListSchema = joi.object( {
     type: joi.array().items( joi.any() ).min( 0 ),
     size: joi.array().items( joi.any() ).min( 0 ),
   } ).required(),
+  export: joi.boolean().required(),
+  emptyDownload: joi.boolean().required(),
 } );
 
 export const fixtureList = {
