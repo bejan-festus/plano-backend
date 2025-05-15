@@ -7,6 +7,7 @@ import * as planoService from '../service/planogram.service.js';
 import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as fixtureShelfService from '../service/fixtureShelf.service.js';
 import * as planoProductService from '../service/planoProduct.service.js';
+import * as planoVmService from '../service/planoVm.service.js';
 import * as planoMappingService from '../service/planoMapping.service.js';
 import * as planoTaskService from '../service/planoTask.service.js';
 import * as processedTaskService from '../service/processedTaskservice.js';
@@ -14,6 +15,7 @@ import * as processedTaskService from '../service/processedTaskservice.js';
 // import * as planoTaskComplianceService from '../service/planoTask.service.js';
 // import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
+import * as fixtureLibraryService from '../service/planoLibrary.service.js';
 import mongoose from 'mongoose';
 import JSZip from 'jszip';
 import { signedUrl } from 'tango-app-api-middleware';
@@ -6721,6 +6723,1167 @@ export async function updateExcelPlanogram( req, res ) {
     }
 
     res.sendSuccess( finalData );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateCrestPlanogram', error: e } );
+    return res.sendError( e.message || 'Internal Server Error', 500 );
+  }
+}
+
+export async function migrateCrest( req, res ) {
+  try {
+    if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+      return res.sendError( 'Unauthorized', 401 );
+    }
+
+    const startTime = Date.now();
+
+    const layoutApiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
+    let staticToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1NTE3MjQxLCJpYXQiOjE3NDU1MTM2NDEsImp0aSI6Ijg3MWVlNTA3ODY2OTQ5OTVhMTQ0YTk4NzQyNzY0MzEzIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.eGzTMGwwstr13M0Hu1Ls5-gkE_oSPMJJBL2wgygT6Ac';
+
+    async function fetchStoreData( store, bearerToken, res ) {
+      const payload = JSON.stringify( { store_id: store.toObject().storeName?.toUpperCase() } );
+
+      try {
+        const response = await fetch( layoutApiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${bearerToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength( payload ),
+          },
+          body: payload,
+        } );
+
+        const data = await response.text();
+        let jsonData = null;
+
+        try {
+          jsonData = JSON.parse( data );
+        } catch ( parseError ) {
+          logger.error( { functionName: `Warning: Received invalid JSON for store ${store.toObject().storeName}`, error: parseError } );
+          console.warn( `Warning: Received invalid JSON for store ${store.toObject().storeName}` );
+          return { storeName: store.toObject().storeName, data: null };
+        }
+
+        if ( jsonData.result === 'Token is invalid or expired' ) {
+          console.log( 'Token expired, retrying...' );
+          try {
+            const newToken = await fetchNewToken();
+            staticToken = newToken;
+            return await fetchStoreData( store, newToken, res );
+          } catch ( retryError ) {
+            logger.error( { functionName: 'Failed to refresh token', error: retryError } );
+            console.log( retryError );
+            return res.sendError( 'Failed to refresh token', 401 );
+          }
+        }
+
+        return { storeName: store.toObject().storeName, data: jsonData };
+      } catch ( error ) {
+        logger.error( { functionName: `Error fetching data for ${store.toObject().storeName}:`, error } );
+        console.error( `Error fetching data for ${store.toObject().storeName}:`, error.message );
+        return { storeName: store.toObject().storeName, data: null };
+      }
+    }
+
+
+    const fetchNewToken = async () => {
+      const fetchWithCookies = fetchCookie( fetch );
+
+      const email = 'tango.lenskart@getcrest.ai';
+      const password = 'Tangolenskart@123';
+
+      const credentials = JSON.stringify( { email, password } );
+
+      const invalidateUrl = 'https://app.getcrest.ai/api/ms_iam/user/session/override/';
+      const tokenUrl = 'https://app.getcrest.ai/api/ms_iam/token/';
+
+      try {
+        const invalidateRes = await fetchWithCookies( invalidateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: credentials,
+        } );
+
+        const invalidateData = await invalidateRes.json();
+        console.log( 'Invalidate response:', invalidateData );
+
+        console.log( 'Fetching new token...' );
+        const tokenRes = await fetchWithCookies( tokenUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+          },
+          body: credentials,
+        } );
+
+        const tokenData = await tokenRes.json();
+        console.log( 'Token response:', tokenData );
+
+        return tokenData.access;
+      } catch ( error ) {
+        console.error( 'Error fetching new token:', error );
+        throw error;
+      }
+    };
+
+    let storeList = await storeService.find( { ...( req?.body?.storeName ) ? { storeName: req?.body?.storeName } : { storeName: { $in: [ 'LKST600' ] } }, clientId: '11' } );
+
+    const constantFixtureLength = 1220;
+    const constantDetailedFixtureLength = 1220;
+
+    const constantFixtureWidth = 610;
+    const constantDetailedFixtureWidth = 1524;
+
+    const mmToFeet = 305;
+
+    function roundToTwo( num ) {
+      return Math.round( num * 100 ) / 100;
+    }
+
+    for ( let i = 0; i < storeList.length; i++ ) {
+      const storeData = await fetchStoreData( storeList[i], staticToken, res );
+
+      if ( storeData?.data?.message !== 'SUCCESS' ) continue;
+
+      const storeDetails = storeList[i];
+
+      const existingPlanogram = await planoService.findOne( { storeName: storeData.storeName } );
+
+      if ( existingPlanogram ) {
+        const checkTaskSubmitted = await planoTaskService.findOne( { planoId: existingPlanogram.toObject()._id } );
+
+        const checkTaskCreated = await processedTaskService.findOne( { storeName: storeData.storeName, date_iso: { $gte: new Date( ), $lte: new Date( ) }, isPlano: true } );
+
+        if ( checkTaskSubmitted || checkTaskCreated ) {
+          continue;
+        }
+      }
+
+
+      if ( existingPlanogram?.toObject()?._id && mongoose.Types.ObjectId.isValid( existingPlanogram?.toObject()?._id ) ) {
+        await Promise.all( [ planoService.deleteOne( { _id: existingPlanogram?.toObject()?._id } ), storeBuilderService.deleteMany( { planoId: existingPlanogram?.toObject()?._id } ),
+          storeFixtureService.deleteMany( { planoId: existingPlanogram?.toObject()?._id } ), fixtureShelfService.deleteMany( { planoId: existingPlanogram?.toObject()?._id } ),
+          planoMappingService.deleteMany( { planoId: existingPlanogram?.toObject()?._id } ),
+        ] );
+      }
+
+
+      const planoInsertData = {
+        storeName: storeData.storeName,
+        storeId: storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        layoutName: `${storeData.storeName} - Layout`,
+        clientId: '11',
+        attachments: [],
+        createdBy: new mongoose.Types.ObjectId( '66a78cd82734f4f857cd6db6' ),
+        createdByName: 'Bejan',
+        createdByEmail: 'bejan@tangotech.co.in',
+        status: 'completed',
+        floorNumber: 1,
+        productResolutionLevel: 'L2',
+        scanType: 'qr',
+      };
+
+      const insertedPlano = await planoService.upsertOne( { storeName: storeData.storeName }, planoInsertData );
+      const planoDoc = insertedPlano.toObject();
+
+      const floors = new Set();
+
+      for ( const item of storeData.data.result ) {
+        if ( item.floor ) {
+          floors.add( item.floor );
+        }
+
+        if ( Array.isArray( item.fixtures ) ) {
+          for ( const fixture of item.fixtures ) {
+            if ( fixture.floor ) {
+              floors.add( fixture.floor );
+            }
+          }
+        }
+      }
+
+      const floorArray = Array.from( floors );
+
+      let isFloorKeyExist = true;
+
+      if ( !floorArray.length ) {
+        isFloorKeyExist = false;
+        floorArray.push( 'GROUND' );
+      }
+
+      for ( let floorIndex = 0; floorIndex < floorArray.length; floorIndex++ ) {
+        const leftWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'LEFT WALL' );
+        let leftFixtures = leftWall.flatMap( ( wall ) => wall.fixtures );
+        if ( isFloorKeyExist ) {
+          leftFixtures = leftFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
+        }
+        const rightWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'RIGHT WALL' );
+        let rightFixtures = rightWall.flatMap( ( wall ) => wall.fixtures );
+        if ( isFloorKeyExist ) {
+          rightFixtures = rightFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
+        }
+        const backWall = storeData.data.result.filter( ( entry ) => entry['main'] === 'RIGHT VERTICAL WALL' );
+        let backFixtures = backWall.flatMap( ( wall ) => wall.fixtures );
+        if ( isFloorKeyExist ) {
+          backFixtures = backFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
+        }
+        let floorFixtures = storeData.data.result.filter(
+            ( entry ) => entry['main'] === 'Euro Center' || entry['main'] === 'Euro Center Dr',
+        );
+        if ( isFloorKeyExist ) {
+          floorFixtures = floorFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
+        }
+
+        const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        const leftXDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+        const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
+        const leftYDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantDetailedFixtureWidth / mmToFeet ) ) ) : 0;
+
+        const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        const rightXDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
+
+        const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+        const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
+
+        const maxFixturesPerRow = floorFixtures.length/2;
+        const totalRows = 2;
+
+        const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
+
+        const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( 2 * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
+        const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( 2 * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
+
+        const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+        const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
+
+        const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
+        const backYDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantDetailedFixtureWidth / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth )/mmToFeet ) ) ): 0;
+
+        const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
+        const maxXDetailedDistance = Math.max( leftXDetailedDistanceFeet, rightXDetailedDistanceFeet, floorXDetailedDistanceFeet );
+
+        const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
+        const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
+
+        const finalXDistance = roundToTwo( ( maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance ) );
+        const finalXDetailedDistance = roundToTwo( ( maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance ) );
+
+        const finalYDistance = roundToTwo( ( maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) ) ) );
+        const finalYDetailedDistance = roundToTwo( ( maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) ) ) );
+
+
+        const floorInsertData = {
+          storeName: planoDoc.storeName,
+          storeId: storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+          layoutName: `${planoDoc.storeName} - Layout`,
+          clientId: '11',
+          floorNumber: floorIndex + 1,
+          floorName: `${floorArray[floorIndex].toLowerCase()} floor`,
+          crestLayout: true,
+          layoutPolygon: [
+            {
+              elementType: 'wall',
+              distance: finalXDistance,
+              unit: 'ft',
+              direction: 'right',
+              angle: 90,
+              elementNumber: 1,
+              detailedDistance: finalXDetailedDistance,
+            },
+            {
+              elementType: 'wall',
+              distance: finalYDistance,
+              unit: 'ft',
+              direction: 'down',
+              angle: 90,
+              elementNumber: 2,
+              detailedDistance: finalYDetailedDistance,
+            },
+            {
+              elementType: 'wall',
+              distance: finalXDistance,
+              unit: 'ft',
+              direction: 'left',
+              angle: 90,
+              elementNumber: 3,
+              detailedDistance: finalXDetailedDistance,
+            },
+            {
+              elementType: 'wall',
+              distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+              unit: 'ft',
+              direction: 'up',
+              angle: 90,
+              elementNumber: 4,
+              detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+            },
+            {
+              elementType: 'entrance',
+              distance: roundToTwo( ( ( finalYDistance * 20 ) / 100 ) ),
+              unit: 'ft',
+              direction: 'up',
+              angle: 90,
+              elementNumber: 1,
+              detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
+            },
+            {
+              elementType: 'wall',
+              distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+              unit: 'ft',
+              direction: 'up',
+              angle: 90,
+              elementNumber: 5,
+              detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+            },
+          ],
+          createdBy: new mongoose.Types.ObjectId( '66a78cd82734f4f857cd6db6' ),
+          createdByName: 'Bejan',
+          createdByEmail: 'bejan@tangotech.co.in',
+          status: 'completed',
+          planoId: planoDoc._id,
+        };
+
+        const layoutDoc = await storeBuilderService.upsertOne( { planoId: planoDoc._id, floorNumber: floorIndex + 1 }, floorInsertData );
+
+        let fixtureCounter = 1;
+
+        for ( let index = 0; index < leftFixtures.length; index++ ) {
+          const fixture = leftFixtures[index];
+
+          const fixtureConfig = await fixtureLibraryService.findOne( { fixtureCategory: fixture.fixtureType } );
+          if ( !fixtureConfig ) continue;
+          const fixtureConfigDoc = fixtureConfig.toObject();
+          const fixtureTemplate = {
+            'clientId': layoutDoc.clientId,
+            'fixtureCategory': fixtureConfigDoc.fixtureCategory,
+            'fixtureType': 'wall',
+            'fixtureName': `${fixtureConfigDoc.fixtureCategory}-${roundToTwo( constantFixtureLength/mmToFeet )}ft`,
+            'fixtureHeight': {
+              'value': 0,
+              'unit': 'mm',
+            },
+            'fixtureLength': {
+              'value': constantFixtureLength,
+              'unit': 'mm',
+            },
+            'fixtureWidth': {
+              'value': constantFixtureWidth,
+              'unit': 'mm',
+            },
+            'fixtureStaticLength': {
+              'value': fixtureConfigDoc.fixtureLength.value,
+              'unit': fixtureConfigDoc.fixtureLength.unit,
+            },
+            'fixtureStaticLength': {
+              'value': fixtureConfigDoc.fixtureWidth.value,
+              'unit': fixtureConfigDoc.fixtureLength.unit,
+            },
+            'shelfConfig': [ ...fixtureConfigDoc.shelfConfig ],
+            'header': {
+              'height': {
+                'value': fixtureConfigDoc?.header?.height?.value,
+                'unit': fixtureConfigDoc?.footer?.height?.unit,
+              },
+              'label': fixture.header,
+              'isEnabled': true,
+            },
+            'footer': {
+              'height': {
+                'value': fixtureConfigDoc?.footer?.height?.value,
+                'unit': fixtureConfigDoc?.footer?.height?.unit,
+              },
+              'label': fixture.footer,
+              'isEnabled': true,
+            },
+            'isBodyEnabled': true,
+            'productResolutionLevel': 'L3',
+            'fixtureLibraryId': fixtureConfigDoc._id,
+            'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+            'fixtureBrandCategory': fixture.fixtureSubname.flatMap( ( s ) => s.split( ' + ' ) ),
+            'fixtureBrandSubCategory': [],
+            'status': 'complete',
+          };
+
+          const createdTemplate = await fixtureConfigService.upsertOne(
+              {
+                clientId: layoutDoc.clientId,
+                fixtureName: fixtureTemplate.fixtureName,
+              },
+              fixtureTemplate,
+          );
+
+          const templateDoc = createdTemplate.toObject();
+
+          const fixtureData = {
+            ...templateDoc,
+            clientId: layoutDoc.clientId,
+            storeName: layoutDoc.storeName,
+            storeId: storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+            planoId: layoutDoc.planoId,
+            floorId: layoutDoc._id,
+            associatedElementType: 'wall',
+            fixtureNumber: fixtureCounter,
+            associatedElementNumber: 1,
+            associatedElementFixtureNumber: index+1,
+            relativePosition: {
+              'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+              'y': 0,
+              'unit': 'ft',
+            },
+            relativeDetailedPosition: {
+              'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+              'y': 0,
+              'unit': 'ft',
+            },
+          };
+
+          delete fixtureData._id;
+
+
+          const createdFixture = await storeFixtureService.upsertOne(
+              {
+                floorId: layoutDoc._id,
+                fixtureNumber: fixtureCounter++,
+              },
+              fixtureData,
+          );
+
+          if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
+
+          await Promise.all(
+              fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
+                const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+                const shelfSection = shelfZone.products.find( ( product ) => !product.isMerchandisingElement );
+
+                const shelfData = {
+                  'clientId': '11',
+                  'storeName': layoutDoc.storeName,
+                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+                  'planoId': layoutDoc.planoId,
+                  'floorId': layoutDoc._id,
+                  'fixtureId': createdFixture._id,
+                  'shelfNumber': j + 1,
+                  'shelfOrder': 'LTR',
+                  'shelfCapacity': configShelf.shelfCapacity,
+                  'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
+                  'sectionZone': configShelf.shelfZone,
+                  'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
+                };
+
+                await fixtureShelfService.upsertOne(
+                    {
+                      fixtureId: createdFixture._id,
+                      shelfNumber: j + 1,
+                    },
+                    shelfData,
+                );
+              } ),
+          );
+
+          const vmConfigs = [];
+
+          await Promise.all(
+              fixture.productZones?.map( async ( zone ) => {
+                const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
+                const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
+                const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
+
+                await Promise.all(
+                    vms.map( async ( vm ) => {
+                      let configData = vmConfig[0];
+
+                      if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
+                        configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
+                      }
+
+                      if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
+                        configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+                      }
+
+                      if ( !configData ) return;
+
+                      const insertData = {
+                        'clientId': '11',
+                        'vmName': vm.productName,
+                        'vmHeight': {
+                          'value': configData.vmHeightmm,
+                          'unit': 'mm',
+                        },
+                        'vmWidth': {
+                          'value': configData.vmWidthmm,
+                          'unit': 'mm',
+                        },
+                      };
+
+                      const vmTemplate = await planoVmService.upsertOne(
+                          {
+                            'vmName': vm.productName,
+                            'vmHeight.value': configData.vmHeightmm,
+                            'vmWidth.value': configData.vmWidthmm,
+                          },
+                          insertData,
+                      );
+
+                      const existingVmConfigs = templateDoc.vmConfig;
+
+                      let isConfigExist = existingVmConfigs.find( ( config ) => config.startYPosition === configData.startShelf &&
+                        config.endYPosition === configData.endShelf && config.xZone && configData.zone );
+                      if ( !isConfigExist ) {
+                        const updateData = [
+                          ...existingVmConfigs,
+                          {
+                            'startYPosition': configData.startShelf,
+                            'endYPosition': configData.endShelf,
+                            'xZone': configData.zone,
+                          },
+                        ];
+                        await fixtureConfigService.upsertOne(
+                            {
+                              _id: createdTemplate._id,
+                            },
+                            {
+                              vmConfig: updateData,
+                            },
+                        );
+
+                        isConfigExist = {
+                          'vmId': vmTemplate._id,
+                          'startYPosition': configData.startShelf,
+                          'endYPosition': configData.endShelf,
+                          'xZone': configData.zone,
+                        };
+                      }
+
+                      let existingConfig = existingVmConfigs.find( ( config ) => config.startYPosition === configData.startShelf &&
+                        config.endYPosition === configData.endShelf && config.xZone && configData.zone );
+
+                      const updatedConfig = [
+                        createdFixture.toObject().vmConfig,
+                        existingConfig,
+                      ];
+
+                      await storeFixtureService.upsertOne(
+                          {
+                            _id: createdFixture._id,
+                          },
+                          { vmConfig: updatedConfig },
+                      );
+
+                      const vmData = {
+                        'clientId': layoutDoc.clientId,
+                        'storeName': layoutDoc.storeName,
+                        'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+                        'planoId': layoutDoc.planoId,
+                        'floorId': layoutDoc._id,
+                        'type': 'vm',
+                        'fixtureId': createdFixture._id,
+                        'productId': vmTemplate._id,
+                      };
+
+                      await planoMappingService.upsertOne(
+                          {
+                            fixtureId: createdFixture._id,
+                            productId: vmTemplate._id,
+                          },
+                          vmData,
+                      );
+                    } ),
+                );
+              } ) || [],
+          );
+        }
+
+
+        // for ( let index = 0; index < backFixtures.length; index++ ) {
+        //   const fixture = backFixtures[index];
+
+        //   const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+        //   if ( !fixtureConfig ) continue;
+        //   const fixtureConfigDoc = fixtureConfig.toObject();
+
+        //   const fixtureData = {
+        //     'clientId': layoutDoc.clientId,
+        //     'storeName': layoutDoc.storeName,
+        //     'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //     'planoId': layoutDoc.planoId,
+        //     'floorId': layoutDoc._id,
+        //     'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
+        //     'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
+        //     'fixtureBrandCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+        //     'fixtureBrandSubCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+        //     'fixtureCode': fixtureConfigDoc?.fixtureCode,
+        //     'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+        //     'fixtureType': 'wall',
+        //     'fixtureHeight': {
+        //       'value': 0,
+        //       'unit': 'mm',
+        //     },
+        //     'fixtureLength': {
+        //       'value': constantFixtureWidth,
+        //       'unit': 'mm',
+        //     },
+        //     'fixtureWidth': {
+        //       'value': constantFixtureLength,
+        //       'unit': 'mm',
+        //     },
+        //     'associatedElementType': 'wall',
+        //     'associatedElementNumber': 2,
+        //     'relativePosition': {
+        //       'x': roundToTwo( ( finalXDistance - ( constantFixtureWidth/mmToFeet ) ) ),
+        //       'y': roundToTwo( ( ( index * ( ( constantFixtureLength/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantFixtureWidth/mmToFeet ) ) ),
+        //       'unit': 'ft',
+        //     },
+        //     'fixtureNumber': fixtureCounter,
+        //     'detailedFixtureLength': {
+        //       'value': constantDetailedFixtureLength,
+        //       'unit': 'mm',
+        //     },
+        //     'detailedFixtureWidth': {
+        //       'value': constantDetailedFixtureWidth,
+        //       'unit': 'mm',
+        //     },
+        //     'relativeDetailedPosition': {
+        //       'x': roundToTwo( ( finalXDetailedDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
+        //       'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
+        //       'unit': 'ft',
+        //     },
+        //     'productResolutionLevel': 'L2',
+        //     'associatedElementFixtureNumber': index+1,
+        //     'header': fixture.header,
+        //     'footer': fixture.footer,
+        //     'fixtureConfigId': fixtureConfigDoc._id,
+        //   };
+
+        //   const createdFixture = await storeFixtureService.upsertOne(
+        //       {
+        //         floorId: layoutDoc._id,
+        //         fixtureNumber: fixtureCounter++,
+        //       },
+        //       fixtureData,
+        //   );
+
+        //   if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
+
+        //   await Promise.all(
+        //       fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
+        //         const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+        //         const shelfSection = shelfZone.products.find( ( product ) => !product.isMerchandisingElement );
+
+        //         const shelfData = {
+        //           'clientId': '11',
+        //           'storeName': layoutDoc.storeName,
+        //           'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //           'planoId': layoutDoc.planoId,
+        //           'floorId': layoutDoc._id,
+        //           'fixtureId': createdFixture._id,
+        //           'shelfNumber': j + 1,
+        //           'shelfOrder': 'LTR',
+        //           'shelfCapacity': configShelf.shelfCapacity,
+        //           'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
+        //           'sectionZone': configShelf.shelfZone,
+        //           'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
+        //         }; ;
+
+        //         await fixtureShelfService.upsertOne(
+        //             {
+        //               fixtureId: createdFixture._id,
+        //               shelfNumber: j + 1,
+        //             },
+        //             shelfData,
+        //         );
+        //       } ),
+        //   );
+
+        //   await Promise.all(
+        //       fixture.productZones?.map( async ( zone ) => {
+        //         const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
+        //         const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
+        //         const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
+
+        //         await Promise.all(
+        //             vms.map( async ( vm ) => {
+        //               let configData = vmConfig[0];
+
+        //               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
+        //                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
+        //               }
+
+        //               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
+        //                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+        //               }
+
+        //               if ( !configData ) return;
+
+        //               const insertData = {
+        //                 'clientId': '11',
+        //                 'productId': 'VMCR',
+        //                 'type': 'vm',
+        //                 'productName': vm.productName,
+        //                 'productHeight': {
+        //                   'value': configData.vmHeightmm,
+        //                   'unit': 'mm',
+        //                 },
+        //                 'productWidth': {
+        //                   'value': configData.vmWidthmm,
+        //                   'unit': 'mm',
+        //                 },
+        //                 'startYPosition': configData.startShelf,
+        //                 'endYPosition': configData.endShelf,
+        //                 'xZone': configData.zone,
+        //                 'fixtureConfigId': fixtureConfig._id,
+        //               };
+
+        //               const vmTemplate = await planoProductService.upsertOne(
+        //                   {
+        //                     'productName': vm.productName,
+        //                     'fixtureConfigId': fixtureConfig._id,
+        //                     'productHeight.value': configData.vmHeightmm,
+        //                     'productWidth.value': configData.vmWidthmm,
+        //                     'startYPosition': configData.startShelf,
+        //                     'endYPosition': configData.endShelf,
+        //                     'xZone': configData.zone,
+        //                   },
+        //                   insertData,
+        //               );
+
+        //               const vmData = {
+        //                 'clientId': layoutDoc.clientId,
+        //                 'storeName': layoutDoc.storeName,
+        //                 'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //                 'planoId': layoutDoc.planoId,
+        //                 'floorId': layoutDoc._id,
+        //                 'type': 'vm',
+        //                 'fixtureId': createdFixture._id,
+        //                 'productId': vmTemplate._id,
+        //               };
+
+        //               await planoMappingService.upsertOne(
+        //                   {
+        //                     fixtureId: createdFixture._id,
+        //                     productId: vmTemplate._id,
+        //                   },
+        //                   vmData,
+        //               );
+        //             } ),
+        //         );
+        //       } ) || [],
+        //   );
+        // }
+
+        // for ( let index = 0; index < rightFixtures.length; index++ ) {
+        //   const fixture = rightFixtures[index];
+
+        //   const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+        //   if ( !fixtureConfig ) continue;
+        //   const fixtureConfigDoc = fixtureConfig.toObject();
+
+        //   const fixtureData = {
+        //     'clientId': layoutDoc.clientId,
+        //     'storeName': layoutDoc.storeName,
+        //     'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //     'planoId': layoutDoc.planoId,
+        //     'floorId': layoutDoc._id,
+        //     'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
+        //     'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
+        //     'fixtureBrandCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+        //     'fixtureBrandSubCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
+        //     'fixtureCode': fixtureConfigDoc?.fixtureCode,
+        //     'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+        //     'fixtureType': 'wall',
+        //     'fixtureHeight': {
+        //       'value': 0,
+        //       'unit': 'mm',
+        //     },
+        //     'fixtureLength': {
+        //       'value': constantFixtureLength,
+        //       'unit': 'mm',
+        //     },
+        //     'fixtureWidth': {
+        //       'value': constantFixtureWidth,
+        //       'unit': 'mm',
+        //     },
+        //     'associatedElementType': 'wall',
+        //     'associatedElementNumber': 3,
+        //     'relativePosition': {
+        //       'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
+        //       'y': roundToTwo( ( finalYDistance - ( constantFixtureWidth / mmToFeet ) ) ),
+        //       'unit': 'ft',
+        //     },
+        //     'fixtureNumber': fixtureCounter,
+        //     'detailedFixtureLength': {
+        //       'value': constantDetailedFixtureLength,
+        //       'unit': 'mm',
+        //     },
+        //     'detailedFixtureWidth': {
+        //       'value': constantDetailedFixtureWidth,
+        //       'unit': 'mm',
+        //     },
+        //     'relativeDetailedPosition': {
+        //       'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+        //       'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
+        //       'unit': 'ft',
+        //     },
+        //     'productResolutionLevel': 'L2',
+        //     'associatedElementFixtureNumber': index+1,
+        //     'header': fixture.header,
+        //     'footer': fixture.footer,
+        //     'fixtureConfigId': fixtureConfigDoc._id,
+        //   };
+
+        //   const createdFixture = await storeFixtureService.upsertOne(
+        //       {
+        //         floorId: layoutDoc._id,
+        //         fixtureNumber: fixtureCounter++,
+        //       },
+        //       fixtureData,
+        //   );
+
+        //   if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
+
+        //   await Promise.all(
+        //       fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
+        //         const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+        //         const shelfSection = shelfZone.products.find( ( product ) => !product.isMerchandisingElement );
+
+        //         const shelfData = {
+        //           'clientId': '11',
+        //           'storeName': layoutDoc.storeName,
+        //           'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //           'planoId': layoutDoc.planoId,
+        //           'floorId': layoutDoc._id,
+        //           'fixtureId': createdFixture._id,
+        //           'shelfNumber': j + 1,
+        //           'shelfOrder': 'LTR',
+        //           'shelfCapacity': configShelf.shelfCapacity,
+        //           'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
+        //           'sectionZone': configShelf.shelfZone,
+        //           'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
+        //         };
+
+        //         await fixtureShelfService.upsertOne(
+        //             {
+        //               fixtureId: createdFixture._id,
+        //               shelfNumber: j + 1,
+        //             },
+        //             shelfData,
+        //         );
+        //       } ),
+        //   );
+
+        //   await Promise.all(
+        //       fixture.productZones?.map( async ( zone ) => {
+        //         const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
+        //         const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
+        //         const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
+
+        //         await Promise.all(
+        //             vms.map( async ( vm ) => {
+        //               let configData = vmConfig[0];
+
+        //               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
+        //                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
+        //               }
+
+        //               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
+        //                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+        //               }
+
+        //               if ( !configData ) return;
+
+        //               const insertData = {
+        //                 'clientId': '11',
+        //                 'productId': 'VMCR',
+        //                 'type': 'vm',
+        //                 'productName': vm.productName,
+        //                 'productHeight': {
+        //                   'value': configData.vmHeightmm,
+        //                   'unit': 'mm',
+        //                 },
+        //                 'productWidth': {
+        //                   'value': configData.vmWidthmm,
+        //                   'unit': 'mm',
+        //                 },
+        //                 'startYPosition': configData.startShelf,
+        //                 'endYPosition': configData.endShelf,
+        //                 'xZone': configData.zone,
+        //                 'fixtureConfigId': fixtureConfig._id,
+        //               };
+
+        //               const vmTemplate = await planoProductService.upsertOne(
+        //                   {
+        //                     'productName': vm.productName,
+        //                     'fixtureConfigId': fixtureConfig._id,
+        //                     'productHeight.value': configData.vmHeightmm,
+        //                     'productWidth.value': configData.vmWidthmm,
+        //                     'startYPosition': configData.startShelf,
+        //                     'endYPosition': configData.endShelf,
+        //                     'xZone': configData.zone,
+        //                   },
+        //                   insertData,
+        //               );
+
+        //               const vmData = {
+        //                 'clientId': layoutDoc.clientId,
+        //                 'storeName': layoutDoc.storeName,
+        //                 'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //                 'planoId': layoutDoc.planoId,
+        //                 'floorId': layoutDoc._id,
+        //                 'type': 'vm',
+        //                 'fixtureId': createdFixture._id,
+        //                 'productId': vmTemplate._id,
+        //               };
+
+        //               await planoMappingService.upsertOne(
+        //                   {
+        //                     fixtureId: createdFixture._id,
+        //                     productId: vmTemplate._id,
+        //                   },
+        //                   vmData,
+        //               );
+        //             } ),
+        //         );
+        //       } ) || [],
+        //   );
+        // }
+
+
+        // for ( let index = 0; index < floorFixtures.length; index++ ) {
+        //   const fixture = floorFixtures[index];
+        //   const centerRow = Math.floor( totalRows / 2 );
+
+        //   const startingX = roundToTwo( ( finalXDistance / 2 - ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) );
+        //   const detailedStartingX = roundToTwo( ( finalXDetailedDistance / 2 - ( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) );
+
+        //   const startingY = finalYDistance / 2 - centerRow * ( constantFixtureWidth / mmToFeet );
+        //   const detailedStartingY = finalYDetailedDistance / 2 - centerRow * ( constantDetailedFixtureWidth / mmToFeet );
+
+        //   const colIndex = Math.floor( index / 2 );
+        //   const rowIndex = index % 2 === 0 ? 1 : 0;
+
+        //   const xPos = roundToTwo( startingX + colIndex * ( constantFixtureLength / mmToFeet ) );
+        //   const yPos = roundToTwo( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) );
+
+        //   const detailedXPos = roundToTwo( ( detailedStartingX + colIndex * ( constantDetailedFixtureLength / mmToFeet ) ) );
+        //   const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
+
+        //   const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.main } );
+        //   if ( !fixtureConfig ) continue;
+
+        //   const fixtureConfigDoc = fixtureConfig.toObject();
+
+        //   const fixtureData = {
+        //     'clientId': layoutDoc.clientId,
+        //     'storeName': layoutDoc.storeName,
+        //     'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //     'planoId': layoutDoc.planoId,
+        //     'floorId': layoutDoc._id,
+        //     'fixtureName': `Fixture ${index+1} - ${fixture.main}`,
+        //     'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
+        //     'fixtureBrandCategory': fixture.centerSubMain ? fixture.centerSubMain : undefined,
+        //     'fixtureBrandSubCategory': fixture.centerSubMain ? fixture.centerSubMain : undefined,
+        //     'fixtureCode': fixtureConfigDoc?.fixtureCode,
+        //     'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
+        //     'fixtureType': 'floor',
+        //     'fixtureHeight': {
+        //       'value': 0,
+        //       'unit': 'mm',
+        //     },
+        //     'fixtureLength': {
+        //       'value': constantFixtureLength,
+        //       'unit': 'mm',
+        //     },
+        //     'fixtureWidth': {
+        //       'value': constantFixtureWidth,
+        //       'unit': 'mm',
+        //     },
+        //     'relativePosition': {
+        //       'x': xPos,
+        //       'y': yPos,
+        //       'unit': 'ft',
+        //     },
+        //     'fixtureNumber': fixtureCounter,
+        //     'detailedFixtureLength': {
+        //       'value': constantDetailedFixtureLength,
+        //       'unit': 'mm',
+        //     },
+        //     'detailedFixtureWidth': {
+        //       'value': constantDetailedFixtureWidth,
+        //       'unit': 'mm',
+        //     },
+        //     'relativeDetailedPosition': {
+        //       'x': detailedXPos,
+        //       'y': detailedYPos,
+        //       'unit': 'ft',
+        //     },
+        //     'productResolutionLevel': 'L2',
+        //     'associatedElementFixtureNumber': index+1,
+        //     'fixtureConfigId': fixtureConfigDoc._id,
+        //   };
+
+
+        //   const createdFixture = await storeFixtureService.upsertOne(
+        //       {
+        //         floorId: layoutDoc._id,
+        //         fixtureNumber: fixtureCounter++,
+        //       },
+        //       fixtureData,
+        //   );
+
+        //   if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
+
+        //   await Promise.all(
+        //       fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
+        //         const shelfSection = fixture.centerSuperSubMain.find(
+        //             ( product ) => product.isVisualMerchandiser === false || product.isVisualMerchandiser === true,
+        //         );
+
+        //         const shelfData = {
+        //           'clientId': '11',
+        //           'storeName': layoutDoc.storeName,
+        //           'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //           'planoId': layoutDoc.planoId,
+        //           'floorId': layoutDoc._id,
+        //           'fixtureId': createdFixture._id,
+        //           'shelfNumber': j + 1,
+        //           'shelfOrder': 'LTR',
+        //           'shelfCapacity': configShelf.shelfCapacity,
+        //           'sectionName': fixture.centerSuperSubMain.find( ( product ) => product.isVisualMerchandiser === true ) ? shelfSection?.name + ' PIDs' : shelfSection?.name,
+        //           'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
+        //         };
+
+        //         await fixtureShelfService.upsertOne(
+        //             {
+        //               fixtureId: createdFixture._id,
+        //               shelfNumber: j + 1,
+        //             },
+        //             shelfData,
+        //         );
+        //       } ),
+        //   );
+
+        //   const vm = fixture.centerSuperSubMain.find( ( vm ) => vm.isVisualMerchandiser );
+        //   const vmConfig = fixtureConfigDoc.vmConfig;
+
+        //   if ( vm ) {
+        //     const [ configData1, configData2 ] = [ vmConfig[0], vmConfig[1] ];
+
+        //     const insertData1 = {
+        //       'clientId': '11',
+        //       'productId': 'VMCR',
+        //       'type': 'vm',
+        //       'productName': vm.name,
+        //       'productHeight': {
+        //         'value': configData1.vmHeightmm,
+        //         'unit': 'mm',
+        //       },
+        //       'productWidth': {
+        //         'value': configData1.vmWidthmm,
+        //         'unit': 'mm',
+        //       },
+        //       'startYPosition': configData1.startShelf,
+        //       'endYPosition': configData1.endShelf,
+        //       'xZone': configData1.zone,
+        //       'fixtureConfigId': fixtureConfig._id,
+        //     };
+        //     const insertData2 = {
+        //       'clientId': '11',
+        //       'productId': 'VMCR',
+        //       'type': 'vm',
+        //       'productName': ' ',
+        //       'productHeight': {
+        //         'value': configData2.vmHeightmm,
+        //         'unit': 'mm',
+        //       },
+        //       'productWidth': {
+        //         'value': configData2.vmWidthmm,
+        //         'unit': 'mm',
+        //       },
+        //       'startYPosition': configData2.startShelf,
+        //       'endYPosition': configData2.endShelf,
+        //       'xZone': configData2.zone,
+        //       'fixtureConfigId': fixtureConfig._id,
+        //     };
+
+        //     const [ vmTemplate1, vmTemplate2 ] = await Promise.all( [
+        //       planoProductService.upsertOne(
+        //           {
+        //             'productName': vm.name,
+        //             'fixtureConfigId': fixtureConfig._id,
+        //             'productHeight.value': configData1.vmHeightmm,
+        //             'productWidth.value': configData1.vmWidthmm,
+        //             'startYPosition': configData1.startShelf,
+        //             'endYPosition': configData1.endShelf,
+        //             'xZone': configData1.zone,
+        //           },
+        //           insertData1,
+        //       ),
+        //       planoProductService.upsertOne(
+        //           {
+        //             'productName': ' ',
+        //             'fixtureConfigId': fixtureConfig._id,
+        //             'productHeight.value': configData2.vmHeightmm,
+        //             'productWidth.value': configData2.vmWidthmm,
+        //             'startYPosition': configData2.startShelf,
+        //             'endYPosition': configData2.endShelf,
+        //             'xZone': configData2.zone,
+        //           },
+        //           insertData2,
+        //       ),
+        //     ] );
+
+        //     const vmData1 = {
+        //       'clientId': layoutDoc.clientId,
+        //       'storeName': layoutDoc.storeName,
+        //       'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //       'planoId': layoutDoc.planoId,
+        //       'floorId': layoutDoc._id,
+        //       'type': 'vm',
+        //       'fixtureId': createdFixture._id,
+        //       'productId': vmTemplate1._id,
+        //     };
+        //     const vmData2 = {
+        //       'clientId': layoutDoc.clientId,
+        //       'storeName': layoutDoc.storeName,
+        //       'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+        //       'planoId': layoutDoc.planoId,
+        //       'floorId': layoutDoc._id,
+        //       'type': 'vm',
+        //       'fixtureId': createdFixture._id,
+        //       'productId': vmTemplate2._id,
+        //     };
+
+        //     await Promise.all( [
+        //       planoMappingService.upsertOne(
+        //           {
+        //             fixtureId: createdFixture._id,
+        //             productId: vmTemplate1._id,
+        //           },
+        //           vmData1,
+        //       ),
+        //       planoMappingService.upsertOne(
+        //           {
+        //             fixtureId: createdFixture._id,
+        //             productId: vmTemplate2._id,
+        //           },
+        //           vmData2,
+        //       ),
+        //     ] );
+        //   }
+        // }
+
+        const now = Date.now();
+        const elapsedMinutes = ( now - startTime ) / 1000 / 60;
+        console.log( `Store name: ${storeData.storeName},Floor name: ${floorArray[floorIndex]} Iteration ${i + 1}/${storeList?.length}: total elapsed time = ${elapsedMinutes.toFixed( 2 )} minutes` );
+      }
+    }
+
+    res.sendSuccess( 'Updated Successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateCrestPlanogram', error: e } );
     return res.sendError( e.message || 'Internal Server Error', 500 );

@@ -28,4 +28,5 @@ scriptRouter
     .post( '/updateCrestVms', scriptController.updateCrestVms )
     .post( '/downloadPlanoImages', scriptController.downloadPlanoImage )
     .post( '/getVideoUrls', scriptController.getVideoLinks )
-    .post( '/updateExcelPlanogram', scriptController.updateExcelPlanogram );
+    .post( '/updateExcelPlanogram', scriptController.updateExcelPlanogram )
+    .post( '/migrateCrest', scriptController.migrateCrest );
