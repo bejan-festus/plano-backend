@@ -4127,36 +4127,12 @@ export async function downloadPlanoImage( req, res ) {
           date_string: { $gte: req.body.fromDate, $lte: req.body.toDate },
           type: 'layout',
           status: 'incomplete',
+          storeName: { $in: req.body.store },
         },
       },
-      {
-        $lookup: {
-          from: 'planograms',
-          let: { plano_id: '$planoId' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: [ '$_id', '$$plano_id' ] },
-                  ],
-                },
-              },
-            },
-            {
-              $project: {
-                storeName: 1,
-                _id: 0,
-              },
-            },
-          ],
-          as: 'planogram',
-        },
-      },
-      { $unwind: { path: '$planogram', preserveNullAndEmptyArrays: true } },
       {
         $project: {
-          storeName: '$planogram.storeName',
+          storeName: 1,
           answers: 1,
           type: 1,
           status: 1,
@@ -4170,17 +4146,18 @@ export async function downloadPlanoImage( req, res ) {
     if ( !taskDetails.length ) {
       return res.sendError( 'No data found', 204 );
     }
-    let planoList = taskDetails.map( ( ele ) => ele.planoId );
-    let storeList = taskDetails.map( ( ele ) => ele.storeName );
+    let planoList = [ ...new Set( taskDetails.map( ( ele ) => ele.planoId ) ) ];
+    console.log( planoList );
+    let storeList = [ ...new Set( taskDetails.map( ( ele ) => ele.storeName ) ) ];
+    console.log( storeList );
     async function sleep( ms ) {
       return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
     }
 
     async function openPlanoUrls( planoList ) {
       for ( let id of planoList ) {
-        const url = `http://localhost:8080/#/plano?planoId=${id}&token&url=http://localhost:3008`;
+        const url = `https://plano-builder.tangoeye.ai/#/plano?planoId=${id}&token&download=1&url=http://localhost:3008`;
         const driver = await new Builder().forBrowser( 'chrome' ).build();
-
         try {
           await driver.get( url );
           await sleep( 20000 );
@@ -4200,6 +4177,7 @@ export async function downloadPlanoImage( req, res ) {
     if ( !req.body?.merge ) {
       const downloadsPath = path.join( os.homedir(), 'Downloads' );
       const targetFolder = path.join( __dirname, '..', '..', `${req.body.file}Images` );
+      console.log( 'test' );
       await openPlanoUrls( planoList );
       if ( !fs.existsSync( targetFolder ) ) {
         fs.mkdirSync( targetFolder, { recursive: true } );
