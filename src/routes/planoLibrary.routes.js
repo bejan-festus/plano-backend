@@ -7,32 +7,33 @@ import * as validateDtos from '../dtos/validation.dtos.js';
 export const planoLibraryRouter = express.Router();
 
 planoLibraryRouter
-    .post( '/fixtureBulkUpload', isAllowedSessionHandler, planoLibraryController.fixtureBulkUpload )
+    .post( '/fixtureBulkUpload', isAllowedSessionHandler, validate( validateDtos.fixtureBulkUpload ), planoLibraryController.fixtureBulkUpload )
     .post( '/createFixture', isAllowedSessionHandler, validate( validateDtos.createFixture ), planoLibraryController.createFixture )
     .post( '/updateFixture/:fixtureId', isAllowedSessionHandler, validate( validateDtos.updateFixture ), planoLibraryController.updateFixture )
-    .get( '/fixtureDetails/:fixtureId', isAllowedSessionHandler, planoLibraryController.getFixture )
-    .post( '/fixtureList', isAllowedSessionHandler, validate( validateDtos.fixtureList ), planoLibraryController.FixtureLibraryList )
-    .post( '/duplicateFixture', isAllowedSessionHandler, planoLibraryController.duplicateFixture )
-    .post( '/deleteFixture', isAllowedSessionHandler, planoLibraryController.deleteFixture )
-    .get( '/librarySizeList', isAllowedSessionHandler, planoLibraryController.getFixLibWidth );
+    .get( '/fixtureDetails', isAllowedSessionHandler, validate( validateDtos.fixtureId ), planoLibraryController.getFixture )
+    .post( '/fixtureList', isAllowedSessionHandler, validate( validateDtos.fixtureVMListSchema ), planoLibraryController.FixtureLibraryList )
+    .post( '/duplicateFixture', isAllowedSessionHandler, validate( validateDtos.bodyFixtureId ), planoLibraryController.duplicateFixture )
+    .post( '/deleteFixture', isAllowedSessionHandler, validate( validateDtos.bodyFixtureId ), planoLibraryController.deleteFixture )
+    .get( '/fixtureSizeList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.getFixLibWidth );
 
 planoLibraryRouter
     .post( '/addVmType', isAllowedSessionHandler, validate( validateDtos.addVmType ), planoLibraryController.addVmType )
-    .post( '/updateVmType/:id', isAllowedSessionHandler, planoLibraryController.updateVmImage )
-    .get( '/getVmTypeList', isAllowedSessionHandler, planoLibraryController.getVmTypeList )
-    .post( '/deletevmImage', isAllowedSessionHandler, planoLibraryController.deleteVmImage )
-    .post( '/deletevmType', isAllowedSessionHandler, planoLibraryController.deleteVmType );
+    .post( '/uploadVmtypeImage/:vmId', isAllowedSessionHandler, planoLibraryController.uploadVmImage )
+    .get( '/getVmTypeList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.getVmTypeList )
+    .post( '/deleteVmTypeImage', isAllowedSessionHandler, validate( validateDtos.deleteVMTypeImage ), planoLibraryController.deletevmTypeImage );
 
 planoLibraryRouter
-    .get( '/getBrandList', isAllowedSessionHandler, planoLibraryController.getBrandList )
-    .post( '/addUpdateBrand', isAllowedSessionHandler, planoLibraryController.addUpdateBrandList )
-    .post( '/uploadBrandList', isAllowedSessionHandler, planoLibraryController.uploadBrandList )
-    .post( '/taskconfig', isAllowedSessionHandler, planoLibraryController.updateTaskConfig );
+    .get( '/getBrandList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.getBrandList )
+    .post( '/addUpdateBrand', isAllowedSessionHandler, validate( validateDtos.addUpdateBrand ), planoLibraryController.addUpdateBrandList )
+    .post( '/uploadBrandList', isAllowedSessionHandler, validate( validateDtos.uploadBrandList ), planoLibraryController.uploadBrandList )
+    .post( '/updateTaskconfig', isAllowedSessionHandler, validate( validateDtos.updateTaskConfig ), planoLibraryController.updateTaskConfig )
+    .get( '/getTaskConfig', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.getTaskConfig );
 
 planoLibraryRouter
-    .post( '/addUpdateVm', isAllowedSessionHandler, planoLibraryController.addUpdateVm )
-    .post( '/getVmLibList', isAllowedSessionHandler, planoLibraryController.getVmLibList )
-    .post( '/duplicateVmLib', isAllowedSessionHandler, planoLibraryController.duplicateVmLib )
-    .post( '/deleteVmLib', isAllowedSessionHandler, planoLibraryController.deleteVmLibrary )
-    .get( '/getVmDetails', isAllowedSessionHandler, planoLibraryController.getVmDetails );
+    .post( '/addUpdateVm', isAllowedSessionHandler, validate( validateDtos.addUpdateVm ), planoLibraryController.addUpdateVm )
+    .post( '/getVmLibList', isAllowedSessionHandler, validate( validateDtos.fixtureVMListSchema ), planoLibraryController.getVmLibList )
+    .post( '/duplicateVmLib', isAllowedSessionHandler, validate( validateDtos.deleteVmLib ), planoLibraryController.duplicateVmLib )
+    .post( '/deleteVmLib', isAllowedSessionHandler, validate( validateDtos.deleteVmLib ), planoLibraryController.deleteVmLibrary )
+    .get( '/getVmDetails', isAllowedSessionHandler, validate( validateDtos.getVmDetails ), planoLibraryController.getVmDetails )
+    .post( '/vmBulkUpload', isAllowedSessionHandler, validate( validateDtos.vmBulkUpload ), planoLibraryController.vmBulkUpload );
 

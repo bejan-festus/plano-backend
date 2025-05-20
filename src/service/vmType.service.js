@@ -8,6 +8,10 @@ export const deleteOne = async ( query ={} ) => {
   return model.vmTypeModel.deleteOne( query );
 };
 
+export const deleteMany = async ( query ={} ) => {
+  return model.vmTypeModel.deleteMany( query );
+};
+
 export const create = async ( data ) => {
   return model.vmTypeModel.create( data );
 };

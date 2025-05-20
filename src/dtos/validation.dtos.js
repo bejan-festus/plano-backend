@@ -116,11 +116,19 @@ export const fixtureIdSchema = joi.object( {
   fixtureId: joi.string().required(),
 } );
 
+export const fixtureId ={
+  query: fixtureIdSchema,
+};
+
+export const bodyFixtureId = {
+  body: fixtureIdSchema,
+};
+
 export const updateFixture = {
   body: updateFixtureSchema,
   params: fixtureIdSchema,
 };
-export const fixtureListSchema = joi.object( {
+export const fixtureVMListSchema = joi.object( {
   clientId: joi.string().required(),
   limit: joi.number().required(),
   offset: joi.number().required(),
@@ -130,21 +138,137 @@ export const fixtureListSchema = joi.object( {
   filter: joi.object( {
     status: joi.array().items( joi.any() ).min( 0 ),
     type: joi.array().items( joi.any() ).min( 0 ),
-    size: joi.array().items( joi.any() ).min( 0 ),
+    size: joi.array().items( joi.any() ).min( 0 ).optional(),
+    brand: joi.array().items( joi.any() ).min( 0 ).optional(),
+    category: joi.array().items( joi.any() ).min( 0 ).optional(),
   } ).required(),
   export: joi.boolean().required(),
   emptyDownload: joi.boolean().required(),
 } );
 
 export const fixtureList = {
-  body: fixtureListSchema,
+  body: fixtureVMListSchema,
 };
 
 export const addVmTypeSchema = joi.object( {
   clientId: joi.string().required(),
-  vmData: joi.array().items( joi.any() ).min( 1 ),
+  vmData: joi.array().items( joi.any() ).min( 1 ).required(),
 } );
 
 export const addVmType = {
   body: addVmTypeSchema,
 };
+
+export const getClientSchema = joi.object( {
+  clientId: joi.string().required(),
+} );
+
+export const getClient = {
+  query: getClientSchema,
+};
+
+export const deleteVMTypeImageSchema = joi.object( {
+  vmId: joi.string().required(),
+  index: joi.number().required(),
+} );
+
+export const deleteVMTypeImage = {
+  body: getClientSchema,
+};
+
+export const updateTaskConfigSchema = joi.object( {
+  clientId: joi.string().required(),
+  dueDay: joi.number().required(),
+  dueTime: joi.string().required(),
+  allowedStoreLocation: joi.boolean().required(),
+} );
+
+export const updateTaskConfig = {
+  body: updateTaskConfigSchema,
+};
+
+export const uploadBrandListSchema = joi.object( {
+  clientId: joi.string().required(),
+  brandData: joi.array().items( joi.any() ).min( 1 ).required(),
+} );
+
+export const uploadBrandList = {
+  body: uploadBrandListSchema,
+};
+
+export const fixtureBulkUploadSchema = joi.object( {
+  clientId: joi.string().required(),
+  fixtureData: joi.array().items( joi.any() ).min( 1 ).required(),
+  newFixtureStatus: joi.boolean().required(),
+  updateFixtureStatus: joi.boolean().optional(),
+  deleteFixtureList: joi.array().items( joi.any() ).min( 0 ),
+} );
+
+export const fixtureBulkUpload = {
+  body: fixtureBulkUploadSchema,
+};
+
+export const addUpdateBrandSchema = joi.object( {
+  clientId: joi.string().required(),
+  brandId: joi.string().optional(),
+  brandName: joi.string().required(),
+  brandDetails: joi.array().items( joi.any() ).min( 1 ).required(),
+} );
+
+export const addUpdateBrand = {
+  body: addUpdateBrandSchema,
+};
+
+export const getVmDetailsSchema = joi.object( {
+  vmId: joi.string().required(),
+} );
+
+export const getVmDetails = {
+  query: getVmDetailsSchema,
+};
+
+export const deleteVmLibSchema = joi.object( {
+  vmId: joi.string().required(),
+} );
+
+export const deleteVmLib = {
+  body: deleteVmLibSchema,
+};
+
+export const addUpdateVmSchema = joi.object( {
+  clientId: joi.string().required(),
+  vmName: joi.string().required(),
+  vmType: joi.string().required(),
+  vmBrand: joi.string().required(),
+  vmSubBrand: joi.string().required(),
+  vmCategory: joi.string().required(),
+  vmSubcategory: joi.string().required(),
+  vmHeight: joi.object( {
+    value: joi.string().required(),
+    unit: joi.string().required(),
+  } ).required(),
+  vmWidth: joi.object( {
+    value: joi.string().required(),
+    unit: joi.string().required(),
+  } ).required(),
+  vmImageUrl: joi.string().required(),
+  isDoubleSided: joi.boolean().required(),
+  status: joi.string().required(),
+} );
+
+export const addUpdateVm = {
+  body: addUpdateVmSchema,
+};
+
+export const vmBulkUploadSchema = joi.object( {
+  clientId: joi.string().required(),
+  vmData: joi.array().items( joi.any() ).min( 1 ).required(),
+  newVmStatus: joi.string().required(),
+  updateVmStatus: joi.string().required(),
+  deleteVmList: joi.array().required(),
+} );
+
+export const vmBulkUpload = {
+  body: vmBulkUploadSchema,
+};
+
