@@ -591,6 +591,7 @@ export async function addVmType( req, res ) {
     let vmTypeList = [];
     let error = [];
     inputData.vmData.forEach( ( ele ) => {
+      ele.clientId = inputData.clientId;
       if ( vmTypeList.includes( ele.vmType.toLowerCase() ) ) {
         error.push( ele.vmType );
       }
@@ -871,9 +872,9 @@ export async function getVmLibList( req, res ) {
           vmCategory: 1,
           vmSubBrand: 1,
           clientId: 1,
-          vmHeight: { $concat: [ '$vmHeight.value', '', '$vmHeight.unit' ] },
+          vmHeight: 1,
           status: 1,
-          vmWidth: { $concat: [ '$vmWidth.value', '', '$vmWidth.unit' ] },
+          vmWidth: 1,
           vmImageUrl: 1,
           isDoubleSided: 1,
           vmSubCategory: 1,
@@ -922,7 +923,7 @@ export async function getVmLibList( req, res ) {
           vmWidth: 1,
           vmImageUrl: 1,
           isDoubleSided: 1,
-          templateId: { $size: '$templateId' },
+          templateId: 1,
           vmLibCode: 1,
           vmSubCategory: 1,
           planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
