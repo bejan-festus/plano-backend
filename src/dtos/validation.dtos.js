@@ -141,6 +141,7 @@ export const fixtureVMListSchema = joi.object( {
     size: joi.array().items( joi.any() ).min( 0 ).optional(),
     brand: joi.array().items( joi.any() ).min( 0 ).optional(),
     category: joi.array().items( joi.any() ).min( 0 ).optional(),
+    subCategory: joi.array().items( joi.any() ).min( 0 ).optional(),
   } ).required(),
   export: joi.boolean().required(),
   emptyDownload: joi.boolean().required(),
@@ -240,20 +241,21 @@ export const addUpdateVmSchema = joi.object( {
   vmName: joi.string().required(),
   vmType: joi.string().required(),
   vmBrand: joi.string().required(),
-  vmSubBrand: joi.string().required(),
-  vmCategory: joi.string().required(),
-  vmSubcategory: joi.string().required(),
+  vmSubBrand: joi.string().optional().allow( null ),
+  vmCategory: joi.string().optional().allow( null ),
+  vmSubCategory: joi.string().optional().allow( null ),
   vmHeight: joi.object( {
-    value: joi.string().required(),
+    value: joi.number().required(),
     unit: joi.string().required(),
   } ).required(),
   vmWidth: joi.object( {
-    value: joi.string().required(),
+    value: joi.number().required(),
     unit: joi.string().required(),
   } ).required(),
   vmImageUrl: joi.string().required(),
   isDoubleSided: joi.boolean().required(),
   status: joi.string().required(),
+  _id: joi.string().optional(),
 } );
 
 export const addUpdateVm = {
@@ -270,5 +272,26 @@ export const vmBulkUploadSchema = joi.object( {
 
 export const vmBulkUpload = {
   body: vmBulkUploadSchema,
+};
+
+export const createTemplateSchema = joi.object( {
+  clientId: joi.string().required(),
+  fixtureLibraryId: joi.string().required(),
+} );
+
+export const createTemplate = {
+  body: createTemplateSchema,
+};
+
+export const templateIdSchema = joi.object( {
+  templateId: joi.string().required(),
+} );
+
+export const templateId = {
+  body: templateIdSchema,
+};
+
+export const queryTemplateId = {
+  query: templateIdSchema,
 };
 
