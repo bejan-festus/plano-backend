@@ -596,24 +596,36 @@ export async function addVmType( req, res ) {
         error.push( ele.vmType );
       }
       vmTypeList.push( ele.vmType.toLowerCase() );
-      delete ele._id;
-      if ( ele?.imageUrls?.length ) {
-        ele.imageUrls = ele.imageUrls.map( ( image ) => {
-          let url = image.split( '?' )[0].split( '/' );
-          url.splice( 0, 3 );
-          image = decodeURIComponent( url.join( '/' ) );
-          return image;
-        } );
-      }
     } );
     if ( error.length ) {
       return res.sendError( `${error.toString()} - Vm types are duplicated.`, 400 );
     }
-    await vmTypeService.deleteMany( { clientId: inputData.clientId } );
+    await vmTypeService.deleteMany( { clientId: inputData.clientId, _id: { $ne: req.body.mappedTypeList } } );
     await vmTypeService.insertMany( inputData.vmData );
     return res.sendSuccess( 'Vm type is created successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'addVmType', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function deleteVmType( req, res ) {
+  try {
+    if ( !req.body?.vmId ) {
+      return res.sendError( 'Vm id is required', 400 );
+    }
+    let vmtypeDetails = await vmTypeService.findOne( { _id: req.body.vmId } );
+    if ( !vmtypeDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    let mappedType = await vmService.findOne( { vmType: vmtypeDetails.vmType } );
+    if ( mappedType ) {
+      return res.sendError( `${vmtypeDetails.vmType}-vmtype is mapped with Vmlibrary`, 400 );
+    }
+    await vmTypeService.deleteOne( { _id: req.body.vmId } );
+    return res.sendSuccess( 'Vmtype is deleted successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'deleteVmType', error: e } );
     return res.sendError( e, 500 );
   }
 }

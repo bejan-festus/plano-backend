@@ -19,6 +19,7 @@ planoLibraryRouter
 planoLibraryRouter
     .post( '/addVmType', isAllowedSessionHandler, validate( validateDtos.addVmType ), planoLibraryController.addVmType )
     .post( '/uploadVmtypeImage/:vmId', isAllowedSessionHandler, planoLibraryController.uploadVmImage )
+    .post( '/deleteVmType', isAllowedSessionHandler, planoLibraryController.deleteVmType )
     .get( '/getVmTypeList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.getVmTypeList )
     .post( '/deleteVmTypeImage', isAllowedSessionHandler, validate( validateDtos.deleteVMTypeImage ), planoLibraryController.deletevmTypeImage );
 
