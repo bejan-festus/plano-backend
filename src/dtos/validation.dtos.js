@@ -241,9 +241,9 @@ export const addUpdateVmSchema = joi.object( {
   vmName: joi.string().required(),
   vmType: joi.string().required(),
   vmBrand: joi.string().required(),
-  vmSubBrand: joi.string().optional().allow( null ),
-  vmCategory: joi.string().optional().allow( null ),
-  vmSubCategory: joi.string().optional().allow( null ),
+  vmSubBrand: joi.string().optional().allow( '' ),
+  vmCategory: joi.string().optional().allow( '' ),
+  vmSubCategory: joi.string().optional().allow( '' ),
   vmHeight: joi.object( {
     value: joi.number().required(),
     unit: joi.string().required(),

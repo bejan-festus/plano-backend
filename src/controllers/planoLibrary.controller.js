@@ -7,7 +7,6 @@ import * as planoStaticService from '../service/planoStaticData.service.js';
 import * as vmService from '../service/planoVm.service.js';
 import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as planoService from '../service/planogram.service.js';
-import { createTask } from '../controllers/task.controller.js';
 import ExcelJS from 'exceljs';
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
@@ -19,31 +18,35 @@ export async function fixtureBulkUpload( req, res ) {
     let groupedData = inputData.fixtureData.reduce( ( acc, ele ) => {
       if ( !acc[ele.fixtureName] ) {
         acc[ele.fixtureName] = {
-          'clientId': inputData.clientId,
-          'fixtureCategory': ele.fixtureName,
-          'fixtureType': ele.fixtureType,
-          'fixtureLength': {
-            value: ele.length,
+          clientId: inputData.clientId,
+          fixtureCategory: ele.fixtureName,
+          fixtureType: ele.fixtureType,
+          fixtureLength: {
+            value: ele.height,
             unit: 'ft',
           },
-          'fixtureWidth': {
+          fixtureWidth: {
             value: ele.width,
             unit: 'ft',
           },
-          'fixtureLibCode': ele?.fixLibCode || '',
-          'header.height': {
-            value: ele.headerHeight,
-            unit: 'ft',
+          fixtureLibCode: ele?.fixLibCode || '',
+          header: {
+            height: {
+              value: ele.headerHeight,
+              unit: 'ft',
+            },
           },
-          'footer.height': {
-            value: ele.footerHeight,
-            unit: 'ft',
+          footer: {
+            height: {
+              value: ele.footerHeight,
+              unit: 'ft',
+            },
           },
-          'shelfConfig': [
+          shelfConfig: [
             {
               shelfNumber: ele.shelfNumber,
               shelfType: ele.shelfType,
-              trayRow: ele.shelfType =='shelf' ? 0 : ele.trayRows,
+              trayRows: ele.shelfType =='shelf' ? 0 : ele.trayRows,
               productPerShelf: ele.productPerShelf,
               label: ele.shelfName,
             },
@@ -55,7 +58,7 @@ export async function fixtureBulkUpload( req, res ) {
             {
               shelfNumber: ele.shelfNumber,
               shelfType: ele.shelfType,
-              trayRow: ele.trayRows,
+              trayRows: ele.shelfType =='shelf' ? 0 : ele.trayRows,
               productPerShelf: ele.productPerShelf,
               label: ele.shelfName,
             },
@@ -66,7 +69,7 @@ export async function fixtureBulkUpload( req, res ) {
     let fixtureData = [];
     await Promise.all( Object.keys( groupedData ).map( async ( ele ) => {
       if ( groupedData[ele]?.fixtureLibCode && !groupedData[ele]?.status ) {
-        await planoLibraryService.updateOne( { fixtureLibCode: ele.fixtureLibCode }, fixtureEle );
+        await planoLibraryService.updateOne( { fixtureLibCode: groupedData[ele]?.fixtureLibCode }, groupedData[ele] );
       } else {
         let FixLibCode = await getMaxFixtureLibCode();
         groupedData[ele].fixtureLibCode = FixLibCode;
@@ -404,7 +407,7 @@ export async function FixtureLibraryList( req, res ) {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet( 'Fixture Library' );
 
-      sheet.getRow( 1 ).values = [ 'Fixture Code', 'Fixture Name', 'Fixture Type', 'Fixture Height(ft)', 'Fixture Width(ft)', 'Fixture Header height(ft)', 'Fixture Footer Height(ft)', 'Shelf Number', 'Shelf Type', 'Tray Rows', 'Product Per Shelf/Tray', 'Panel Name' ];
+      sheet.getRow( 1 ).values = [ 'Fixture Code', 'Fixture Name', 'Fixture Type', 'Fixture Height(ft)', 'Fixture Width(ft)', 'Fixture Header Height(ft)', 'Fixture Footer Height(ft)', 'Shelf Number', 'Shelf Type', 'Tray Rows', 'Product Per Shelf/Tray', 'Panel Name' ];
 
       let rowStart = 2;
       let lockedRowNumber = [];
@@ -1222,7 +1225,7 @@ export async function vmBulkUpload( req, res ) {
   try {
     let inputData = req.body;
     await Promise.all( inputData.vmData.map( async ( ele ) => {
-      ele = { ...ele, clientId: req.body.clientId, vmWidth: { value: ele.vmWidth, unit: 'mm' }, vmHeight: { value: ele.vmHeight, unit: 'mm' } };
+      ele = { ...ele, clientId: req.body.clientId, vmWidth: { value: ele.vmWidth, unit: ele.unit }, vmHeight: { value: ele.vmHeight, unit: ele.unit } };
       let vmLibData;
       if ( !ele?.vmLibCode ) {
         ele.vmLibCode = await getMaxVMLibCode();
@@ -1286,13 +1289,5 @@ async function getMaxVMLibCode() {
     console.log( e );
     logger.error( { functionName: 'getMaxVMLibCode', error: e } );
     return false;
-  }
-}
-
-export async function createUpdateTask( req, res ) {
-  try {
-    await createTask();
-  } catch ( e ) {
-
   }
 }
