@@ -7,6 +7,7 @@ import * as planoStaticService from '../service/planoStaticData.service.js';
 import * as vmService from '../service/planoVm.service.js';
 import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as planoService from '../service/planogram.service.js';
+import { createTask } from '../controllers/task.controller.js';
 import ExcelJS from 'exceljs';
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
@@ -29,7 +30,7 @@ export async function fixtureBulkUpload( req, res ) {
             value: ele.width,
             unit: 'ft',
           },
-          'fixtureLibCode': ele?.FixLibCode || '',
+          'fixtureLibCode': ele?.fixLibCode || '',
           'header.height': {
             value: ele.headerHeight,
             unit: 'ft',
@@ -47,7 +48,7 @@ export async function fixtureBulkUpload( req, res ) {
               label: ele.shelfName,
             },
           ],
-          ...( typeof ele?.isEdit == undefined ) ? { 'status': ele?.FixLibCode ? inputData.updateFixtureStatus : inputData.newFixtureStatus } :{},
+          ...( typeof ele?.isEdit == undefined ) ? { 'status': ele?.fixLibCode ? inputData.updateFixtureStatus : inputData.newFixtureStatus } :{},
         };
       } else {
         acc[ele.fixtureName].shelfConfig.push(
@@ -1285,5 +1286,13 @@ async function getMaxVMLibCode() {
     console.log( e );
     logger.error( { functionName: 'getMaxVMLibCode', error: e } );
     return false;
+  }
+}
+
+export async function createUpdateTask( req, res ) {
+  try {
+    await createTask();
+  } catch ( e ) {
+
   }
 }
