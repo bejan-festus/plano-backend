@@ -1,4 +1,4 @@
-import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
+import { logger, fileUpload } from 'tango-app-api-middleware';
 import * as planoLibraryService from '../service/planoLibrary.service.js';
 import * as fixtureTemplateService from '../service/fixtureConfig.service.js';
 import * as vmTypeService from '../service/vmType.service.js';
@@ -390,12 +390,12 @@ export async function FixtureLibraryList( req, res ) {
         },
     );
     let fixtureDetails = await planoLibraryService.aggregate( query );
-    if ( !fixtureDetails[0]?.fixtureData.length ) {
+    if ( !req.body.export && !fixtureDetails[0]?.fixtureData.length ) {
       return res.sendError( 'No data found', 204 );
     }
     let result = {
-      count: fixtureDetails[0].count[0].total,
-      data: fixtureDetails[0].fixtureData,
+      count: fixtureDetails[0]?.count?.[0]?.total || 0,
+      data: fixtureDetails[0]?.fixtureData || [],
     };
     if ( !req.body.export ) {
       return res.sendSuccess( result );
@@ -636,13 +636,8 @@ export async function uploadVmImage( req, res ) {
     };
     let fileRes = await fileUpload( params );
     if ( fileRes.Key ) {
-      params = {
-        Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-        file_path: fileRes.Key,
-      };
-      let imageUrl = await signedUrl( params );
       await vmTypeService.updateKeys( { _id: req.params.vmId }, { $push: { imageUrls: fileRes.Key } } );
-      return res.sendSuccess( { url: imageUrl, path: fileRes.Key } );
+      return res.sendSuccess( { url: fileRes.Key } );
     }
   } catch ( e ) {
     logger.error( { functionName: 'updateVmType', error: e } );
@@ -654,14 +649,11 @@ export async function getVmTypeList( req, res ) {
   try {
     let vmDetails = await vmTypeService.find( { ...( req.query.clientId ) ? { clientId: req.query.clientId } : {}, ...( req.query.id ) ? { _id: req.query.id } : {} }, { createdAt: 0, updatedAt: 0 } );
     vmDetails = await Promise.all( vmDetails.map( async ( ele ) => {
-      ele.imageUrls = await Promise.all( ele.imageUrls.map( async ( image ) => {
-        let params = {
-          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-          file_path: image,
-        };
-        image = await signedUrl( params );
-        return image;
-      } ) );
+      ele= { ...ele.toObject(), isUsed: false };
+      let mappedDetails = await vmService.findOne( { vmType: ele.vmType } );
+      if ( mappedDetails ) {
+        ele['isUsed'] = true;
+      }
       return ele;
     } ) );
     return res.sendSuccess( vmDetails );
@@ -1017,30 +1009,20 @@ export async function getVmLibList( req, res ) {
         },
     );
     let fixtureDetails = await vmService.aggregate( query );
-    if ( !fixtureDetails[0]?.fixtureData.length ) {
+    if ( !req.body.export && !fixtureDetails[0]?.fixtureData.length ) {
       return res.sendError( 'No data found', 204 );
     }
     let result = {
       count: fixtureDetails[0].count[0].total,
       data: fixtureDetails[0].fixtureData,
     };
-    result.data = await Promise.all( result.data.map( async ( ele ) => {
-      if ( ele.vmImageUrl ) {
-        let params = {
-          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-          file_path: ele.vmImageUrl,
-        };
-        ele.vmImageUrl = await signedUrl( params );
-      }
-      return ele;
-    } ) );
     if ( !req.body.export ) {
       return res.sendSuccess( result );
     } else {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet( 'Fixture Library' );
 
-      sheet.getRow( 1 ).values = [ 'VM Lib Code', 'VM Name', 'VM Type', 'VM Brand', 'VM SubBrand', 'VM Category', 'VM Subcategory', 'VM Height(mm)', 'VM Width(mm)', 'VM ImageUrl', 'isDoubleSided' ];
+      sheet.getRow( 1 ).values = [ 'VM Lib Code', 'VM Name', 'VM Type', 'VM Brand', 'VM SubBrand', 'VM Category', 'VM SubCategory', 'Unit', 'VM Height', 'VM Width', 'VM ImageUrl' ];
 
       let rowStart = 2;
       let lockedRowNumber = [];
@@ -1050,13 +1032,16 @@ export async function getVmLibList( req, res ) {
       for ( let i=0; i<result.data.length; i++ ) {
         let height = 0;
         let width = 0;
+        let unit = 'mm';
         if ( result.data[i]?.vmHeight ) {
           height = result.data[i].vmHeight.value;
+          unit = result.data[i].vmHeight.unit;
         }
         if ( result.data[i]?.vmWidth ) {
           width = result.data[i].vmWidth.value;
+          unit = result.data[i].vmWidth.unit;
         }
-        sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmSubBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', height, width, result.data[i]?.vmImageUrl || '', result.data[i].isDoubleSided || '' ];
+        sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmSubBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', unit, height, width, result.data[i]?.vmImageUrl || '' ];
         if ( result.data[i].templateId.length || result.data[i].status == 'active' ) {
           lockedRowNumber.push( rowStart );
         }
@@ -1075,7 +1060,7 @@ export async function getVmLibList( req, res ) {
 
       const maxRows = 1048576;
 
-      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `D2:D${maxRows}`, optionList: [ `"${brand.toString()}"` ] }, { key: `E2:E${maxRows}`, optionList: [ `"${brandSubBrand.toString()}"` ] }, { key: `F2:F${maxRows}`, optionList: [ `"${brandCategories.toString()}"` ] }, { key: `G2:G${maxRows}`, optionList: [ `"${brandSubCategories.toString()}"` ] } ];
+      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `D2:D${maxRows}`, optionList: [ `"${brand.toString()}"` ] }, { key: `E2:E${maxRows}`, optionList: [ `"${brandSubBrand.toString()}"` ] }, { key: `F2:F${maxRows}`, optionList: [ `"${brandCategories.toString()}"` ] }, { key: `G2:G${maxRows}`, optionList: [ `"${brandSubCategories.toString()}"` ] }, { key: `H2:H${maxRows}`, optionList: [ '"mm,cm,inches,feet"' ] } ];
 
       dropDownRange.forEach( ( ele ) => {
         sheet.dataValidations.add( ele.key, {
