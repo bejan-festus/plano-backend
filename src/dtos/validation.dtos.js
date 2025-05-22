@@ -252,7 +252,7 @@ export const addUpdateVmSchema = joi.object( {
     value: joi.number().required(),
     unit: joi.string().required(),
   } ).required(),
-  vmImageUrl: joi.string().required(),
+  vmImageUrl: joi.string().optional(),
   isDoubleSided: joi.boolean().required(),
   status: joi.string().required(),
   _id: joi.string().optional(),
@@ -293,5 +293,17 @@ export const templateId = {
 
 export const queryTemplateId = {
   query: templateIdSchema,
+};
+
+export const updateFixtureTaskSchema = joi.object( {
+  endDate: joi.string().required(),
+  clientId: joi.string().required(),
+  storeList: joi.array().items( joi.any() ).min( 1 ).required(),
+  endTime: joi.string().required(),
+  geoFencing: joi.boolean().required(),
+} );
+
+export const updateFixtureTask = {
+  body: updateFixtureTaskSchema,
 };
 

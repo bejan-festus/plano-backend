@@ -12,5 +12,6 @@ fixtureTemplateRouter
     .post( '/deleteTemplate', isAllowedSessionHandler, validate( validateDtos.templateId ), fixtureTemplateController.deleteTemplate )
     .post( '/duplicateTemplate', isAllowedSessionHandler, validate( validateDtos.templateId ), fixtureTemplateController.duplicateTemplate )
     .post( '/getTemplateList', isAllowedSessionHandler, validate( validateDtos.fixtureVMListSchema ), fixtureTemplateController.getTemplateList )
-    .get( '/getTemplateDetails', isAllowedSessionHandler, validate( validateDtos.queryTemplateId ), fixtureTemplateController.getTemplateDetails );
+    .get( '/getTemplateDetails', isAllowedSessionHandler, validate( validateDtos.queryTemplateId ), fixtureTemplateController.getTemplateDetails )
+    .post( '/updateFixtureTask', isAllowedSessionHandler, validate( validateDtos.updateFixtureTask ), fixtureTemplateController.updateFixtureTask );
 

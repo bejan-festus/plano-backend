@@ -4,8 +4,13 @@ import * as fixtureLibService from '../service/planoLibrary.service.js';
 import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as planoService from '../service/planogram.service.js';
 import * as storeService from '../service/store.service.js';
+import * as processedTaskService from '../service/processedTaskservice.js';
+import { createTask } from '../controllers/task.controller.js';
 import mongoose from 'mongoose';
+import dayjs from 'dayjs';
 const ObjectId = mongoose.Types.ObjectId;
+import customParseFormat from 'dayjs/plugin/customParseFormat.js';
+dayjs.extend( customParseFormat );
 
 
 export async function createTemplate( req, res ) {
@@ -315,107 +320,69 @@ export async function getTemplateList( req, res ) {
       count: fixtureDetails[0].count[0].total,
       data: fixtureDetails[0].templateData,
     };
-    if ( !req.body.export ) {
-      return res.sendSuccess( result );
-    } else {
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet( 'Fixture Template' );
-
-      sheet.getRow( 1 ).values = [ 'VM Lib Code', 'VM Name', 'VM Type', 'VM Brand', 'VM SubBrand', 'VM Category', 'VM Subcategory', 'VM Height(mm)', 'VM Width(mm)', 'VM ImageUrl', 'isDoubleSided' ];
-
-      let rowStart = 2;
-      let lockedRowNumber = [];
-      if ( req.body.emptyDownload ) {
-        result.data = [];
-      }
-      for ( let i=0; i<result.data.length; i++ ) {
-        let height = 0;
-        let width = 0;
-        if ( result.data[i]?.vmHeight ) {
-          height = result.data[i].vmHeight.value;
-        }
-        if ( result.data[i]?.vmWidth ) {
-          width = result.data[i].vmWidth.value;
-        }
-        sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmSubBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', height, width, result.data[i]?.vmImageUrl || '', result.data[i].isDoubleSided || '' ];
-        if ( result.data[i].templateId.length || result.data[i].status == 'active' ) {
-          lockedRowNumber.push( rowStart );
-        }
-        rowStart = rowStart + 1;
-      }
-
-      let productBrandDetails = await planoProductService.find( { clientId: req.body.clientId } );
-      let vmTypeList = await vmTypeService.find( { clientId: req.body.clientId } );
-      vmTypeList = vmTypeList.map( ( ele ) => ele.vmType );
-      let brand = productBrandDetails.map( ( ele ) => ele.brandName );
-      let brandSubBrand = [ ...new Set( productBrandDetails.flatMap( ( ele ) => ele.brandDetails.map( ( brand ) => brand.subBrandName ) ) ) ];
-      let brandCategories = productBrandDetails.flatMap( ( ele ) => ele.brandDetails.flatMap( ( brand ) => [ ...brand.category ] ) );
-      let brandSubCategories = productBrandDetails.flatMap( ( ele ) => ele.brandDetails.flatMap( ( brand ) => [ ...brand.subCategory ] ) );
-      brandCategories = [ ...new Set( brandCategories.map( ( ele ) => ele ) ) ];
-      brandSubCategories = [ ...new Set( brandSubCategories.map( ( ele ) => ele ) ) ];
-
-      const maxRows = 1048576;
-
-      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `D2:D${maxRows}`, optionList: [ `"${brand.toString()}"` ] }, { key: `E2:E${maxRows}`, optionList: [ `"${brandSubBrand.toString()}"` ] }, { key: `F2:F${maxRows}`, optionList: [ `"${brandCategories.toString()}"` ] }, { key: `G2:G${maxRows}`, optionList: [ `"${brandSubCategories.toString()}"` ] } ];
-
-      dropDownRange.forEach( ( ele ) => {
-        sheet.dataValidations.add( ele.key, {
-          type: 'list',
-          allowBlank: true,
-          formulae: ele.optionList,
-          showErrorMessage: true,
-          errorTitle: 'Invalid Choice',
-          error: 'Please select from the dropdown list.',
-        } );
-      } );
-
-      let unlockCellValues = 20000;
-      let splitLoop = [];
-
-      for ( let i=1; i<=unlockCellValues; i+=2000 ) {
-        splitLoop.push( { start: i, end: i + 1999 } );
-      }
-
-      await Promise.all( splitLoop.map( ( item ) => {
-        for ( let i=item.start; i<=item.end; i++ ) {
-          const row = sheet.getRow( i );
-          if ( i > rowStart - 1 ) {
-            row.values = [ '', '', '', '', '', '', '', '', '' ];
-          }
-          if ( !lockedRowNumber.includes( i ) && i != 1 ) {
-            row.eachCell( ( cell ) => {
-              const columnLetter = cell.address.replace( /[0-9]/g, '' );
-              if ( columnLetter != 'A' ) {
-                cell.protection = { locked: false };
-              }
-            } );
-          }
-        }
-      } ) );
-
-      await sheet.protect( 'password123', {
-        selectLockedCells: false,
-        selectUnlockedCells: true,
-      } );
-
-      sheet.columns.forEach( ( column ) => {
-        let maxLength = 10;
-        column.eachCell( { includeEmpty: true }, ( cell ) => {
-          const cellValue = cell.value ? cell.value.toString() : '';
-          if ( cellValue.length > maxLength ) {
-            maxLength = cellValue.length;
-          }
-        } );
-        column.width = maxLength + 2;
-      } );
-      const buffer = await workbook.xlsx.writeBuffer();
-      res.setHeader( 'Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
-      res.setHeader( 'Content-Disposition', 'attachment; filename="VM Library.xlsx"' );
-      return res.send( buffer );
-    }
+    return res.sendSuccess( result );
   } catch ( e ) {
     console.log( e );
     logger.error( { functionName: 'getTemplateList', error: e } );
     return res.sendError( e, 500 );
+  }
+}
+
+export async function updateFixtureTask( req, res ) {
+  try {
+    let storeList = req.body.storeList.map( ( ele ) => ele.toLowerCase() );
+    let query = [
+      {
+        $addFields: {
+          storeLower: { $toLower: '$storeName' },
+        },
+      },
+      {
+        $match: {
+          clientId: req.body.clientId,
+          status: 'active',
+          storeLower: { $in: storeList },
+        },
+      },
+    ];
+    let storeDetails = await storeService.aggregate( query );
+    if ( !storeDetails.length ) {
+      return res.sendError( 'No date found', 204 );
+    }
+    storeList = storeDetails.map( ( ele ) => {
+      return { store: ele.storeName, email: ele?.spocDetails?.[0]?.email };
+    } );
+    let fixtureTaskStore = [];
+    let layoutTaskStore = [];
+    await Promise.all( storeList.map( async ( ele ) => {
+      let getTaskDetails = await processedTaskService.findOne( { storeName: ele.store, userEmail: ele.email, isPlano: true, date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ), type: 'layout' } );
+      if ( getTaskDetails && getTaskDetails.planoType == 'layout' && getTaskDetails.checklistStatus == 'submit' ) {
+        fixtureTaskStore.push( ele );
+      } else {
+        layoutTaskStore.push( ele );
+      }
+    } ) );
+    let currDate = dayjs();
+    let endDate = dayjs( req.body.endDate, 'YYYY-MM-DD' );
+    let todayDate = currDate.format( 'YYYY-MM-DD' ) == endDate.format( 'YYYY-MM-DD' );
+    let data = [
+      'Fixture Verification',
+      'Layout Verification',
+    ];
+    await Promise.all( data.map( async ( ele ) => {
+      req.body = {
+        clientId: req.body.clientId,
+        stores: ele.includes( 'Fixture' ) ? fixtureTaskStore : layoutTaskStore,
+        days: todayDate ? 1 : endDate.diff( currDate, 'day' ) + 2,
+        checkListName: ele,
+        geoFencing: req.body.geoFencing,
+        endTime: req.body.endTime,
+      };
+      if ( req.body.stores.length ) {
+        await createTask( req, res );
+      }
+    } ) );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateFixtureTask', error: e } );
   }
 }
