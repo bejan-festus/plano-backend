@@ -200,8 +200,8 @@ export const uploadBrandList = {
 export const fixtureBulkUploadSchema = joi.object( {
   clientId: joi.string().required(),
   fixtureData: joi.array().items( joi.any() ).min( 1 ).required(),
-  newFixtureStatus: joi.boolean().required(),
-  updateFixtureStatus: joi.boolean().optional(),
+  newFixtureStatus: joi.string().optional(),
+  updateFixtureStatus: joi.string().optional(),
   deleteFixtureList: joi.array().items( joi.any() ).min( 0 ),
 } );
 
