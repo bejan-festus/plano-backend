@@ -1,6 +1,6 @@
 // import { writeFileSync } from 'fs';
 import xlsx from 'xlsx';
-import { logger } from 'tango-app-api-middleware';
+import { logger, fileUpload } from 'tango-app-api-middleware';
 import * as storeBuilderService from '../service/storeBuilder.service.js';
 import * as storeService from '../service/store.service.js';
 import * as planoService from '../service/planogram.service.js';
@@ -2318,9 +2318,9 @@ export async function updateVmData( req, res ) {
 
 
 async function scrapeCrest() {
-  const storeIds = [];
+  const storeIds = ['LKST512'];
   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzNjY5ODIyLCJpYXQiOjE3NDM2NjYyMjIsImp0aSI6IjA5ZDRjYTVhZGRiNzQxMDVhYjhjOWVjMmU3MjZiM2NiIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.C3wLXzbv0bTDGiZqs8jSA3up0cq0wqA5PIMw45_T4Wg';
+  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3ODM3NDAwLCJpYXQiOjE3NDc4MzM4MDAsImp0aSI6IjlmNWM5N2U4N2ViYjQwMjc5YWRjMDViMDViOWMxZjBmIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.fL2-vOoH7ky0s_-v1HogOO6Wd2m5AABX4yRvrKMdHhg';
   const filePath = 'response.json';
   let allResults = [];
 
@@ -2384,6 +2384,8 @@ async function scrapeCrest() {
     await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
   }
 }
+
+// scrapeCrest()
 
 export async function createCrestPlanogram( req, res ) {
   try {
@@ -4332,6 +4334,8 @@ export async function downloadPlanoImage( req, res ) {
   }
 }
 
+ 
+
 
 export async function updateCrestPlanogram( req, res ) {
   try {
@@ -4343,6 +4347,8 @@ export async function updateCrestPlanogram( req, res ) {
 
     const layoutApiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
     let staticToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1NTE3MjQxLCJpYXQiOjE3NDU1MTM2NDEsImp0aSI6Ijg3MWVlNTA3ODY2OTQ5OTVhMTQ0YTk4NzQyNzY0MzEzIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.eGzTMGwwstr13M0Hu1Ls5-gkE_oSPMJJBL2wgygT6Ac';
+    const fetchWithCookies = fetchCookie( fetch );
+
 
     async function fetchStoreData( store, bearerToken, res ) {
       const payload = JSON.stringify( { store_id: store.toObject().storeName?.toUpperCase() } );
@@ -4392,8 +4398,6 @@ export async function updateCrestPlanogram( req, res ) {
 
 
     const fetchNewToken = async () => {
-      const fetchWithCookies = fetchCookie( fetch );
-
       const email = 'tango.lenskart@getcrest.ai';
       const password = 'Tangolenskart@123';
 
@@ -4434,16 +4438,70 @@ export async function updateCrestPlanogram( req, res ) {
       }
     };
 
+    const fetchVmImage = async ( attachmentId ) => {
+      try {
+        const response = await fetchWithCookies( `https://api.getcrest.ai/api/ms_data_preparation/master_data/attachment/?preview=0&attachment_id=${attachmentId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${staticToken}`,
+            'Cookie': 'prod_session_key=w144dqljxlh096487nc33rm09vwtossh',
+          },
+        } );
+
+        if ( !response.ok ) {
+          throw new Error( `Failed to fetch image: ${response.status}` );
+        }
+
+        const dest = fs.createWriteStream( `${attachmentId}.png` );
+        response.body.pipe( dest );
+
+        return await response.buffer();
+      } catch ( error ) {
+        console.error( 'Error fetching image buffer:', error.message );
+        throw error;
+      }
+    };
+
+    const getImageMetadata = async ( imageBuffer ) => {
+      try {
+        const metadata = await sharp( imageBuffer ).metadata();
+        const { width, height, format } = metadata;
+
+        if ( !width || !height || !format ) throw new Error( 'Invalid image metadata' );
+
+        const ratio = width / height;
+        const normalizedRatio = ratio > 1 ? ratio : 1 / ratio;
+        const squareThreshold = 1.2;
+        const imageShape = normalizedRatio <= squareThreshold ? 'square' : 'rectangle';
+
+        const fileExtension = format === 'jpeg' ? 'jpg' : format;
+        const contentType = `image/${format}`;
+
+        return {
+          imageShape,
+          width,
+          height,
+          fileExtension,
+          contentType,
+        };
+      } catch ( error ) {
+        console.error( 'Error processing image buffer:', error.message );
+        throw error;
+      }
+    };
+
+
     if ( !req?.body?.storeName ) {
       return res.sendError( 'No store supplied', 200 );
     }
 
     let storeQuery = {
       clientId: '11',
-      $and: [
-        { storeName: req.body.storeName },
-        { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
-      ],
+      storeName: 'LKST1030',
+      // $and: [
+      //   { storeName: req.body.storeName },
+      //   { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
+      // ],
     };
 
     let storeList = await storeService.find( storeQuery );
@@ -4470,11 +4528,11 @@ export async function updateCrestPlanogram( req, res ) {
       const existingPlanogram = await planoService.findOne( { storeName: storeData.storeName } );
 
       if ( existingPlanogram ) {
-        const checkTaskSubmitted = await planoTaskService.findOne( { planoId: existingPlanogram.toObject()._id } );
+        // const checkTaskSubmitted = await planoTaskService.findOne( { planoId: existingPlanogram.toObject()._id } );
 
         const checkTaskCreated = await processedTaskService.findOne( { storeName: storeData.storeName, date_string: dayjs().format( 'YYYY-MM-DD' ), isPlano: true } );
 
-        if ( checkTaskSubmitted || checkTaskCreated ) {
+        if ( checkTaskCreated ) {
           continue;
         }
       }
@@ -4789,6 +4847,37 @@ export async function updateCrestPlanogram( req, res ) {
 
                       if ( !configData ) return;
 
+                      let attachmentId = '';
+                      let imgPath = '';
+                      let imageMeta = null;
+
+
+                      if ( zone.preview_image_url ) {
+                        const parsedUrl = new URL( zone.preview_image_url );
+                        attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
+
+                        const isVmImageExist = await planoProductService.findOne( { crestImageId: attachmentId } );
+
+
+                        if ( !isVmImageExist ) {
+                          const vmImageData = await fetchVmImage( attachmentId );
+
+                          imageMeta = await getImageMetadata( vmImageData );
+
+                          const params = {
+                            Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                            Key: `crestVms/`,
+                            fileName: `${attachmentId}.${imageMeta.fileExtension}`,
+                            ContentType: imageMeta.contentType,
+                            body: vmImageData,
+                          };
+
+                          const imgUpload = await fileUpload( params );
+
+                          imgPath = imgUpload.Key;
+                        }
+                      }
+
                       const insertData = {
                         'clientId': '11',
                         'productId': 'VMCR',
@@ -4807,6 +4896,30 @@ export async function updateCrestPlanogram( req, res ) {
                         'xZone': configData.zone,
                         'fixtureConfigId': fixtureConfig._id,
                       };
+
+                      if ( attachmentId && imgPath ) {
+                        insertData.crestImageId = attachmentId;
+                        insertData.productImageUrl = imgPath;
+
+                        const shelfData = fixtureConfigDoc.shelfConfig
+                            .filter( ( shelf ) => shelf.shelfZone === configData.position )
+                            .sort( ( a, b ) => a.shelfNumber - b.shelfNumber );
+
+                        if ( imageMeta.imageShape === 'square' ) {
+                          insertData.productHeight.value = 100;
+                          insertData.productWidth.value = 230;
+
+                          if ( shelfData.length ) {
+                            insertData.startYPosition = shelfData[0].shelfNumber;
+                            insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
+                          }
+                        }
+
+                        // if ( imageMeta.imageShape === 'rectangle' ) {
+                        //   insertData.productHeight.value = 100;
+                        //   insertData.productWidth.value = 905;
+                        // }
+                      }
 
                       const vmTemplate = await planoProductService.upsertOne(
                           {
@@ -4966,6 +5079,37 @@ export async function updateCrestPlanogram( req, res ) {
 
                       if ( !configData ) return;
 
+                      let attachmentId = '';
+                      let imgPath = '';
+                      let imageMeta = null;
+
+
+                      if ( zone.preview_image_url ) {
+                        const parsedUrl = new URL( zone.preview_image_url );
+                        attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
+
+                        const isVmImageExist = await planoProductService.findOne( { crestImageId: attachmentId } );
+
+
+                        if ( !isVmImageExist ) {
+                          const vmImageData = await fetchVmImage( attachmentId );
+
+                          imageMeta = await getImageMetadata( vmImageData );
+
+                          const params = {
+                            Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                            Key: `crestVms/`,
+                            fileName: `${attachmentId}.${imageMeta.fileExtension}`,
+                            ContentType: imageMeta.contentType,
+                            body: vmImageData,
+                          };
+
+                          const imgUpload = await fileUpload( params );
+
+                          imgPath = imgUpload.Key;
+                        }
+                      }
+
                       const insertData = {
                         'clientId': '11',
                         'productId': 'VMCR',
@@ -4984,6 +5128,30 @@ export async function updateCrestPlanogram( req, res ) {
                         'xZone': configData.zone,
                         'fixtureConfigId': fixtureConfig._id,
                       };
+
+                      if ( attachmentId && imgPath ) {
+                        insertData.crestImageId = attachmentId;
+                        insertData.productImageUrl = imgPath;
+
+                        const shelfData = fixtureConfigDoc.shelfConfig
+                            .filter( ( shelf ) => shelf.shelfZone === configData.position )
+                            .sort( ( a, b ) => a.shelfNumber - b.shelfNumber );
+
+                        if ( imageMeta.imageShape === 'square' ) {
+                          insertData.productHeight.value = 100;
+                          insertData.productWidth.value = 230;
+                        }
+
+                        if ( imageMeta.imageShape === 'rectangle' ) {
+                          insertData.productHeight.value = 100;
+                          insertData.productWidth.value = 905;
+                        }
+
+                        if ( shelfData.length ) {
+                          insertData.startYPosition = shelfData[0].shelfNumber;
+                          insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
+                        }
+                      }
 
                       const vmTemplate = await planoProductService.upsertOne(
                           {
@@ -5142,6 +5310,38 @@ export async function updateCrestPlanogram( req, res ) {
 
                       if ( !configData ) return;
 
+                      let attachmentId = '';
+                      let imgPath = '';
+                      let imageMeta = null;
+
+
+                      if ( zone.preview_image_url ) {
+                        const parsedUrl = new URL( zone.preview_image_url );
+                        attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
+
+                        const isVmImageExist = await planoProductService.findOne( { crestImageId: attachmentId } );
+
+
+                        if ( !isVmImageExist ) {
+                          const vmImageData = await fetchVmImage( attachmentId );
+
+                          imageMeta = await getImageMetadata( vmImageData );
+
+                          const params = {
+                            Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                            Key: `crestVms/`,
+                            fileName: `${attachmentId}.${imageMeta.fileExtension}`,
+                            ContentType: imageMeta.contentType,
+                            body: vmImageData,
+                          };
+
+                          const imgUpload = await fileUpload( params );
+
+                          imgPath = imgUpload.Key;
+                        }
+                      }
+
+
                       const insertData = {
                         'clientId': '11',
                         'productId': 'VMCR',
@@ -5160,6 +5360,30 @@ export async function updateCrestPlanogram( req, res ) {
                         'xZone': configData.zone,
                         'fixtureConfigId': fixtureConfig._id,
                       };
+
+                      if ( attachmentId && imgPath ) {
+                        insertData.crestImageId = attachmentId;
+                        insertData.productImageUrl = imgPath;
+
+                        const shelfData = fixtureConfigDoc.shelfConfig
+                            .filter( ( shelf ) => shelf.shelfZone === configData.position )
+                            .sort( ( a, b ) => a.shelfNumber - b.shelfNumber );
+
+                        if ( imageMeta.imageShape === 'square' ) {
+                          insertData.productHeight.value = 100;
+                          insertData.productWidth.value = 230;
+                        }
+
+                        if ( imageMeta.imageShape === 'rectangle' ) {
+                          insertData.productHeight.value = 100;
+                          insertData.productWidth.value = 905;
+                        }
+
+                        if ( shelfData.length ) {
+                          insertData.startYPosition = shelfData[0].shelfNumber;
+                          insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
+                        }
+                      }
 
                       const vmTemplate = await planoProductService.upsertOne(
                           {
@@ -6797,8 +7021,8 @@ async function downloadImage() {
   try {
     const response = await fetch( url, {
       headers: {
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3MDMyNDcyLCJpYXQiOjE3NDcwMjg4NzIsImp0aSI6IjZmN2Y0Yzk4OGY5ZjRiYjg5NmNhOTYwNzMyMTVlOTUwIiwidXNlcl9pZCI6MTA4NCwiaWQiOjEwODQsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiYWRtaW4ifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJhZG1pbiJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImFkbWluIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJhZG1pbiJ9XX0.Lt3zT1Rw4KnDWRQ8LWYRVMFPS3PHRRTgHXn6kLG8Uk0',
-        Cookie: 'prod_session_key=w144dqljxlh096487nc33rm09vwtossh; prod_session_key=xn1fry9sekk94hs2hfo78erxcmc8a3am',
+        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3MjE0MjcxLCJpYXQiOjE3NDcyMTA2NzEsImp0aSI6ImM4ZjQ4ZDY2YWJkYzRmNDU4MWI4OGE4MTMwODVjOTUwIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.IOw_0yNA6CMBCIn7cxjPR0FqHI949WplCKzlkr8aK7g',
+        Cookie: 'prod_session_key=w144dqljxlh096487nc33rm09vwtossh; prod_session_key=7mljy9k7niwpw4btbbyvuhkz7otbdh6v',
       },
     } );
 
@@ -6857,3 +7081,33 @@ export async function recorrectTaskData( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+
+
+function fillFeedbackFromJson( excelPath, jsonData, outputPath ) {
+  const workbook = xlsx.readFile( excelPath );
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+
+  const data = xlsx.utils.sheet_to_json( sheet, { defval: 'Transformed by Data.Page' } );
+
+  const feedbackMap = {};
+  jsonData.forEach( ( entry ) => {
+    feedbackMap[entry.store] = entry.videoUrl;
+  } );
+
+  const updatedData = data.map( ( row ) => {
+    const store = row.storeName;
+    if ( feedbackMap[store] ) {
+      row.FeedBack = feedbackMap[store];
+    }
+    return row;
+  } );
+
+  const newSheet = xlsx.utils.json_to_sheet( updatedData );
+
+  workbook.Sheets[sheetName] = newSheet;
+
+  xlsx.writeFile( workbook, outputPath );
+}
+
+// fillFeedbackFromJson('input.xlsx', feedbackJson, 'output.xlsx');
