@@ -14,6 +14,8 @@ import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
 import * as floorService from '../service/storeBuilder.service.js';
 import * as planoStaticService from '../service/planoStaticData.service.js';
+import mongoose from 'mongoose';
+
 dayjs.extend( timeZone );
 
 async function createUser( data ) {
@@ -506,7 +508,8 @@ export async function updateAnswers( req, res ) {
       }
     } );
 
-    let taskDetails = await processedService.findOne( { date_string: dayjs().format( 'YYYY-MM-DD' ), userId: req.user._id, isPlano: true, planoType: 'layout' } );
+    let taskDetails = await processedService.findOne( { date_string: dayjs().format( 'YYYY-MM-DD' ), userId: req.user._id, isPlano: true,
+      planoType: req.body.type, planoId: new mongoose.Types.ObjectId( req.body.planoId ), floorId: new mongoose.Types.ObjectId( req.body.floorId ) } );
 
 
     let data = {
