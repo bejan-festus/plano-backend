@@ -795,6 +795,7 @@ export async function addUpdateVm( req, res ) {
         $match: {
           clientId: req.body.clientId,
           name: req.body.vmName.toLowerCase(),
+          ...( req.body?.vmWidth?.value ) ? { vmWidth: req.body.vmWidth.value } : {},
           ...( req.body._id ) ? { _id: { $ne: new ObjectId( req.body._id ) } } : {},
         },
       },
