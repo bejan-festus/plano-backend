@@ -347,7 +347,7 @@ export async function FixtureLibraryList( req, res ) {
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
             $cond: {
-              if: { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] },
+              if: { $and: [ { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] }, { $gt: [ { $size: '$templateId' }, 0 ] } ] },
               then: 'active',
               else: {
                 $cond: {
@@ -980,7 +980,7 @@ export async function getVmLibList( req, res ) {
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
             $cond: {
-              if: { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] },
+              if: { $and: [ { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] }, { $gt: [ { $size: '$templateId' }, 0 ] } ] },
               then: 'active',
               else: {
                 $cond: {

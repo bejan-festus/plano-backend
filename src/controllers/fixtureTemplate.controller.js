@@ -6,7 +6,6 @@ import * as planoService from '../service/planogram.service.js';
 import * as storeService from '../service/store.service.js';
 import * as processedTaskService from '../service/processedTaskservice.js';
 import { createTask } from './task.controller.js';
-import * as planoVmService from '../service/planoVm.service.js';
 import mongoose from 'mongoose';
 import dayjs from 'dayjs';
 const ObjectId = mongoose.Types.ObjectId;
@@ -178,18 +177,12 @@ export async function getTemplateDetails( req, res ) {
       planoDetails = planoDetails.map( ( ele ) => ele.status );
       templateDetails.status = planoDetails.includes( 'completed' ) ? 'active' : 'inactive';
     }
-    let vmData = await Promise.all( templateDetails.vmConfig.map( async ( ele ) => {
-      let vmDetails = await planoVmService.findOne( { _id: ele.vmId }, { createdAt: 0, updatedAt: 0 } );
-      return { ...vmDetails.toObject(), ...ele.toObject() };
-    } ) );
-
     let data = {
       ...templateDetails.toObject(),
       store: storeDetails.map( ( ele ) => {
         return { storeName: ele.storeName, storeId: ele.storeId, userEmail: ele?.spocDetails?.[0]?.email };
       } ),
     };
-    data.vmConfig = vmData;
     return res.sendSuccess( data );
   } catch ( e ) {
     logger.error( { functionName: 'getTemplateDetails', error: e } );
