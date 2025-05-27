@@ -127,8 +127,9 @@ export async function createFixture( req, res ) {
       },
       {
         $match: {
-          clientId: req.body.clientId,
-          fixtureCategoryLower: req.body.fixtureCategory.toLowerCase(),
+          'clientId': req.body.clientId,
+          'fixtureCategoryLower': req.body.fixtureCategory.toLowerCase(),
+          'fixtureWidth.value': 10,
         },
       },
     ];
@@ -155,6 +156,25 @@ export async function updateFixture( req, res ) {
     let fixtureLibraryDetails = await planoLibraryService.findOne( { _id: req.params.fixtureId } );
     if ( !fixtureLibraryDetails ) {
       return res.sendError( 'No data found', 204 );
+    }
+    let query = [
+      {
+        $addFields: {
+          fixtureCategoryLower: { $toLower: '$fixtureCategory' },
+        },
+      },
+      {
+        $match: {
+          'clientId': req.body.clientId,
+          'fixtureCategoryLower': req.body.fixtureCategory.toLowerCase(),
+          'fixtureWidth.value': req.body.fixtureWidth.value,
+          '_id': { $in: req.params.fixtureId },
+        },
+      },
+    ];
+    let fixLibDetails = await planoLibraryService.aggregate( query );
+    if ( fixLibDetails.length ) {
+      return res.sendError( `${req.body.fixtureCategory} is already exists`, 400 );
     }
 
     let fixtureData = {
@@ -795,7 +815,6 @@ export async function addUpdateVm( req, res ) {
         $match: {
           clientId: req.body.clientId,
           name: req.body.vmName.toLowerCase(),
-          ...( req.body?.vmWidth?.value ) ? { vmWidth: req.body.vmWidth.value } : {},
           ...( req.body._id ) ? { _id: { $ne: new ObjectId( req.body._id ) } } : {},
         },
       },
@@ -804,11 +823,11 @@ export async function addUpdateVm( req, res ) {
     if ( checkVmExists.length ) {
       return res.sendError( 'VmName is already exists', 400 );
     }
-    if ( req.body?.vmImageUrl && ( req.body?.vmImageUrl.startsWith( 'https://' ) || req.body?.vmImageUrl.startsWith( 'http://' ) ) ) {
-      req.body.vmImageUrl = req.body?.vmImageUrl.split( '?' )?.[0]?.split( '/' );
-      req.body.vmImageUrl.splice( 0, 3 );
-      req.body.vmImageUrl = decodeURIComponent( req.body.vmImageUrl.join( '/' ) );
-    }
+    // if ( req.body?.vmImageUrl && ( req.body?.vmImageUrl.startsWith( 'https://' ) || req.body?.vmImageUrl.startsWith( 'http://' ) ) ) {
+    //   req.body.vmImageUrl = req.body?.vmImageUrl.split( '?' )?.[0]?.split( '/' );
+    //   req.body.vmImageUrl.splice( 0, 3 );
+    //   req.body.vmImageUrl = decodeURIComponent( req.body.vmImageUrl.join( '/' ) );
+    // }
     if ( !req.body?._id ) {
       req.body.vmLibCode = await getMaxVMLibCode();
     }
