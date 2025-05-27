@@ -749,18 +749,14 @@ export async function uploadBrandList( req, res ) {
         acc[ele.brandName] = {
           brandName: ele.brandName,
           clientId: inputData.clientId,
-          brandDetails: [
-            {
-              subBrandName: ele.subBrandName,
-              category: ele.category,
-              subCategory: ele.subCategory,
-            },
-          ],
+          category: ele.category,
+          subCategory: ele.subCategory,
         };
       } else {
-        acc[ele.brandName].brandDetails.push( {
-          subBrandName: ele.subBrandName,
+        acc[ele.brandName].category.push( {
           category: ele.category,
+        } );
+        acc[ele.brandName].subCategory.push( {
           subCategory: ele.subCategory,
         } );
       }

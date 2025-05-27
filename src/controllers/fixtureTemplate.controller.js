@@ -5,6 +5,7 @@ import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as planoService from '../service/planogram.service.js';
 import * as storeService from '../service/store.service.js';
 import * as processedTaskService from '../service/processedTaskservice.js';
+import * as fixtureShelfService from '../service/fixtureShelf.service.js';
 import { createTask } from './task.controller.js';
 import mongoose from 'mongoose';
 import dayjs from 'dayjs';
@@ -92,6 +93,29 @@ export async function updateTemplate( req, res ) {
           fixtureConfigId: newFixture ? newFixture._id : storeFixtureDetails.fixtureConfigId,
         };
         await storeFixtureService.updateOne( { _id: storeFixtureDetails._id }, fixtureData );
+        await fixtureShelfService.deleteMany( { fixtureId: storeFixtureDetails._id } );
+        let shelfData = [];
+        inputData.shelfConfig.forEach( ( ele, index ) => {
+          shelfData.push( {
+            productCategory: inputData.productCategory,
+            productSubCategory: inputData.productCategory,
+            shelfType: ele.shelfType,
+            trayRows: ele.trayRows,
+            shelfNumber: index + 1,
+            fixtureId: storeFixtureDetails._id,
+            clientId: req.body.clientId,
+            planoId: storeFixtureDetails.planoId,
+            floorId: storeFixtureDetails.floorId,
+            productBrandName: ele.productBrandName,
+            shelfOrder: 'LTR',
+            shelfSplitup: 0,
+            storeId: storeFixtureDetails.storeId,
+            storeName: storeFixtureDetails.storeName,
+            productPerShelf: ele.productPerShelf,
+            sectionZone: ele.zone,
+          } );
+        } );
+        await fixtureShelfService.insertMany( shelfData );
       } ) );
     }
     await fixtureConfigService.updateOne( { _id: req.params.templateId }, inputData );
