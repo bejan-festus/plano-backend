@@ -168,7 +168,7 @@ export async function updateFixture( req, res ) {
           'clientId': req.body.clientId,
           'fixtureCategoryLower': req.body.fixtureCategory.toLowerCase(),
           'fixtureWidth.value': req.body.fixtureWidth.value,
-          '_id': { $in: req.params.fixtureId },
+          '_id': { $ne: req.params.fixtureId },
         },
       },
     ];
