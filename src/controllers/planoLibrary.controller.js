@@ -1070,6 +1070,9 @@ export async function getVmLibList( req, res ) {
           width = result.data[i].vmWidth.value;
           unit = result.data[i].vmWidth.unit;
         }
+        if ( result.data[i]?.vmImageUrl ) {
+          result.data[i].vmImageUrl = process.env.PLANOCDNURL +'/'+result.data[i].vmImageUrl;
+        }
         sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', unit, height, width, result.data[i]?.vmImageUrl || '' ];
         if ( result.data[i].templateId.length || result.data[i].status == 'active' ) {
           lockedRowNumber.push( rowStart );
@@ -1081,8 +1084,8 @@ export async function getVmLibList( req, res ) {
       let vmTypeList = await vmTypeService.find( { clientId: req.body.clientId } );
       vmTypeList = vmTypeList.map( ( ele ) => ele.vmType );
       let brand = productBrandDetails.map( ( ele ) => ele.brandName );
-      let brandCategories = productBrandDetails.flatMap( ( ele ) => ele.brandDetails.flatMap( ( brand ) => [ ...brand.category ] ) );
-      let brandSubCategories = productBrandDetails.flatMap( ( ele ) => ele.brandDetails.flatMap( ( brand ) => [ ...brand.subCategory ] ) );
+      let brandCategories = productBrandDetails.flatMap( ( ele ) => [ ...ele.category ] );
+      let brandSubCategories = productBrandDetails.flatMap( ( ele ) => [ ...ele.subCategory ] );
       brandCategories = [ ...new Set( brandCategories.map( ( ele ) => ele ) ) ];
       brandSubCategories = [ ...new Set( brandSubCategories.map( ( ele ) => ele ) ) ];
 
@@ -1112,7 +1115,7 @@ export async function getVmLibList( req, res ) {
         for ( let i=item.start; i<=item.end; i++ ) {
           const row = sheet.getRow( i );
           if ( i > rowStart - 1 ) {
-            row.values = [ '', '', '', '', '', '', '', '', '' ];
+            row.values = [ '', '', '', '', '', '', '', '', '', '' ];
           }
           if ( !lockedRowNumber.includes( i ) && i != 1 ) {
             row.eachCell( ( cell ) => {
