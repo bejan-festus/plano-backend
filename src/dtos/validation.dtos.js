@@ -213,7 +213,8 @@ export const addUpdateBrandSchema = joi.object( {
   clientId: joi.string().required(),
   brandId: joi.string().optional(),
   brandName: joi.string().required(),
-  brandDetails: joi.array().items( joi.any() ).min( 1 ).required(),
+  subCategory: joi.array().items( joi.any() ).min( 0 ).required(),
+  category: joi.array().items( joi.any() ).min( 1 ).required(),
 } );
 
 export const addUpdateBrand = {

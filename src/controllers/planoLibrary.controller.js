@@ -894,7 +894,6 @@ export async function getVmLibList( req, res ) {
           vmType: 1,
           vmBrand: 1,
           vmCategory: 1,
-          vmSubBrand: 1,
           clientId: 1,
           vmHeight: 1,
           status: 1,
@@ -940,7 +939,6 @@ export async function getVmLibList( req, res ) {
           vmType: 1,
           vmBrand: 1,
           vmCategory: 1,
-          vmSubBrand: 1,
           clientId: 1,
           vmHeight: 1,
           status: 1,
@@ -981,7 +979,6 @@ export async function getVmLibList( req, res ) {
           vmType: 1,
           vmBrand: 1,
           vmCategory: 1,
-          vmSubBrand: 1,
           clientId: 1,
           vmHeight: 1,
           status: 1,
@@ -1054,7 +1051,7 @@ export async function getVmLibList( req, res ) {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet( 'Fixture Library' );
 
-      sheet.getRow( 1 ).values = [ 'VM Lib Code', 'VM Name', 'VM Type', 'VM Brand', 'VM SubBrand', 'VM Category', 'VM SubCategory', 'Unit', 'VM Height', 'VM Width', 'VM ImageUrl' ];
+      sheet.getRow( 1 ).values = [ 'VM Lib Code', 'VM Name', 'VM Type', 'VM Brand', 'VM Category', 'VM SubCategory', 'Unit', 'VM Height', 'VM Width', 'VM ImageUrl' ];
 
       let rowStart = 2;
       let lockedRowNumber = [];
@@ -1073,7 +1070,7 @@ export async function getVmLibList( req, res ) {
           width = result.data[i].vmWidth.value;
           unit = result.data[i].vmWidth.unit;
         }
-        sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmSubBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', unit, height, width, result.data[i]?.vmImageUrl || '' ];
+        sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', unit, height, width, result.data[i]?.vmImageUrl || '' ];
         if ( result.data[i].templateId.length || result.data[i].status == 'active' ) {
           lockedRowNumber.push( rowStart );
         }
@@ -1084,7 +1081,6 @@ export async function getVmLibList( req, res ) {
       let vmTypeList = await vmTypeService.find( { clientId: req.body.clientId } );
       vmTypeList = vmTypeList.map( ( ele ) => ele.vmType );
       let brand = productBrandDetails.map( ( ele ) => ele.brandName );
-      let brandSubBrand = [ ...new Set( productBrandDetails.flatMap( ( ele ) => ele.brandDetails.map( ( brand ) => brand.subBrandName ) ) ) ];
       let brandCategories = productBrandDetails.flatMap( ( ele ) => ele.brandDetails.flatMap( ( brand ) => [ ...brand.category ] ) );
       let brandSubCategories = productBrandDetails.flatMap( ( ele ) => ele.brandDetails.flatMap( ( brand ) => [ ...brand.subCategory ] ) );
       brandCategories = [ ...new Set( brandCategories.map( ( ele ) => ele ) ) ];
@@ -1092,7 +1088,7 @@ export async function getVmLibList( req, res ) {
 
       const maxRows = 1048576;
 
-      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `D2:D${maxRows}`, optionList: [ `"${brand.toString()}"` ] }, { key: `E2:E${maxRows}`, optionList: [ `"${brandSubBrand.toString()}"` ] }, { key: `F2:F${maxRows}`, optionList: [ `"${brandCategories.toString()}"` ] }, { key: `G2:G${maxRows}`, optionList: [ `"${brandSubCategories.toString()}"` ] }, { key: `H2:H${maxRows}`, optionList: [ '"mm,cm,inches,feet"' ] } ];
+      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `D2:D${maxRows}`, optionList: [ `"${brand.toString()}"` ] }, { key: `E2:E${maxRows}`, optionList: [ `"${brandCategories.toString()}"` ] }, { key: `F2:F${maxRows}`, optionList: [ `"${brandSubCategories.toString()}"` ] }, { key: `G2:G${maxRows}`, optionList: [ '"mm,cm,inches,feet"' ] } ];
 
       dropDownRange.forEach( ( ele ) => {
         sheet.dataValidations.add( ele.key, {
