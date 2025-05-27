@@ -150,7 +150,7 @@ export async function duplicateTemplate( req, res ) {
 
 export async function getTemplateDetails( req, res ) {
   try {
-    let templateDetails = await fixtureConfigService.findOne( { _id: req.query.templateId }, { createdAt: 0, updatedAt: 0 } );
+    let templateDetails = await fixtureConfigService.findOne( { _id: req.query.templateId } );
     if ( !templateDetails ) {
       return res.sendError( 'No data found', 204 );
     }
