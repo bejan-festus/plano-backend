@@ -199,16 +199,17 @@ export async function getFixture( req, res ) {
     if ( !fixtureLibDetails ) {
       return res.sendError( 'No data found', 204 );
     }
+    let fixtureTemplateDetails = await fixtureTemplateService.find( { fixtureLibraryId: req.query?.fixtureId } );
     let fixtureDetails = await storeFixtureService.findOne( { fixtureLibraryId: req.query?.fixtureId }, { planoId: 1 } );
     if ( fixtureDetails ) {
       let planoStatus = await planoService.findOne( { planoId: fixtureDetails.planoId }, { status: 1 } );
       if ( planoStatus ) {
-        fixtureLibDetails.status = planoStatus.status == 'completed' ? 'Active' :'Inactive';
+        fixtureLibDetails.status = planoStatus.status == 'complete' ? 'Active' :'Inactive';
       }
     } else {
       fixtureLibDetails.status = fixtureLibDetails.status == 'draft' ? 'Draft' : 'Inactive';
     }
-    return res.sendSuccess( fixtureLibDetails );
+    return res.sendSuccess( { ...fixtureLibDetails, templateId: fixtureTemplateDetails.length } );
   } catch ( e ) {
     logger.error( { functionName: 'getFixture', error: e } );
     return res.sendError( e, 500 );
