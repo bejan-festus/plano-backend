@@ -753,8 +753,8 @@ export async function uploadBrandList( req, res ) {
           subCategory: ele.subCategory,
         };
       } else {
-        acc[ele.brandName].category.push( ele.category );
-        acc[ele.brandName].subCategory.push( ele.subCategory );
+        acc[ele.brandName].category.push( ...ele.category );
+        acc[ele.brandName].subCategory.push( ...ele.subCategory );
       }
       return acc;
     }, {} );
