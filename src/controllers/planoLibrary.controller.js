@@ -157,6 +157,10 @@ export async function updateFixture( req, res ) {
     if ( !fixtureLibraryDetails ) {
       return res.sendError( 'No data found', 204 );
     }
+    let templateMapped = await fixtureTemplateService.find( { fixtureLibraryId: req.params.fixtureId } );
+    if ( templateMapped.length ) {
+      return res.sendError( 'Fixture library is mapped with template', 400 );
+    }
     let query = [
       {
         $addFields: {
@@ -182,7 +186,7 @@ export async function updateFixture( req, res ) {
       updatedAt: new Date(),
     };
     await planoLibraryService.updateOne( { _id: req.params.fixtureId }, fixtureData );
-    return res.sendSuccess( 'Fixture library details updates successfully' );
+    return res.sendSuccess( 'Fixture library details updated successfully' );
   } catch ( e ) {
     console.log( e );
     logger.error( { functionName: 'updateFixture', error: e } );
