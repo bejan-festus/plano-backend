@@ -209,7 +209,11 @@ export async function getFixture( req, res ) {
     } else {
       fixtureLibDetails.status = fixtureLibDetails.status == 'draft' ? 'Draft' : 'Inactive';
     }
-    return res.sendSuccess( { ...fixtureLibDetails, templateId: fixtureTemplateDetails.length } );
+    fixtureLibDetails = {
+      ...fixtureLibDetails.toObject(),
+      templateId: fixtureTemplateDetails.length,
+    };
+    return res.sendSuccess( fixtureLibDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getFixture', error: e } );
     return res.sendError( e, 500 );
