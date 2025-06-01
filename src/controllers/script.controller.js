@@ -2320,9 +2320,9 @@ export async function updateVmData( req, res ) {
 
 
 async function scrapeCrest() {
-  const storeIds = [];
+  const storeIds = [ 'LKST98' ];
   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzNjY5ODIyLCJpYXQiOjE3NDM2NjYyMjIsImp0aSI6IjA5ZDRjYTVhZGRiNzQxMDVhYjhjOWVjMmU3MjZiM2NiIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.C3wLXzbv0bTDGiZqs8jSA3up0cq0wqA5PIMw45_T4Wg';
+  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4NTAxMDkxLCJpYXQiOjE3NDg0OTc0OTEsImp0aSI6ImY2NzI5ODIzNzE2YzQ3ZDg4MTU4YWE5OGVkZDVhZjQ3IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.ocrW9L8jCTvR8wnXk8T4t1PMJZxXkhC1gW2uACzB7jw';
   const filePath = 'response.json';
   let allResults = [];
 
@@ -2386,6 +2386,8 @@ async function scrapeCrest() {
     await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
   }
 }
+
+// scrapeCrest()
 
 export async function createCrestPlanogram( req, res ) {
   try {
@@ -3443,12 +3445,14 @@ import fetchCookie from 'fetch-cookie';
 
 async function downloadCrestImages() {
   const storeList = await planoService.find( {} );
-  const storeIds = storeList.map( ( store ) => store.toObject().storeName );
+  // const storeIds = storeList.map( ( store ) => store.toObject().storeName );
+  const storeIds = [ 'LKST1304' ];
+
 
   const invalidateUrl = 'https://app.getcrest.ai/api/ms_iam/user/session/override/';
   const tokenUrl = 'https://app.getcrest.ai/api/ms_iam/token/';
 
-  let authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0NzE4MjUzLCJpYXQiOjE3NDQ3MTQ2NTMsImp0aSI6Ijk5ZTAyYjU4ODg2NjQ3MDk4Y2NlY2NmODZlYzYzYTU4IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.7g1XS48l7mVsOcDXHLC7VFLFyJ-p13e2kkJlb8uFc_g';
+  let authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3NTEwNDAxLCJpYXQiOjE3NDc1MDY4MDEsImp0aSI6IjQ0YzNjOWNkZjUzYjQ5ZWE5OGQ3NWQxOTI1NGMxMGRkIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.5OYkUq4kIWDUXothNCCfk6GIQHlhiMdOuHzuczWt6QM';
 
   const fetchWithCookies = fetchCookie( fetch );
 
@@ -3486,7 +3490,7 @@ async function downloadCrestImages() {
 
     while ( attempts < retries ) {
       const options = new chrome.Options();
-      options.addArguments( 'headless' );
+      // options.addArguments( 'headless' );
       options.addArguments( 'disable-gpu' );
 
       const driver = await new Builder()
@@ -6861,7 +6865,7 @@ export async function recorrectTaskData( req, res ) {
 }
 
 
-export async function migrateCrest( req, res ) {
+export async function migrateCrestv1( req, res ) {
   try {
     if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
       return res.sendError( 'Unauthorized', 401 );
@@ -7023,7 +7027,8 @@ export async function migrateCrest( req, res ) {
       clientId: '11',
       $and: [
         { storeName: req.body.storeName },
-        { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
+        // { storeName: { $in: [ 'LKST98' ] } },
+        // { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
       ],
     };
 
@@ -7041,10 +7046,12 @@ export async function migrateCrest( req, res ) {
       return Math.round( num * 100 ) / 100;
     }
 
+
     for ( let i = 0; i < storeList.length; i++ ) {
       const storeData = await fetchStoreData( storeList[i], staticToken, res );
 
       if ( storeData?.data?.message !== 'SUCCESS' ) continue;
+
 
       const storeDetails = storeList[i];
 
@@ -7250,38 +7257,177 @@ export async function migrateCrest( req, res ) {
 
         let fixtureCounter = 1;
 
+
         for ( let index = 0; index < leftFixtures.length; index++ ) {
           const fixture = leftFixtures[index];
 
-          const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+          const fixtureConfig = await fixtureLibraryService.findOne( { fixtureCategory: fixture.fixtureType } );
           if ( !fixtureConfig ) continue;
           const fixtureConfigDoc = fixtureConfig.toObject();
 
+          let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.header}`;
+
+          const fixtureProductSubBrandName = new Set();
+
+
+          const shelfTemplate = fixtureConfigDoc.shelfConfig.map( ( configShelf, j ) => {
+            const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+            const shelfSection = shelfZone?.products.find( ( product ) => !product.isMerchandisingElement );
+
+            const shelfIdentifier = `shelf${j + 1}=${shelfSection?.productName}`;
+
+            mapKey += ','+shelfIdentifier;
+
+            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+
+            productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
+
+            return {
+              shelfNumber: j+1,
+              shelfType: configShelf?.shelfType,
+              productPerShelf: configShelf?.productPerShelf,
+              trayRows: configShelf?.trayRows,
+              productBrandName: productSubBrandName,
+              zone: configShelf.shelfZone,
+            };
+          } );
+
+          const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
+            const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
+            const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
+            const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
+
+            return vms.map( ( vm, k ) => {
+              let configData = vmConfig[0];
+
+              if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
+                configData.zone = 'stretch';
+              }
+
+              if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
+                configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+              }
+
+              if ( !configData ) return;
+
+              const vmIdentifier = `vm${k+1}=${vm.productName}+${configData.vmHeightmm}+${configData.vmWidthmm}+${configData.startShelf}+${configData.endShelf}+${configData.zone}`;
+
+              mapKey += ','+vmIdentifier;
+
+              return {
+                startYPosition: configData.startShelf,
+                endYPosition: configData.endShelf,
+                xZone: configData.zone,
+                vmName: vm.productName,
+                vmHeight: configData.vmHeightmm,
+                vmWidth: configData.vmWidthmm,
+                imageUrl: zone?.actual_image_url,
+              };
+            } );
+          } );
+
+          const vmTemplate = await Promise.all( vmConfig.map( async ( vmTemplate ) => {
+            const vmInsertData = {
+              clientId: '11',
+              vmName: vmTemplate.vmName,
+              vmHeight: {
+                value: vmTemplate.vmHeight,
+                unit: 'mm',
+              },
+              vmWidth: {
+                value: vmTemplate.vmWidth,
+                unit: 'mm',
+              },
+              status: 'complete',
+              vmBrand: vmTemplate.vmBrand,
+            };
+            if ( vmTemplate?.imageUrl ) {
+              const parsedUrl = new URL( zone.preview_image_url );
+              const attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
+
+              const isVmImageExist = await planoVmService.findOne( { crestImageId: attachmentId } );
+
+              if ( !isVmImageExist ) {
+                const vmImageData = await fetchVmImage( attachmentId );
+
+                const imageMeta = await getImageMetadata( vmImageData );
+
+                const params = {
+                  Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                  Key: `crestVms/`,
+                  fileName: `${attachmentId}.${imageMeta.fileExtension}`,
+                  ContentType: imageMeta.contentType,
+                  body: vmImageData,
+                };
+
+                const imgUpload = await fileUpload( params );
+
+                vmDetails.crestImageId = attachmentId;
+                vmDetails.vmImageUrl = imgUpload.Key;
+
+
+                if ( imageMeta.imageShape === 'square' ) {
+                  vmDetails.vmHeight.value = 100;
+                  vmDetails.vmWidth.value = 230;
+                }
+              } else {
+                vmDetails.crestImageId = attachmentId;
+                vmDetails.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
+              }
+            }
+
+            const vmDetails = await planoVmService.upsertOne(
+                {
+                  'productName': vmInsertData.vmName,
+                },
+                vmInsertData,
+            );
+
+            return {
+              vmId: vmDetails.toObject()._id,
+              startYPosition: vmTemplate.startYPosition,
+              endYPosition: vmTemplate.endYPosition,
+              xZone: vmTemplate.xZone,
+            };
+          } ) );
+
+
+          const fixtureTemplateData = {
+            ...fixtureConfigDoc,
+            'shelfConfig': shelfTemplate,
+            'vmConfig': vmTemplate,
+            'clientId': fixtureConfigDoc.clientId,
+            'fixtureName': `${fixture.header ? fixture.header : fixture.fixtureSubname[0]}-${fixtureConfigDoc.fixtureCategory}-${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit}`,
+            'header': {
+              label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
+              isEnabled: true,
+            },
+            'footer': {
+              label: fixture.footer,
+              isEnabled: true,
+            },
+            'isBodyEnabled': true,
+            'productResolutionLevel': 'L3',
+            'productBrandName': [ ...fixtureProductSubBrandName ],
+            'fixtureLibraryId': fixtureConfigDoc._id,
+            'crestMapKey': mapKey,
+          };
+
+          delete fixtureTemplateData._id;
+
+
+          const fixtureTemplate = await fixtureConfigService.upsertOne(
+              { crestMapKey: mapKey },
+              fixtureTemplateData,
+          );
+
           const fixtureData = {
-            'clientId': layoutDoc.clientId,
+            ...fixtureTemplate.toObject(),
             'storeName': layoutDoc.storeName,
             'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
-            'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
-            'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
-            'fixtureBrandCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
-            'fixtureBrandSubCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
-            'fixtureCode': fixtureConfigDoc?.fixtureCode,
-            'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
-            'fixtureType': 'wall',
-            'fixtureHeight': {
-              'value': 0,
-              'unit': 'mm',
-            },
-            'fixtureLength': {
-              'value': constantFixtureLength,
-              'unit': 'mm',
-            },
-            'fixtureWidth': {
-              'value': constantFixtureWidth,
-              'unit': 'mm',
-            },
             'associatedElementType': 'wall',
             'associatedElementNumber': 1,
             'relativePosition': {
@@ -7290,25 +7436,17 @@ export async function migrateCrest( req, res ) {
               'unit': 'ft',
             },
             'fixtureNumber': fixtureCounter,
-            'detailedFixtureLength': {
-              'value': constantDetailedFixtureLength,
-              'unit': 'mm',
-            },
-            'detailedFixtureWidth': {
-              'value': constantDetailedFixtureWidth,
-              'unit': 'mm',
-            },
             'relativeDetailedPosition': {
               'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
               'y': 0,
               'unit': 'ft',
             },
-            'productResolutionLevel': 'L2',
             'associatedElementFixtureNumber': index+1,
-            'header': fixture.header,
-            'footer': fixture.footer,
-            'fixtureConfigId': fixtureConfigDoc._id,
+            'fixtureConfigId': fixtureTemplate.toObject()._id,
           };
+
+          delete fixtureData._id;
+          delete fixtureData.shelfConfig;
 
           const createdFixture = await storeFixtureService.upsertOne(
               {
@@ -7320,200 +7458,205 @@ export async function migrateCrest( req, res ) {
 
           if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
-          await Promise.all(
-              fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
-                const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
-                const shelfSection = shelfZone.products.find( ( product ) => !product.isMerchandisingElement );
+          fixtureTemplate.shelfConfig.forEach( async ( configShelf, j ) => {
+            const shelfData = {
+              'clientId': '11',
+              'storeName': layoutDoc.storeName,
+              'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'fixtureId': createdFixture._id,
+              'shelfNumber': j + 1,
+              'shelfOrder': 'LTR',
+              'shelfCapacity': configShelf.shelfCapacity,
+              'productBrandName': configShelf.productBrandName,
+              'shelfType': configShelf.shelfType,
+              'productPerShelf': configShelf.productPerShelf,
+              'trayRows': configShelf.trayRows,
+              'productPerTray': configShelf.productPerTray,
+              'sectionZone': configShelf.zone,
+            };
 
-                const shelfData = {
-                  'clientId': '11',
-                  'storeName': layoutDoc.storeName,
-                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
-                  'planoId': layoutDoc.planoId,
-                  'floorId': layoutDoc._id,
-                  'fixtureId': createdFixture._id,
-                  'shelfNumber': j + 1,
-                  'shelfOrder': 'LTR',
-                  'shelfCapacity': configShelf.shelfCapacity,
-                  'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
-                  'sectionZone': configShelf.shelfZone,
-                  'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
-                };
-
-                await fixtureShelfService.upsertOne(
-                    {
-                      fixtureId: createdFixture._id,
-                      shelfNumber: j + 1,
-                    },
-                    shelfData,
-                );
-              } ),
-          );
-
-          await Promise.all(
-              fixture.productZones?.map( async ( zone ) => {
-                const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
-                const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
-                const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
-
-                await Promise.all(
-                    vms.map( async ( vm ) => {
-                      let configData = vmConfig[0];
-
-                      if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
-                        configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
-                      }
-
-                      if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
-                        configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
-                      }
-
-                      if ( !configData ) return;
-
-                      let attachmentId = '';
-                      let imgPath = '';
-                      let imageMeta = null;
-
-
-                      if ( zone.preview_image_url ) {
-                        const parsedUrl = new URL( zone.preview_image_url );
-                        attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
-
-                        const isVmImageExist = await planoProductService.findOne( { crestImageId: attachmentId } );
-
-
-                        if ( !isVmImageExist ) {
-                          const vmImageData = await fetchVmImage( attachmentId );
-
-                          imageMeta = await getImageMetadata( vmImageData );
-
-                          const params = {
-                            Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-                            Key: `crestVms/`,
-                            fileName: `${attachmentId}.${imageMeta.fileExtension}`,
-                            ContentType: imageMeta.contentType,
-                            body: vmImageData,
-                          };
-
-                          const imgUpload = await fileUpload( params );
-
-                          imgPath = imgUpload.Key;
-                        }
-                      }
-
-                      const insertData = {
-                        'clientId': '11',
-                        'productId': 'VMCR',
-                        'type': 'vm',
-                        'productName': vm.productName,
-                        'productHeight': {
-                          'value': configData.vmHeightmm,
-                          'unit': 'mm',
-                        },
-                        'productWidth': {
-                          'value': configData.vmWidthmm,
-                          'unit': 'mm',
-                        },
-                        'startYPosition': configData.startShelf,
-                        'endYPosition': configData.endShelf,
-                        'xZone': configData.zone,
-                        'fixtureConfigId': fixtureConfig._id,
-                      };
-
-                      if ( attachmentId && imgPath ) {
-                        insertData.crestImageId = attachmentId;
-                        insertData.productImageUrl = imgPath;
-
-                        const shelfData = fixtureConfigDoc.shelfConfig
-                            .filter( ( shelf ) => shelf.shelfZone === configData.position )
-                            .sort( ( a, b ) => a.shelfNumber - b.shelfNumber );
-
-                        if ( imageMeta.imageShape === 'square' ) {
-                          insertData.productHeight.value = 100;
-                          insertData.productWidth.value = 230;
-                        }
-
-                        if ( imageMeta.imageShape === 'rectangle' ) {
-                          insertData.productHeight.value = 100;
-                          insertData.productWidth.value = 905;
-                        }
-
-                        if ( shelfData.length ) {
-                          insertData.startYPosition = shelfData[0].shelfNumber;
-                          insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
-                        }
-                      }
-
-                      const vmTemplate = await planoProductService.upsertOne(
-                          {
-                            'productName': vm.productName,
-                            'fixtureConfigId': fixtureConfig._id,
-                            'productHeight.value': configData.vmHeightmm,
-                            'productWidth.value': configData.vmWidthmm,
-                            'startYPosition': configData.startShelf,
-                            'endYPosition': configData.endShelf,
-                            'xZone': configData.zone,
-                          },
-                          insertData,
-                      );
-
-                      const vmData = {
-                        'clientId': layoutDoc.clientId,
-                        'storeName': layoutDoc.storeName,
-                        'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
-                        'planoId': layoutDoc.planoId,
-                        'floorId': layoutDoc._id,
-                        'type': 'vm',
-                        'fixtureId': createdFixture._id,
-                        'productId': vmTemplate._id,
-                      };
-
-                      await planoMappingService.upsertOne(
-                          {
-                            fixtureId: createdFixture._id,
-                            productId: vmTemplate._id,
-                          },
-                          vmData,
-                      );
-                    } ),
-                );
-              } ) || [],
-          );
+            await fixtureShelfService.upsertOne(
+                {
+                  fixtureId: createdFixture._id,
+                  shelfNumber: j + 1,
+                },
+                shelfData,
+            );
+          } );
         }
-
 
         for ( let index = 0; index < backFixtures.length; index++ ) {
           const fixture = backFixtures[index];
 
-          const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+          const fixtureConfig = await fixtureLibraryService.findOne( { fixtureCategory: fixture.fixtureType } );
           if ( !fixtureConfig ) continue;
           const fixtureConfigDoc = fixtureConfig.toObject();
 
+          let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.header}`;
+
+          const fixtureProductSubBrandName = new Set();
+
+
+          const shelfTemplate = fixtureConfigDoc.shelfConfig.map( ( configShelf, j ) => {
+            const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+            const shelfSection = shelfZone?.products.find( ( product ) => !product.isMerchandisingElement );
+
+            const shelfIdentifier = `shelf${j + 1}=${shelfSection?.productName}`;
+
+            mapKey += ','+shelfIdentifier;
+
+            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+
+            productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
+
+            return {
+              shelfNumber: j+1,
+              shelfType: configShelf?.shelfType,
+              productPerShelf: configShelf?.productPerShelf,
+              trayRows: configShelf?.trayRows,
+              productBrandName: productSubBrandName,
+              zone: configShelf.shelfZone,
+            };
+          } );
+
+          const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
+            const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
+            const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
+            const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
+
+            return vms.map( ( vm, k ) => {
+              let configData = vmConfig[0];
+
+              if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
+                configData.zone = 'stretch';
+              }
+
+              if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
+                configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+              }
+
+              if ( !configData ) return;
+
+              const vmIdentifier = `vm${k+1}=${vm.productName}+${configData.vmHeightmm}+${configData.vmWidthmm}+${configData.startShelf}+${configData.endShelf}+${configData.zone}`;
+
+              mapKey += ','+vmIdentifier;
+
+              return {
+                startYPosition: configData.startShelf,
+                endYPosition: configData.endShelf,
+                xZone: configData.zone,
+                vmName: vm.productName,
+                vmHeight: configData.vmHeightmm,
+                vmWidth: configData.vmWidthmm,
+                imageUrl: zone?.actual_image_url,
+              };
+            } );
+          } );
+
+          const vmTemplate = await Promise.all( vmConfig.map( async ( vmTemplate ) => {
+            const vmInsertData = {
+              clientId: '11',
+              vmName: vmTemplate.vmName,
+              vmHeight: {
+                value: vmTemplate.vmHeight,
+                unit: 'mm',
+              },
+              vmWidth: {
+                value: vmTemplate.vmWidth,
+                unit: 'mm',
+              },
+              status: 'complete',
+              vmBrand: vmTemplate.vmBrand,
+            };
+            if ( vmTemplate?.imageUrl ) {
+              const parsedUrl = new URL( zone.preview_image_url );
+              const attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
+
+              const isVmImageExist = await planoVmService.findOne( { crestImageId: attachmentId } );
+
+              if ( !isVmImageExist ) {
+                const vmImageData = await fetchVmImage( attachmentId );
+
+                const imageMeta = await getImageMetadata( vmImageData );
+
+                const params = {
+                  Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                  Key: `crestVms/`,
+                  fileName: `${attachmentId}.${imageMeta.fileExtension}`,
+                  ContentType: imageMeta.contentType,
+                  body: vmImageData,
+                };
+
+                const imgUpload = await fileUpload( params );
+
+                vmDetails.crestImageId = attachmentId;
+                vmDetails.vmImageUrl = imgUpload.Key;
+
+
+                if ( imageMeta.imageShape === 'square' ) {
+                  vmDetails.vmHeight.value = 100;
+                  vmDetails.vmWidth.value = 230;
+                }
+              } else {
+                vmDetails.crestImageId = attachmentId;
+                vmDetails.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
+              }
+            }
+
+            const vmDetails = await planoVmService.upsertOne(
+                {
+                  'productName': vmInsertData.vmName,
+                },
+                vmInsertData,
+            );
+
+            return {
+              vmId: vmDetails.toObject()._id,
+              startYPosition: vmTemplate.startYPosition,
+              endYPosition: vmTemplate.endYPosition,
+              xZone: vmTemplate.xZone,
+            };
+          } ) );
+
+
+          const fixtureTemplateData = {
+            ...fixtureConfigDoc,
+            'shelfConfig': shelfTemplate,
+            'vmConfig': vmTemplate,
+            'clientId': fixtureConfigDoc.clientId,
+            'fixtureName': `${fixture.header ? fixture.header : fixture.fixtureSubname[0]}-${fixtureConfigDoc.fixtureCategory}-${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit}`,
+            'header': {
+              label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
+              isEnabled: true,
+            },
+            'footer': {
+              label: fixture.footer,
+              isEnabled: true,
+            },
+            'isBodyEnabled': true,
+            'productResolutionLevel': 'L3',
+            'productBrandName': [ ...fixtureProductSubBrandName ],
+            'fixtureLibraryId': fixtureConfigDoc._id,
+            'crestMapKey': mapKey,
+          };
+
+          delete fixtureTemplateData._id;
+
+
+          const fixtureTemplate = await fixtureConfigService.upsertOne(
+              { crestMapKey: mapKey },
+              fixtureTemplateData,
+          );
+
           const fixtureData = {
-            'clientId': layoutDoc.clientId,
+            ...fixtureTemplate.toObject(),
             'storeName': layoutDoc.storeName,
             'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
-            'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
-            'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
-            'fixtureBrandCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
-            'fixtureBrandSubCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
-            'fixtureCode': fixtureConfigDoc?.fixtureCode,
-            'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
-            'fixtureType': 'wall',
-            'fixtureHeight': {
-              'value': 0,
-              'unit': 'mm',
-            },
-            'fixtureLength': {
-              'value': constantFixtureWidth,
-              'unit': 'mm',
-            },
-            'fixtureWidth': {
-              'value': constantFixtureLength,
-              'unit': 'mm',
-            },
             'associatedElementType': 'wall',
             'associatedElementNumber': 2,
             'relativePosition': {
@@ -7522,25 +7665,17 @@ export async function migrateCrest( req, res ) {
               'unit': 'ft',
             },
             'fixtureNumber': fixtureCounter,
-            'detailedFixtureLength': {
-              'value': constantDetailedFixtureLength,
-              'unit': 'mm',
-            },
-            'detailedFixtureWidth': {
-              'value': constantDetailedFixtureWidth,
-              'unit': 'mm',
-            },
             'relativeDetailedPosition': {
               'x': roundToTwo( ( finalXDetailedDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
               'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
               'unit': 'ft',
             },
-            'productResolutionLevel': 'L2',
             'associatedElementFixtureNumber': index+1,
-            'header': fixture.header,
-            'footer': fixture.footer,
-            'fixtureConfigId': fixtureConfigDoc._id,
+            'fixtureConfigId': fixtureTemplate.toObject()._id,
           };
+
+          delete fixtureData._id;
+          delete fixtureData.shelfConfig;
 
           const createdFixture = await storeFixtureService.upsertOne(
               {
@@ -7552,199 +7687,205 @@ export async function migrateCrest( req, res ) {
 
           if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
-          await Promise.all(
-              fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
-                const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
-                const shelfSection = shelfZone.products.find( ( product ) => !product.isMerchandisingElement );
+          fixtureTemplate.shelfConfig.forEach( async ( configShelf, j ) => {
+            const shelfData = {
+              'clientId': '11',
+              'storeName': layoutDoc.storeName,
+              'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'fixtureId': createdFixture._id,
+              'shelfNumber': j + 1,
+              'shelfOrder': 'LTR',
+              'shelfCapacity': configShelf.shelfCapacity,
+              'productBrandName': configShelf.productBrandName,
+              'shelfType': configShelf.shelfType,
+              'productPerShelf': configShelf.productPerShelf,
+              'trayRows': configShelf.trayRows,
+              'productPerTray': configShelf.productPerTray,
+              'sectionZone': configShelf.zone,
+            };
 
-                const shelfData = {
-                  'clientId': '11',
-                  'storeName': layoutDoc.storeName,
-                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
-                  'planoId': layoutDoc.planoId,
-                  'floorId': layoutDoc._id,
-                  'fixtureId': createdFixture._id,
-                  'shelfNumber': j + 1,
-                  'shelfOrder': 'LTR',
-                  'shelfCapacity': configShelf.shelfCapacity,
-                  'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
-                  'sectionZone': configShelf.shelfZone,
-                  'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
-                }; ;
-
-                await fixtureShelfService.upsertOne(
-                    {
-                      fixtureId: createdFixture._id,
-                      shelfNumber: j + 1,
-                    },
-                    shelfData,
-                );
-              } ),
-          );
-
-          await Promise.all(
-              fixture.productZones?.map( async ( zone ) => {
-                const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
-                const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
-                const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
-
-                await Promise.all(
-                    vms.map( async ( vm ) => {
-                      let configData = vmConfig[0];
-
-                      if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
-                        configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
-                      }
-
-                      if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
-                        configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
-                      }
-
-                      if ( !configData ) return;
-
-                      let attachmentId = '';
-                      let imgPath = '';
-                      let imageMeta = null;
-
-
-                      if ( zone.preview_image_url ) {
-                        const parsedUrl = new URL( zone.preview_image_url );
-                        attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
-
-                        const isVmImageExist = await planoProductService.findOne( { crestImageId: attachmentId } );
-
-
-                        if ( !isVmImageExist ) {
-                          const vmImageData = await fetchVmImage( attachmentId );
-
-                          imageMeta = await getImageMetadata( vmImageData );
-
-                          const params = {
-                            Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-                            Key: `crestVms/`,
-                            fileName: `${attachmentId}.${imageMeta.fileExtension}`,
-                            ContentType: imageMeta.contentType,
-                            body: vmImageData,
-                          };
-
-                          const imgUpload = await fileUpload( params );
-
-                          imgPath = imgUpload.Key;
-                        }
-                      }
-
-                      const insertData = {
-                        'clientId': '11',
-                        'productId': 'VMCR',
-                        'type': 'vm',
-                        'productName': vm.productName,
-                        'productHeight': {
-                          'value': configData.vmHeightmm,
-                          'unit': 'mm',
-                        },
-                        'productWidth': {
-                          'value': configData.vmWidthmm,
-                          'unit': 'mm',
-                        },
-                        'startYPosition': configData.startShelf,
-                        'endYPosition': configData.endShelf,
-                        'xZone': configData.zone,
-                        'fixtureConfigId': fixtureConfig._id,
-                      };
-
-                      if ( attachmentId && imgPath ) {
-                        insertData.crestImageId = attachmentId;
-                        insertData.productImageUrl = imgPath;
-
-                        const shelfData = fixtureConfigDoc.shelfConfig
-                            .filter( ( shelf ) => shelf.shelfZone === configData.position )
-                            .sort( ( a, b ) => a.shelfNumber - b.shelfNumber );
-
-                        if ( imageMeta.imageShape === 'square' ) {
-                          insertData.productHeight.value = 100;
-                          insertData.productWidth.value = 230;
-                        }
-
-                        if ( imageMeta.imageShape === 'rectangle' ) {
-                          insertData.productHeight.value = 100;
-                          insertData.productWidth.value = 905;
-                        }
-
-                        if ( shelfData.length ) {
-                          insertData.startYPosition = shelfData[0].shelfNumber;
-                          insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
-                        }
-                      }
-
-                      const vmTemplate = await planoProductService.upsertOne(
-                          {
-                            'productName': vm.productName,
-                            'fixtureConfigId': fixtureConfig._id,
-                            'productHeight.value': configData.vmHeightmm,
-                            'productWidth.value': configData.vmWidthmm,
-                            'startYPosition': configData.startShelf,
-                            'endYPosition': configData.endShelf,
-                            'xZone': configData.zone,
-                          },
-                          insertData,
-                      );
-
-                      const vmData = {
-                        'clientId': layoutDoc.clientId,
-                        'storeName': layoutDoc.storeName,
-                        'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
-                        'planoId': layoutDoc.planoId,
-                        'floorId': layoutDoc._id,
-                        'type': 'vm',
-                        'fixtureId': createdFixture._id,
-                        'productId': vmTemplate._id,
-                      };
-
-                      await planoMappingService.upsertOne(
-                          {
-                            fixtureId: createdFixture._id,
-                            productId: vmTemplate._id,
-                          },
-                          vmData,
-                      );
-                    } ),
-                );
-              } ) || [],
-          );
+            await fixtureShelfService.upsertOne(
+                {
+                  fixtureId: createdFixture._id,
+                  shelfNumber: j + 1,
+                },
+                shelfData,
+            );
+          } );
         }
 
         for ( let index = 0; index < rightFixtures.length; index++ ) {
           const fixture = rightFixtures[index];
 
-          const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.fixtureType } );
+          const fixtureConfig = await fixtureLibraryService.findOne( { fixtureCategory: fixture.fixtureType } );
           if ( !fixtureConfig ) continue;
           const fixtureConfigDoc = fixtureConfig.toObject();
 
+          let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.header}`;
+
+          const fixtureProductSubBrandName = new Set();
+
+
+          const shelfTemplate = fixtureConfigDoc.shelfConfig.map( ( configShelf, j ) => {
+            const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
+            const shelfSection = shelfZone?.products.find( ( product ) => !product.isMerchandisingElement );
+
+            const shelfIdentifier = `shelf${j + 1}=${shelfSection?.productName}`;
+
+            mapKey += ','+shelfIdentifier;
+
+            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+
+            productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
+
+            return {
+              shelfNumber: j+1,
+              shelfType: configShelf?.shelfType,
+              productPerShelf: configShelf?.productPerShelf,
+              trayRows: configShelf?.trayRows,
+              productBrandName: productSubBrandName,
+              zone: configShelf.shelfZone,
+            };
+          } );
+
+          const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
+            const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
+            const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
+            const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
+
+            return vms.map( ( vm, k ) => {
+              let configData = vmConfig[0];
+
+              if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
+                configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
+                configData.zone = 'stretch';
+              }
+
+              if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
+                configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+              }
+
+              if ( !configData ) return;
+
+              const vmIdentifier = `vm${k+1}=${vm.productName}+${configData.vmHeightmm}+${configData.vmWidthmm}+${configData.startShelf}+${configData.endShelf}+${configData.zone}`;
+
+              mapKey += ','+vmIdentifier;
+
+              return {
+                startYPosition: configData.startShelf,
+                endYPosition: configData.endShelf,
+                xZone: configData.zone,
+                vmName: vm.productName,
+                vmHeight: configData.vmHeightmm,
+                vmWidth: configData.vmWidthmm,
+                imageUrl: zone?.actual_image_url,
+              };
+            } );
+          } );
+
+          const vmTemplate = await Promise.all( vmConfig.map( async ( vmTemplate ) => {
+            const vmInsertData = {
+              clientId: '11',
+              vmName: vmTemplate.vmName,
+              vmHeight: {
+                value: vmTemplate.vmHeight,
+                unit: 'mm',
+              },
+              vmWidth: {
+                value: vmTemplate.vmWidth,
+                unit: 'mm',
+              },
+              status: 'complete',
+              vmBrand: vmTemplate.vmBrand,
+            };
+            if ( vmTemplate?.imageUrl ) {
+              const parsedUrl = new URL( zone.preview_image_url );
+              const attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
+
+              const isVmImageExist = await planoVmService.findOne( { crestImageId: attachmentId } );
+
+              if ( !isVmImageExist ) {
+                const vmImageData = await fetchVmImage( attachmentId );
+
+                const imageMeta = await getImageMetadata( vmImageData );
+
+                const params = {
+                  Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                  Key: `crestVms/`,
+                  fileName: `${attachmentId}.${imageMeta.fileExtension}`,
+                  ContentType: imageMeta.contentType,
+                  body: vmImageData,
+                };
+
+                const imgUpload = await fileUpload( params );
+
+                vmDetails.crestImageId = attachmentId;
+                vmDetails.vmImageUrl = imgUpload.Key;
+
+
+                if ( imageMeta.imageShape === 'square' ) {
+                  vmDetails.vmHeight.value = 100;
+                  vmDetails.vmWidth.value = 230;
+                }
+              } else {
+                vmDetails.crestImageId = attachmentId;
+                vmDetails.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
+              }
+            }
+
+            const vmDetails = await planoVmService.upsertOne(
+                {
+                  'productName': vmInsertData.vmName,
+                },
+                vmInsertData,
+            );
+
+            return {
+              vmId: vmDetails.toObject()._id,
+              startYPosition: vmTemplate.startYPosition,
+              endYPosition: vmTemplate.endYPosition,
+              xZone: vmTemplate.xZone,
+            };
+          } ) );
+
+
+          const fixtureTemplateData = {
+            ...fixtureConfigDoc,
+            'shelfConfig': shelfTemplate,
+            'vmConfig': vmTemplate,
+            'clientId': fixtureConfigDoc.clientId,
+            'fixtureName': `${fixture.header ? fixture.header : fixture.fixtureSubname[0]}-${fixtureConfigDoc.fixtureCategory}-${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit}`,
+            'header': {
+              label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
+              isEnabled: true,
+            },
+            'footer': {
+              label: fixture.footer,
+              isEnabled: true,
+            },
+            'isBodyEnabled': true,
+            'productResolutionLevel': 'L3',
+            'productBrandName': [ ...fixtureProductSubBrandName ],
+            'fixtureLibraryId': fixtureConfigDoc._id,
+            'crestMapKey': mapKey,
+          };
+
+          delete fixtureTemplateData._id;
+
+
+          const fixtureTemplate = await fixtureConfigService.upsertOne(
+              { crestMapKey: mapKey },
+              fixtureTemplateData,
+          );
+
           const fixtureData = {
-            'clientId': layoutDoc.clientId,
+            ...fixtureTemplate.toObject(),
             'storeName': layoutDoc.storeName,
             'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
-            'fixtureName': `Fixture ${index+1} - ${fixture.fixtureType}`,
-            'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
-            'fixtureBrandCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
-            'fixtureBrandSubCategory': fixture.fixtureSubname.length ? ( fixture.fixtureSubname.length > 1 ? fixture.fixtureSubname.join( ' + ' ) : fixture.fixtureSubname[0] ) : undefined,
-            'fixtureCode': fixtureConfigDoc?.fixtureCode,
-            'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
-            'fixtureType': 'wall',
-            'fixtureHeight': {
-              'value': 0,
-              'unit': 'mm',
-            },
-            'fixtureLength': {
-              'value': constantFixtureLength,
-              'unit': 'mm',
-            },
-            'fixtureWidth': {
-              'value': constantFixtureWidth,
-              'unit': 'mm',
-            },
             'associatedElementType': 'wall',
             'associatedElementNumber': 3,
             'relativePosition': {
@@ -7753,25 +7894,17 @@ export async function migrateCrest( req, res ) {
               'unit': 'ft',
             },
             'fixtureNumber': fixtureCounter,
-            'detailedFixtureLength': {
-              'value': constantDetailedFixtureLength,
-              'unit': 'mm',
-            },
-            'detailedFixtureWidth': {
-              'value': constantDetailedFixtureWidth,
-              'unit': 'mm',
-            },
             'relativeDetailedPosition': {
               'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
               'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
               'unit': 'ft',
             },
-            'productResolutionLevel': 'L2',
             'associatedElementFixtureNumber': index+1,
-            'header': fixture.header,
-            'footer': fixture.footer,
-            'fixtureConfigId': fixtureConfigDoc._id,
+            'fixtureConfigId': fixtureTemplate.toObject()._id,
           };
+
+          delete fixtureData._id;
+          delete fixtureData.shelfConfig;
 
           const createdFixture = await storeFixtureService.upsertOne(
               {
@@ -7783,171 +7916,38 @@ export async function migrateCrest( req, res ) {
 
           if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
-          await Promise.all(
-              fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
-                const shelfZone = fixture.productZones.find( ( zone ) => zone.zoneName === configShelf.shelfZone );
-                const shelfSection = shelfZone.products.find( ( product ) => !product.isMerchandisingElement );
+          fixtureTemplate.shelfConfig.forEach( async ( configShelf, j ) => {
+            const shelfData = {
+              'clientId': '11',
+              'storeName': layoutDoc.storeName,
+              'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
+              'planoId': layoutDoc.planoId,
+              'floorId': layoutDoc._id,
+              'fixtureId': createdFixture._id,
+              'shelfNumber': j + 1,
+              'shelfOrder': 'LTR',
+              'shelfCapacity': configShelf.shelfCapacity,
+              'productBrandName': configShelf.productBrandName,
+              'shelfType': configShelf.shelfType,
+              'productPerShelf': configShelf.productPerShelf,
+              'trayRows': configShelf.trayRows,
+              'productPerTray': configShelf.productPerTray,
+              'sectionZone': configShelf.zone,
+            };
 
-                const shelfData = {
-                  'clientId': '11',
-                  'storeName': layoutDoc.storeName,
-                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
-                  'planoId': layoutDoc.planoId,
-                  'floorId': layoutDoc._id,
-                  'fixtureId': createdFixture._id,
-                  'shelfNumber': j + 1,
-                  'shelfOrder': 'LTR',
-                  'shelfCapacity': configShelf.shelfCapacity,
-                  'sectionName': shelfSection?.productName ? shelfSection.productName : 'Unknown',
-                  'sectionZone': configShelf.shelfZone,
-                  'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
-                };
-
-                await fixtureShelfService.upsertOne(
-                    {
-                      fixtureId: createdFixture._id,
-                      shelfNumber: j + 1,
-                    },
-                    shelfData,
-                );
-              } ),
-          );
-
-          await Promise.all(
-              fixture.productZones?.map( async ( zone ) => {
-                const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
-                const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
-                const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
-
-                await Promise.all(
-                    vms.map( async ( vm ) => {
-                      let configData = vmConfig[0];
-
-                      if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
-                        configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
-                      }
-
-                      if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
-                        configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
-                      }
-
-                      if ( !configData ) return;
-
-                      let attachmentId = '';
-                      let imgPath = '';
-                      let imageMeta = null;
-
-
-                      if ( zone.preview_image_url ) {
-                        const parsedUrl = new URL( zone.preview_image_url );
-                        attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
-
-                        const isVmImageExist = await planoProductService.findOne( { crestImageId: attachmentId } );
-
-
-                        if ( !isVmImageExist ) {
-                          const vmImageData = await fetchVmImage( attachmentId );
-
-                          imageMeta = await getImageMetadata( vmImageData );
-
-                          const params = {
-                            Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-                            Key: `crestVms/`,
-                            fileName: `${attachmentId}.${imageMeta.fileExtension}`,
-                            ContentType: imageMeta.contentType,
-                            body: vmImageData,
-                          };
-
-                          const imgUpload = await fileUpload( params );
-
-                          imgPath = imgUpload.Key;
-                        }
-                      }
-
-
-                      const insertData = {
-                        'clientId': '11',
-                        'productId': 'VMCR',
-                        'type': 'vm',
-                        'productName': vm.productName,
-                        'productHeight': {
-                          'value': configData.vmHeightmm,
-                          'unit': 'mm',
-                        },
-                        'productWidth': {
-                          'value': configData.vmWidthmm,
-                          'unit': 'mm',
-                        },
-                        'startYPosition': configData.startShelf,
-                        'endYPosition': configData.endShelf,
-                        'xZone': configData.zone,
-                        'fixtureConfigId': fixtureConfig._id,
-                      };
-
-                      if ( attachmentId && imgPath ) {
-                        insertData.crestImageId = attachmentId;
-                        insertData.productImageUrl = imgPath;
-
-                        const shelfData = fixtureConfigDoc.shelfConfig
-                            .filter( ( shelf ) => shelf.shelfZone === configData.position )
-                            .sort( ( a, b ) => a.shelfNumber - b.shelfNumber );
-
-                        if ( imageMeta.imageShape === 'square' ) {
-                          insertData.productHeight.value = 100;
-                          insertData.productWidth.value = 230;
-                        }
-
-                        if ( imageMeta.imageShape === 'rectangle' ) {
-                          insertData.productHeight.value = 100;
-                          insertData.productWidth.value = 905;
-                        }
-
-                        if ( shelfData.length ) {
-                          insertData.startYPosition = shelfData[0].shelfNumber;
-                          insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
-                        }
-                      }
-
-                      const vmTemplate = await planoProductService.upsertOne(
-                          {
-                            'productName': vm.productName,
-                            'fixtureConfigId': fixtureConfig._id,
-                            'productHeight.value': configData.vmHeightmm,
-                            'productWidth.value': configData.vmWidthmm,
-                            'startYPosition': configData.startShelf,
-                            'endYPosition': configData.endShelf,
-                            'xZone': configData.zone,
-                          },
-                          insertData,
-                      );
-
-                      const vmData = {
-                        'clientId': layoutDoc.clientId,
-                        'storeName': layoutDoc.storeName,
-                        'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
-                        'planoId': layoutDoc.planoId,
-                        'floorId': layoutDoc._id,
-                        'type': 'vm',
-                        'fixtureId': createdFixture._id,
-                        'productId': vmTemplate._id,
-                      };
-
-                      await planoMappingService.upsertOne(
-                          {
-                            fixtureId: createdFixture._id,
-                            productId: vmTemplate._id,
-                          },
-                          vmData,
-                      );
-                    } ),
-                );
-              } ) || [],
-          );
+            await fixtureShelfService.upsertOne(
+                {
+                  fixtureId: createdFixture._id,
+                  shelfNumber: j + 1,
+                },
+                shelfData,
+            );
+          } );
         }
-
 
         for ( let index = 0; index < floorFixtures.length; index++ ) {
           const fixture = floorFixtures[index];
+
           const centerRow = Math.floor( totalRows / 2 );
 
           const startingX = roundToTwo( ( finalXDistance / 2 - ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) );
@@ -7965,60 +7965,156 @@ export async function migrateCrest( req, res ) {
           const detailedXPos = roundToTwo( ( detailedStartingX + colIndex * ( constantDetailedFixtureLength / mmToFeet ) ) );
           const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
 
-          const fixtureConfig = await fixtureConfigService.findOne( { fixtureCategory: fixture.main } );
+          const fixtureConfig = await fixtureLibraryService.findOne( { fixtureCategory: fixture.main } );
           if ( !fixtureConfig ) continue;
-
           const fixtureConfigDoc = fixtureConfig.toObject();
 
+          let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.header}`;
+
+          const fixtureProductSubBrandName = new Set();
+
+
+          const shelfTemplate = fixtureConfigDoc.shelfConfig.map( ( configShelf, j ) => {
+            const shelfSection = fixture?.centerSuperSubMain?.find( ( product ) => !product.isVisualMerchandiser );
+
+            const shelfIdentifier = `shelf${j + 1}=${shelfSection?.productName}`;
+
+            mapKey += ','+shelfIdentifier;
+
+
+            let productSubBrandName = fixture.centerSubMain.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+
+            if ( shelfSection ) {
+              productSubBrandName = shelfSection.name.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+            }
+
+            productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
+
+            return {
+              shelfNumber: j+1,
+              shelfType: configShelf?.shelfType,
+              productPerShelf: configShelf?.productPerShelf,
+              trayRows: configShelf?.trayRows,
+              productBrandName: productSubBrandName,
+              zone: configShelf.shelfZone,
+            };
+          } );
+
+          const vmConfig = fixture.centerSuperSubMain?.flatMap( ( vm ) => {
+            if ( !vm?.isVisualMerchandiser ) {
+              return [];
+            }
+            const vmConfig = fixtureConfigDoc.vmConfig;
+
+            const [ configData1, configData2 ] = [ vmConfig[0], vmConfig[1] ];
+
+            return [
+              {
+                startYPosition: configData1.startShelf,
+                endYPosition: configData1.endShelf,
+                xZone: configData1.zone,
+                vmName: vm.name + ' - 1',
+                vmHeight: configData1.vmHeightmm,
+                vmWidth: configData1.vmWidthmm,
+              },
+              {
+                startYPosition: configData2.startShelf,
+                endYPosition: configData2.endShelf,
+                xZone: configData2.zone,
+                vmName: vm.name + ' - 2',
+                vmHeight: configData2.vmHeightmm,
+                vmWidth: configData2.vmWidthmm,
+              },
+            ];
+          } );
+
+          const vmTemplate = await Promise.all( vmConfig.map( async ( vmTemplate ) => {
+            const vmInsertData = {
+              clientId: '11',
+              vmName: vmTemplate.vmName,
+              vmHeight: {
+                value: vmTemplate.vmHeight,
+                unit: 'mm',
+              },
+              vmWidth: {
+                value: vmTemplate.vmWidth,
+                unit: 'mm',
+              },
+              status: 'complete',
+              vmBrand: vmTemplate.vmBrand,
+            };
+
+            const vmDetails = await planoVmService.upsertOne(
+                {
+                  'vmName': vmInsertData.vmName,
+                },
+                vmInsertData,
+            );
+
+            return {
+              vmId: vmDetails.toObject()._id,
+              startYPosition: vmTemplate.startYPosition,
+              endYPosition: vmTemplate.endYPosition,
+              xZone: vmTemplate.xZone,
+            };
+          } ) );
+
+
+          const fixtureTemplateData = {
+            ...fixtureConfigDoc,
+            'shelfConfig': shelfTemplate,
+            'vmConfig': vmTemplate,
+            'clientId': fixtureConfigDoc.clientId,
+            'fixtureName': `${fixture.centerSubMain}-${fixtureConfigDoc.fixtureCategory}-${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit}`,
+            'header': {
+              label: fixture.centerSubMain,
+              isEnabled: true,
+            },
+            'footer': {
+              label: 'Storage Box',
+              isEnabled: true,
+            },
+            'isBodyEnabled': true,
+            'productResolutionLevel': 'L3',
+            'productBrandName': [ ...fixtureProductSubBrandName ],
+            'fixtureLibraryId': fixtureConfigDoc._id,
+            'crestMapKey': mapKey,
+          };
+
+
+          delete fixtureTemplateData._id;
+
+
+          const fixtureTemplate = await fixtureConfigService.upsertOne(
+              { crestMapKey: mapKey },
+              fixtureTemplateData,
+          );
+
           const fixtureData = {
-            'clientId': layoutDoc.clientId,
+            ...fixtureTemplate.toObject(),
             'storeName': layoutDoc.storeName,
             'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
-            'fixtureName': `Fixture ${index+1} - ${fixture.main}`,
-            'fixtureCategory': fixtureConfigDoc.fixtureConfigType,
-            'fixtureBrandCategory': fixture.centerSubMain ? fixture.centerSubMain : undefined,
-            'fixtureBrandSubCategory': fixture.centerSubMain ? fixture.centerSubMain : undefined,
-            'fixtureCode': fixtureConfigDoc?.fixtureCode,
-            'fixtureCapacity': fixtureConfigDoc?.fixtureCapacity,
-            'fixtureType': 'floor',
-            'fixtureHeight': {
-              'value': 0,
-              'unit': 'mm',
-            },
-            'fixtureLength': {
-              'value': constantFixtureLength,
-              'unit': 'mm',
-            },
-            'fixtureWidth': {
-              'value': constantFixtureWidth,
-              'unit': 'mm',
-            },
+            'associatedElementType': 'wall',
+            'associatedElementNumber': 3,
             'relativePosition': {
               'x': xPos,
               'y': yPos,
               'unit': 'ft',
             },
             'fixtureNumber': fixtureCounter,
-            'detailedFixtureLength': {
-              'value': constantDetailedFixtureLength,
-              'unit': 'mm',
-            },
-            'detailedFixtureWidth': {
-              'value': constantDetailedFixtureWidth,
-              'unit': 'mm',
-            },
             'relativeDetailedPosition': {
               'x': detailedXPos,
               'y': detailedYPos,
               'unit': 'ft',
             },
-            'productResolutionLevel': 'L2',
             'associatedElementFixtureNumber': index+1,
-            'fixtureConfigId': fixtureConfigDoc._id,
+            'fixtureConfigId': fixtureTemplate.toObject()._id,
           };
 
+          delete fixtureData._id;
+          delete fixtureData.shelfConfig;
 
           const createdFixture = await storeFixtureService.upsertOne(
               {
@@ -8030,145 +8126,35 @@ export async function migrateCrest( req, res ) {
 
           if ( !fixtureConfigDoc.shelfConfig.length || fixture.header === 'CL' || fixture.fixtureSubname?.includes( 'CL' ) ) continue;
 
-          await Promise.all(
-              fixtureConfigDoc.shelfConfig.map( async ( configShelf, j ) => {
-                const shelfSection = fixture.centerSuperSubMain.find(
-                    ( product ) => product.isVisualMerchandiser === false || product.isVisualMerchandiser === true,
-                );
-
-                const shelfData = {
-                  'clientId': '11',
-                  'storeName': layoutDoc.storeName,
-                  'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
-                  'planoId': layoutDoc.planoId,
-                  'floorId': layoutDoc._id,
-                  'fixtureId': createdFixture._id,
-                  'shelfNumber': j + 1,
-                  'shelfOrder': 'LTR',
-                  'shelfCapacity': configShelf.shelfCapacity,
-                  'sectionName': fixture.centerSuperSubMain.find( ( product ) => product.isVisualMerchandiser === true ) ? shelfSection?.name + ' PIDs' : shelfSection?.name,
-                  'shelfSplitup': configShelf?.shelfSplitup ? configShelf.shelfSplitup : 0,
-                };
-
-                await fixtureShelfService.upsertOne(
-                    {
-                      fixtureId: createdFixture._id,
-                      shelfNumber: j + 1,
-                    },
-                    shelfData,
-                );
-              } ),
-          );
-
-          const vm = fixture.centerSuperSubMain.find( ( vm ) => vm.isVisualMerchandiser );
-          const vmConfig = fixtureConfigDoc.vmConfig;
-
-          if ( vm ) {
-            const [ configData1, configData2 ] = [ vmConfig[0], vmConfig[1] ];
-
-            const insertData1 = {
+          fixtureTemplate.shelfConfig.forEach( async ( configShelf, j ) => {
+            const shelfData = {
               'clientId': '11',
-              'productId': 'VMCR',
-              'type': 'vm',
-              'productName': vm.name,
-              'productHeight': {
-                'value': configData1.vmHeightmm,
-                'unit': 'mm',
-              },
-              'productWidth': {
-                'value': configData1.vmWidthmm,
-                'unit': 'mm',
-              },
-              'startYPosition': configData1.startShelf,
-              'endYPosition': configData1.endShelf,
-              'xZone': configData1.zone,
-              'fixtureConfigId': fixtureConfig._id,
-            };
-            const insertData2 = {
-              'clientId': '11',
-              'productId': 'VMCR',
-              'type': 'vm',
-              'productName': ' ',
-              'productHeight': {
-                'value': configData2.vmHeightmm,
-                'unit': 'mm',
-              },
-              'productWidth': {
-                'value': configData2.vmWidthmm,
-                'unit': 'mm',
-              },
-              'startYPosition': configData2.startShelf,
-              'endYPosition': configData2.endShelf,
-              'xZone': configData2.zone,
-              'fixtureConfigId': fixtureConfig._id,
-            };
-
-            const [ vmTemplate1, vmTemplate2 ] = await Promise.all( [
-              planoProductService.upsertOne(
-                  {
-                    'productName': vm.name,
-                    'fixtureConfigId': fixtureConfig._id,
-                    'productHeight.value': configData1.vmHeightmm,
-                    'productWidth.value': configData1.vmWidthmm,
-                    'startYPosition': configData1.startShelf,
-                    'endYPosition': configData1.endShelf,
-                    'xZone': configData1.zone,
-                  },
-                  insertData1,
-              ),
-              planoProductService.upsertOne(
-                  {
-                    'productName': ' ',
-                    'fixtureConfigId': fixtureConfig._id,
-                    'productHeight.value': configData2.vmHeightmm,
-                    'productWidth.value': configData2.vmWidthmm,
-                    'startYPosition': configData2.startShelf,
-                    'endYPosition': configData2.endShelf,
-                    'xZone': configData2.zone,
-                  },
-                  insertData2,
-              ),
-            ] );
-
-            const vmData1 = {
-              'clientId': layoutDoc.clientId,
               'storeName': layoutDoc.storeName,
               'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
               'planoId': layoutDoc.planoId,
               'floorId': layoutDoc._id,
-              'type': 'vm',
               'fixtureId': createdFixture._id,
-              'productId': vmTemplate1._id,
-            };
-            const vmData2 = {
-              'clientId': layoutDoc.clientId,
-              'storeName': layoutDoc.storeName,
-              'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
-              'planoId': layoutDoc.planoId,
-              'floorId': layoutDoc._id,
-              'type': 'vm',
-              'fixtureId': createdFixture._id,
-              'productId': vmTemplate2._id,
+              'shelfNumber': j + 1,
+              'shelfOrder': 'LTR',
+              'shelfCapacity': configShelf.shelfCapacity,
+              'productBrandName': configShelf.productBrandName,
+              'shelfType': configShelf.shelfType,
+              'productPerShelf': configShelf.productPerShelf,
+              'trayRows': configShelf.trayRows,
+              'productPerTray': configShelf.productPerTray,
+              'sectionZone': configShelf.zone,
             };
 
-            await Promise.all( [
-              planoMappingService.upsertOne(
-                  {
-                    fixtureId: createdFixture._id,
-                    productId: vmTemplate1._id,
-                  },
-                  vmData1,
-              ),
-              planoMappingService.upsertOne(
-                  {
-                    fixtureId: createdFixture._id,
-                    productId: vmTemplate2._id,
-                  },
-                  vmData2,
-              ),
-            ] );
-          }
+            await fixtureShelfService.upsertOne(
+                {
+                  fixtureId: createdFixture._id,
+                  shelfNumber: j + 1,
+                },
+                shelfData,
+            );
+          } );
         }
+
 
         const now = Date.now();
         const elapsedMinutes = ( now - startTime ) / 1000 / 60;

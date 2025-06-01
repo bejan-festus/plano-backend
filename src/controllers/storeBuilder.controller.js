@@ -15,6 +15,7 @@ import * as planoTaskComplianceService from '../service/planoTask.service.js';
 import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import * as planoStaticData from '../service/planoStaticData.service.js';
+import * as planoVmService from '../service/planoVm.service.js';
 
 
 dayjs.extend( utc );
@@ -2875,6 +2876,248 @@ export async function qrScan( req, res ) {
     }
   } catch ( e ) {
     logger.error( { functionName: 'scanv1', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function storeFixturesv2( req, res ) {
+  try {
+    const planoIds = req.body.id
+        .filter( ( id ) => mongoose.Types.ObjectId.isValid( id ) )
+        .map( ( id ) => new mongoose.Types.ObjectId( id ) );
+
+    const planograms = await planoService.find(
+        {
+          $or: [
+            { _id: { $in: planoIds } },
+            { storeId: { $in: req.body.id } },
+          ],
+        },
+        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1, validateShelfSections: 1 },
+    );
+
+    if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
+
+    const currentDate = new Date( dayjs().format( 'YYYY-MM-DD' ) );
+
+    const storeLayout = await Promise.all(
+        planograms.map( async ( planogram ) => {
+          const floors = await storeBuilderService.find(
+              { planoId: planogram._id },
+              { floorName: 1, layoutPolygon: 1, planoId: 1 },
+          );
+
+          const floorsWithFixtures = await Promise.all(
+              floors.map( async ( floor ) => {
+                let productCapacity = 0;
+                const layoutPolygonWithFixtures = await Promise.all(
+                    floor.layoutPolygon.map( async ( element ) => {
+                      const fixtures = await storeFixtureService.findAndSort( {
+                        floorId: floor._id,
+                        associatedElementType: element.elementType,
+                        associatedElementNumber: element.elementNumber,
+                        fixtureType: 'wall',
+                      }, { shelfcount: 0 }, { fixtureNumber: 1 } );
+
+                      const fixturesWithStatus = await Promise.all(
+                          fixtures.map( async ( fixture ) => {
+                            if ( fixture?.imageUrl ) {
+                              let params = {
+                                Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                                file_path: fixture.imageUrl,
+                              };
+                              fixture.imageUrl = await signedUrl( params );
+                            } else {
+                              fixture.imageUrl = '';
+                            }
+                            productCapacity += fixture.toObject().fixtureCapacity;
+                            const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
+
+                            const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
+
+                            const complianceCount = await planoComplianceService.count( {
+                              fixtureId: fixture._id,
+                              compliance: 'proper',
+                              date: currentDate,
+                            } );
+
+                            const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
+
+                            const shelfDetails = await Promise.all(
+                                shelves.map( async ( shelf ) => {
+                                  const productCount = await planoMappingService.count( { fixtureId: fixture._id, shelfId: shelf.toObject(), type: 'product' } );
+
+                                  const vmCount = await planoMappingService.count( { fixtureId: fixture._id, shelfId: shelf.toObject(), type: 'vm' } );
+
+                                  return {
+                                    ...shelf.toObject(),
+                                    productCount: productCount,
+                                    vmCount: vmCount,
+                                  };
+                                } ),
+                            );
+
+                            let fixtureStatus;
+
+                            const cvProcessStatus = await planoQrConversionRequestService.count( { fixtureId: fixture._id, date: currentDate, status: 'initiated' } );
+
+                            if ( cvProcessStatus ) {
+                              fixtureStatus = 'inprogress';
+                            } else {
+                              const missingCount = await planoComplianceService.count( {
+                                fixtureId: fixture._id,
+                                compliance: 'missing',
+                                date: currentDate,
+                              } );
+                              fixtureStatus = complianceCount === 0 && !missingCount ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
+                            }
+
+
+                            const vmDetails = await Promise.all( fixture.toObject()?.vmConfig?.map( async ( vm ) => {
+                              const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
+                              return {
+                                ...vm,
+                                ...vmInfo?.toObject(),
+                              };
+                            } ) );
+
+                            return {
+                              ...fixture.toObject(),
+                              status: fixtureStatus,
+                              shelfCount: shelves.length,
+                              productCount: productCount,
+                              vmCount: vmCount,
+                              shelfDetails: shelfDetails,
+                              vmConfig: vmDetails,
+                            };
+                          } ),
+                      );
+
+                      const otherElements = await storeFixtureService.find( {
+                        floorId: floor._id,
+                        associatedElementType: element.elementType,
+                        associatedElementNumber: element.elementNumber,
+                        fixtureType: 'other',
+                      } );
+
+                      return {
+                        ...element,
+                        fixtures: fixturesWithStatus,
+                        otherElements: otherElements,
+                      };
+                    } ),
+                );
+
+                const centerFixtures = await storeFixtureService.find( {
+                  floorId: floor._id,
+                  fixtureType: 'floor',
+                } );
+
+                const centerFixturesWithStatus = await Promise.all(
+                    centerFixtures.map( async ( fixture ) => {
+                      if ( fixture?.imageUrl ) {
+                        let params = {
+                          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                          file_path: fixture.imageUrl,
+                        };
+                        fixture.imageUrl = await signedUrl( params );
+                      } else {
+                        fixture.imageUrl = '';
+                      }
+                      productCapacity += fixture.toObject().fixtureCapacity;
+                      const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
+
+                      const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
+
+                      const complianceCount = await planoComplianceService.count( {
+                        fixtureId: fixture._id,
+                        compliance: 'proper',
+                        date: currentDate,
+                      } );
+
+                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
+
+                      const shelfDetails = await Promise.all(
+                          shelves.map( async ( shelf ) => {
+                            const productCount = await planoMappingService.count( { fixtureId: fixture._id, shelfId: shelf.toObject(), type: 'product' } );
+
+                            const vmCount = await planoMappingService.count( { fixtureId: fixture._id, shelfId: shelf.toObject(), type: 'vm' } );
+
+                            return {
+                              ...shelf.toObject(),
+                              productCount: productCount,
+                              vmCount: vmCount,
+                            };
+                          } ),
+                      );
+
+                      let fixtureStatus;
+
+                      const cvProcessStatus = await planoQrConversionRequestService.count( { fixtureId: fixture._id, date: currentDate, status: 'initiated' } );
+
+                      if ( cvProcessStatus ) {
+                        fixtureStatus = 'inprogress';
+                      } else {
+                        const missingCount = await planoComplianceService.count( {
+                          fixtureId: fixture._id,
+                          compliance: 'missing',
+                          date: currentDate,
+                        } );
+                        fixtureStatus = complianceCount === 0 && !missingCount ? '' : complianceCount === productCount ? 'complete' : 'incomplete';
+                      }
+
+
+                      const vmDetails = await Promise.all( fixture.toObject().vmConfig.map( async ( vm ) => {
+                        const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
+
+                        return {
+                          ...vm,
+                          ...vmInfo?.toObject(),
+                        };
+                      } ) );
+
+                      return {
+                        ...fixture.toObject(),
+                        status: fixtureStatus,
+                        shelfCount: shelves.shelves,
+                        productCount: productCount,
+                        vmCount: vmCount,
+                        shelfDetails: shelfDetails,
+                        vmConfig: vmDetails,
+
+                      };
+                    } ),
+                );
+
+
+                const otherElements = await storeFixtureService.find( {
+                  floorId: floor._id,
+                  associatedElementType: { $exists: false },
+                  associatedElementNumber: { $exists: false },
+                  fixtureType: 'other',
+                } );
+
+                return {
+                  ...floor.toObject(),
+                  layoutPolygon: layoutPolygonWithFixtures,
+                  centerFixture: centerFixturesWithStatus,
+                  productCount: productCapacity,
+                  // productCapacity: productCapacity,
+                  otherElements: otherElements,
+                };
+              } ),
+          );
+
+          return {
+            ...planogram.toObject(),
+            floors: floorsWithFixtures,
+          };
+        } ),
+    );
+
+    return res.sendSuccess( storeLayout );
+  } catch ( e ) {
+    logger.error( { functionName: 'storeFixturesv1', error: e, message: req.body } );
     return res.sendError( e, 500 );
   }
 }
