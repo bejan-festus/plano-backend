@@ -1,6 +1,6 @@
 // import { writeFileSync } from 'fs';
 import xlsx from 'xlsx';
-import { logger } from 'tango-app-api-middleware';
+import { logger, fileUpload } from 'tango-app-api-middleware';
 import * as storeBuilderService from '../service/storeBuilder.service.js';
 import * as storeService from '../service/store.service.js';
 import * as planoService from '../service/planogram.service.js';
@@ -2320,9 +2320,9 @@ export async function updateVmData( req, res ) {
 
 
 async function scrapeCrest() {
-  const storeIds = [ 'LKST98' ];
+  const storeIds = [ 'LKST682' ];
   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4NTAxMDkxLCJpYXQiOjE3NDg0OTc0OTEsImp0aSI6ImY2NzI5ODIzNzE2YzQ3ZDg4MTU4YWE5OGVkZDVhZjQ3IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.ocrW9L8jCTvR8wnXk8T4t1PMJZxXkhC1gW2uACzB7jw';
+  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4ODUwMzMyLCJpYXQiOjE3NDg4NDY3MzIsImp0aSI6ImNkNmRmNWZhYTg4ZDRmMjQ4YmZkYzFkMzkzZWYzMTg5IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.8fclGcH6koHsKVmtGAQLscS80yNaVqPRkcpLhI3cnsk';
   const filePath = 'response.json';
   let allResults = [];
 
@@ -6954,12 +6954,14 @@ export async function migrateCrestv1( req, res ) {
           },
         } );
 
+
         if ( !response.ok ) {
-          throw new Error( `Failed to fetch image: ${response.status}` );
+          return;
+          // throw new Error( `Failed to fetch image: ${response.status}` );
         }
 
-        const dest = fs.createWriteStream( `${attachmentId}.png` );
-        response.body.pipe( dest );
+        // const dest = fs.createWriteStream( `${attachmentId}.png` );
+        // response.body.pipe( dest );
 
         return await response.buffer();
       } catch ( error ) {
@@ -6995,6 +6997,32 @@ export async function migrateCrestv1( req, res ) {
         throw error;
       }
     };
+
+
+    async function generateFixtureTemplateName( baseName, fixtureWidth ) {
+      function escapeRegex( str ) {
+        return str.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+      }
+
+      const escapedBase = escapeRegex( baseName );
+      const regexPattern = new RegExp( `^Template-(\\d+)-${escapedBase}$` );
+
+      const existingFixtures = await fixtureConfigService.find( {
+        fixtureName: { $regex: new RegExp( `^Template-(\\d+)-${escapedBase}$` ) },
+        fixtureWidth: fixtureWidth,
+      } );
+
+      const usedNumbers = existingFixtures
+          .map( ( doc ) => {
+            const match = doc.fixtureName.match( regexPattern );
+            return match ? parseInt( match[1], 10 ) : null;
+          } )
+          .filter( ( num ) => num !== null );
+
+      const nextNumber = usedNumbers.length > 0 ? Math.max( ...usedNumbers ) + 1 : 1;
+
+      return `Template-${nextNumber}-${baseName}`;
+    }
 
 
     if ( !req?.body?.storeName ) {
@@ -7321,7 +7349,7 @@ export async function migrateCrestv1( req, res ) {
               vmBrand: vmTemplate.vmBrand,
             };
             if ( vmTemplate?.imageUrl ) {
-              const parsedUrl = new URL( zone.preview_image_url );
+              const parsedUrl = new URL( vmTemplate.imageUrl );
               const attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
 
               const isVmImageExist = await planoVmService.findOne( { crestImageId: attachmentId } );
@@ -7333,7 +7361,7 @@ export async function migrateCrestv1( req, res ) {
 
                 const params = {
                   Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-                  Key: `crestVms/`,
+                  Key: `vmType/`,
                   fileName: `${attachmentId}.${imageMeta.fileExtension}`,
                   ContentType: imageMeta.contentType,
                   body: vmImageData,
@@ -7341,17 +7369,17 @@ export async function migrateCrestv1( req, res ) {
 
                 const imgUpload = await fileUpload( params );
 
-                vmDetails.crestImageId = attachmentId;
-                vmDetails.vmImageUrl = imgUpload.Key;
+                vmInsertData.crestImageId = attachmentId;
+                vmInsertData.vmImageUrl = imgUpload.Key;
 
 
                 if ( imageMeta.imageShape === 'square' ) {
-                  vmDetails.vmHeight.value = 100;
-                  vmDetails.vmWidth.value = 230;
+                  vmInsertData.vmHeight.value = 100;
+                  vmInsertData.vmWidth.value = 230;
                 }
               } else {
-                vmDetails.crestImageId = attachmentId;
-                vmDetails.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
+                vmInsertData.crestImageId = attachmentId;
+                vmInsertData.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
               }
             }
 
@@ -7370,13 +7398,16 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
+          const baseFixtureName = `${fixtureConfigDoc.fixtureCategory}`;
+          const uniqueFixtureName = await generateFixtureTemplateName( baseFixtureName, fixtureConfigDoc.fixtureWidth );
+
 
           const fixtureTemplateData = {
             ...fixtureConfigDoc,
             'shelfConfig': shelfTemplate,
             'vmConfig': vmTemplate,
             'clientId': fixtureConfigDoc.clientId,
-            'fixtureName': `${fixture.header ? fixture.header : fixture.fixtureSubname[0]}-${fixtureConfigDoc.fixtureCategory}-${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit}`,
+            'fixtureName': uniqueFixtureName,
             'header': {
               label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
               isEnabled: true,
@@ -7550,7 +7581,7 @@ export async function migrateCrestv1( req, res ) {
               vmBrand: vmTemplate.vmBrand,
             };
             if ( vmTemplate?.imageUrl ) {
-              const parsedUrl = new URL( zone.preview_image_url );
+              const parsedUrl = new URL( vmTemplate.imageUrl );
               const attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
 
               const isVmImageExist = await planoVmService.findOne( { crestImageId: attachmentId } );
@@ -7562,7 +7593,7 @@ export async function migrateCrestv1( req, res ) {
 
                 const params = {
                   Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-                  Key: `crestVms/`,
+                  Key: `vmType/`,
                   fileName: `${attachmentId}.${imageMeta.fileExtension}`,
                   ContentType: imageMeta.contentType,
                   body: vmImageData,
@@ -7570,17 +7601,18 @@ export async function migrateCrestv1( req, res ) {
 
                 const imgUpload = await fileUpload( params );
 
-                vmDetails.crestImageId = attachmentId;
-                vmDetails.vmImageUrl = imgUpload.Key;
+
+                vmInsertData.crestImageId = attachmentId;
+                vmInsertData.vmImageUrl = imgUpload.Key;
 
 
                 if ( imageMeta.imageShape === 'square' ) {
-                  vmDetails.vmHeight.value = 100;
-                  vmDetails.vmWidth.value = 230;
+                  vmInsertData.vmHeight.value = 100;
+                  vmInsertData.vmWidth.value = 230;
                 }
               } else {
-                vmDetails.crestImageId = attachmentId;
-                vmDetails.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
+                vmInsertData.crestImageId = attachmentId;
+                vmInsertData.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
               }
             }
 
@@ -7599,13 +7631,16 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
+          const baseFixtureName = `${fixtureConfigDoc.fixtureCategory}`;
+          const uniqueFixtureName = await generateFixtureTemplateName( baseFixtureName, fixtureConfigDoc.fixtureWidth );
+
 
           const fixtureTemplateData = {
             ...fixtureConfigDoc,
             'shelfConfig': shelfTemplate,
             'vmConfig': vmTemplate,
             'clientId': fixtureConfigDoc.clientId,
-            'fixtureName': `${fixture.header ? fixture.header : fixture.fixtureSubname[0]}-${fixtureConfigDoc.fixtureCategory}-${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit}`,
+            'fixtureName': uniqueFixtureName,
             'header': {
               label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
               isEnabled: true,
@@ -7779,7 +7814,7 @@ export async function migrateCrestv1( req, res ) {
               vmBrand: vmTemplate.vmBrand,
             };
             if ( vmTemplate?.imageUrl ) {
-              const parsedUrl = new URL( zone.preview_image_url );
+              const parsedUrl = new URL( vmTemplate.imageUrl );
               const attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
 
               const isVmImageExist = await planoVmService.findOne( { crestImageId: attachmentId } );
@@ -7791,7 +7826,7 @@ export async function migrateCrestv1( req, res ) {
 
                 const params = {
                   Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-                  Key: `crestVms/`,
+                  Key: `vmType/`,
                   fileName: `${attachmentId}.${imageMeta.fileExtension}`,
                   ContentType: imageMeta.contentType,
                   body: vmImageData,
@@ -7799,17 +7834,17 @@ export async function migrateCrestv1( req, res ) {
 
                 const imgUpload = await fileUpload( params );
 
-                vmDetails.crestImageId = attachmentId;
-                vmDetails.vmImageUrl = imgUpload.Key;
+                vmInsertData.crestImageId = attachmentId;
+                vmInsertData.vmImageUrl = imgUpload.Key;
 
 
                 if ( imageMeta.imageShape === 'square' ) {
-                  vmDetails.vmHeight.value = 100;
-                  vmDetails.vmWidth.value = 230;
+                  vmInsertData.vmHeight.value = 100;
+                  vmInsertData.vmWidth.value = 230;
                 }
               } else {
-                vmDetails.crestImageId = attachmentId;
-                vmDetails.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
+                vmInsertData.crestImageId = attachmentId;
+                vmInsertData.vmImageUrl = isVmImageExist.toObject().vmImageUrl;
               }
             }
 
@@ -7828,13 +7863,16 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
+          const baseFixtureName = `${fixtureConfigDoc.fixtureCategory}`;
+          const uniqueFixtureName = await generateFixtureTemplateName( baseFixtureName, fixtureConfigDoc.fixtureWidth );
+
 
           const fixtureTemplateData = {
             ...fixtureConfigDoc,
             'shelfConfig': shelfTemplate,
             'vmConfig': vmTemplate,
             'clientId': fixtureConfigDoc.clientId,
-            'fixtureName': `${fixture.header ? fixture.header : fixture.fixtureSubname[0]}-${fixtureConfigDoc.fixtureCategory}-${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit}`,
+            'fixtureName': uniqueFixtureName,
             'header': {
               label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
               isEnabled: true,
@@ -8037,13 +8075,16 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
+          const baseFixtureName = `${fixtureConfigDoc.fixtureCategory}`;
+          const uniqueFixtureName = await generateFixtureTemplateName( baseFixtureName, fixtureConfigDoc.fixtureWidth );
+
 
           const fixtureTemplateData = {
             ...fixtureConfigDoc,
             'shelfConfig': shelfTemplate,
             'vmConfig': vmTemplate,
             'clientId': fixtureConfigDoc.clientId,
-            'fixtureName': `${fixture.centerSubMain}-${fixtureConfigDoc.fixtureCategory}-${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit}`,
+            'fixtureName': uniqueFixtureName,
             'header': {
               label: fixture.centerSubMain,
               isEnabled: true,
