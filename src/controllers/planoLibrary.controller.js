@@ -873,7 +873,7 @@ export async function getVmLibList( req, res ) {
             {
               $match: {
                 $expr: {
-                  $in: [ '$$libraryId', '$vmConfig.vmId' ],
+                  $in: [ '$$libraryId', { $ifNull: [ '$vmConfig.vmId', [] ] } ],
                 },
               },
             },
@@ -918,7 +918,7 @@ export async function getVmLibList( req, res ) {
             {
               $match: {
                 $expr: {
-                  $in: [ '$$libraryId', '$vmConfig.vmId' ],
+                  $in: [ '$$libraryId', { $ifNull: [ '$vmConfig.vmId', [] ] } ],
                 },
               },
             },
