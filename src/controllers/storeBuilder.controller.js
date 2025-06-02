@@ -639,9 +639,15 @@ export async function storeFixturesv1( req, res ) {
 
                             const vmDetails = await Promise.all( vms.map( async ( vm ) => {
                               const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
+                              const params = {
+                                Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                                file_path: vmTemplate?.productImageUrl,
+                              };
+                              const vmImage = await signedUrl( params );
                               return {
                                 ...vm.toObject(),
                                 ...vmTemplate?.toObject(),
+                                ...( typeof vmImage === 'string' && { productImageUrl: vmImage } ),
                               };
                             } ) );
 
