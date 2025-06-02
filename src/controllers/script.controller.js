@@ -2318,9 +2318,9 @@ export async function updateVmData( req, res ) {
 
 
 async function scrapeCrest() {
-  const storeIds = ['LKST512'];
+  const storeIds = [ 'LKST682' ];
   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3ODM3NDAwLCJpYXQiOjE3NDc4MzM4MDAsImp0aSI6IjlmNWM5N2U4N2ViYjQwMjc5YWRjMDViMDViOWMxZjBmIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.fL2-vOoH7ky0s_-v1HogOO6Wd2m5AABX4yRvrKMdHhg';
+  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4ODQ3NTcxLCJpYXQiOjE3NDg4NDM5NzEsImp0aSI6ImZiZWEwODRlZjY5ZjRmYWM4MTYwNDBjODMwOTMyZDA0IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.A81bI3_-YupAf4H1ctIMijGEOPHuCvXFG0yiXN30QbQ';
   const filePath = 'response.json';
   let allResults = [];
 
@@ -4334,8 +4334,6 @@ export async function downloadPlanoImage( req, res ) {
   }
 }
 
- 
-
 
 export async function updateCrestPlanogram( req, res ) {
   try {
@@ -4452,10 +4450,13 @@ export async function updateCrestPlanogram( req, res ) {
           throw new Error( `Failed to fetch image: ${response.status}` );
         }
 
-        const dest = fs.createWriteStream( `${attachmentId}.png` );
-        response.body.pipe( dest );
+        // const dest = fs.createWriteStream( `${attachmentId}.png` );
+        // response.body.pipe( dest );
 
-        return await response.buffer();
+        // return await response.buffer();
+
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from( arrayBuffer );
       } catch ( error ) {
         console.error( 'Error fetching image buffer:', error.message );
         throw error;
@@ -4497,11 +4498,10 @@ export async function updateCrestPlanogram( req, res ) {
 
     let storeQuery = {
       clientId: '11',
-      storeName: 'LKST1030',
-      // $and: [
-      //   { storeName: req.body.storeName },
-      //   { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
-      // ],
+      $and: [
+        { storeName: req.body.storeName },
+        // { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
+      ],
     };
 
     let storeList = await storeService.find( storeQuery );
@@ -5140,17 +5140,17 @@ export async function updateCrestPlanogram( req, res ) {
                         if ( imageMeta.imageShape === 'square' ) {
                           insertData.productHeight.value = 100;
                           insertData.productWidth.value = 230;
+
+                          if ( shelfData.length ) {
+                            insertData.startYPosition = shelfData[0].shelfNumber;
+                            insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
+                          }
                         }
 
-                        if ( imageMeta.imageShape === 'rectangle' ) {
-                          insertData.productHeight.value = 100;
-                          insertData.productWidth.value = 905;
-                        }
-
-                        if ( shelfData.length ) {
-                          insertData.startYPosition = shelfData[0].shelfNumber;
-                          insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
-                        }
+                        // if ( imageMeta.imageShape === 'rectangle' ) {
+                        //   insertData.productHeight.value = 100;
+                        //   insertData.productWidth.value = 905;
+                        // }
                       }
 
                       const vmTemplate = await planoProductService.upsertOne(
@@ -5372,17 +5372,17 @@ export async function updateCrestPlanogram( req, res ) {
                         if ( imageMeta.imageShape === 'square' ) {
                           insertData.productHeight.value = 100;
                           insertData.productWidth.value = 230;
+
+                          if ( shelfData.length ) {
+                            insertData.startYPosition = shelfData[0].shelfNumber;
+                            insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
+                          }
                         }
 
-                        if ( imageMeta.imageShape === 'rectangle' ) {
-                          insertData.productHeight.value = 100;
-                          insertData.productWidth.value = 905;
-                        }
-
-                        if ( shelfData.length ) {
-                          insertData.startYPosition = shelfData[0].shelfNumber;
-                          insertData.endYPosition = shelfData[shelfData.length - 1].shelfNumber;
-                        }
+                        // if ( imageMeta.imageShape === 'rectangle' ) {
+                        //   insertData.productHeight.value = 100;
+                        //   insertData.productWidth.value = 905;
+                        // }
                       }
 
                       const vmTemplate = await planoProductService.upsertOne(
@@ -7111,3 +7111,47 @@ function fillFeedbackFromJson( excelPath, jsonData, outputPath ) {
 }
 
 // fillFeedbackFromJson('input.xlsx', feedbackJson, 'output.xlsx');
+
+
+function exportFixtureJsonToExcel( fixtures, filePath ) {
+  const fixtureInfoArr = [];
+  const shelfConfigArr = [];
+  const vmConfigArr = [];
+
+  for ( const fixture of fixtures ) {
+    fixtureInfoArr.push( {
+      clientId: fixture.clientId,
+      fixtureCode: fixture.fixtureCode,
+      fixtureCategory: fixture.fixtureCategory,
+      fixtureConfigType: fixture.fixtureConfigType,
+      fixtureLength: `${fixture.fixtureLength?.value} ${fixture.fixtureLength?.unit}`,
+      fixtureCapacity: fixture.fixtureCapacity,
+    } );
+
+    ( fixture.shelfConfig || [] ).forEach( ( shelf ) => {
+      shelfConfigArr.push( {
+        fixtureCode: fixture.fixtureCode,
+        ...shelf,
+      } );
+    } );
+
+    ( fixture.vmConfig || [] ).forEach( ( vm ) => {
+      vmConfigArr.push( {
+        fixtureCode: fixture.fixtureCode,
+        ...vm,
+      } );
+    } );
+  }
+
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( fixtureInfoArr ), 'Fixture Info' );
+  xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( shelfConfigArr ), 'Shelf Config' );
+  xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( vmConfigArr ), 'VM Config' );
+
+  xlsx.writeFile( workbook, filePath );
+}
+
+// const fixtures = JSON.parse( fs.readFileSync( './input.json', 'utf-8' ) );
+// exportFixtureJsonToExcel( fixtures, 'output.xlsx' );
+
+
