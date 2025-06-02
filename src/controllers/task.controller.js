@@ -13,6 +13,8 @@ import * as planoProductService from '../service/planoProduct.service.js';
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
 import * as floorService from '../service/storeBuilder.service.js';
+import * as planoStaticService from '../service/planoStaticData.service.js';
+
 dayjs.extend( timeZone );
 
 async function createUser( data ) {
@@ -114,6 +116,18 @@ export async function createTask( req, res ) {
     if ( !taskDetails.length ) {
       return res.sendError( 'No data found', 204 );
     }
+    let endDate;
+    let scheduleEndTime = '11:59 PM';
+    let taskConfig = await planoStaticService.findOne( { clientId: req.body.clientId } );
+    if ( taskConfig && !req.body?.endTime ) {
+      scheduleEndTime = taskConfig.dueTime;
+      req.body.days = taskConfig?.dueDay || 0;
+      req.body.geoFencing = taskConfig?.allowedStoreLocation || false;
+    }
+    if ( req.body?.endTime ) {
+      scheduleEndTime = req.body.endTime;
+    }
+    endDate = dayjs().add( req.body.days, 'day' ).format( 'YYYY-MM-DD' );
     let userEmailList = [ ...new Set( req.body.stores.map( ( ele ) => ele.email ) ) ];
     for ( let mail of userEmailList ) {
       let query = [
@@ -140,7 +154,7 @@ export async function createTask( req, res ) {
         await createUser( userData );
       }
     }
-    let endDate = dayjs().add( req.body.days, 'day' ).format( 'YYYY-MM-DD' );
+    endDate = `${endDate} ${scheduleEndTime}`;
     await Promise.all( taskDetails.map( async ( task ) => {
       let splitName = task?.checkListName.split( ' ' );
       splitName.pop();
@@ -152,11 +166,11 @@ export async function createTask( req, res ) {
         checkListName: task.checkListName,
         checkListId: task._id,
         scheduleStartTime: '12:00 AM',
-        scheduleEndTime: '11:59 PM',
+        scheduleEndTime: scheduleEndTime,
         scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(),
-        scheduleEndTime_iso: dayjs( endDate ).utc( '11:59 PM', 'hh:mm A' ).format(),
+        scheduleEndTime_iso: dayjs.utc( endDate, 'YYYY-MM-DD hh:mm A' ).format(),
         allowedOverTime: false,
-        allowedStoreLocation: false,
+        allowedStoreLocation: req.body?.geoFencing || false,
         createdBy: task.createdBy,
         createdByName: task.createdByName,
         questionAnswers: [],
@@ -493,7 +507,8 @@ export async function updateAnswers( req, res ) {
       }
     } );
 
-    let taskDetails = await processedService.findOne( { date_string: dayjs().format( 'YYYY-MM-DD' ), userId: req.user._id, isPlano: true, planoType: 'layout' } );
+    let taskDetails = await processedService.findOne( { date_string: dayjs().format( 'YYYY-MM-DD' ), userId: req.user._id, isPlano: true,
+      planoType: req.body.type, planoId: new mongoose.Types.ObjectId( req.body.planoId ), floorId: new mongoose.Types.ObjectId( req.body.floorId ) } );
 
 
     let data = {
@@ -654,7 +669,7 @@ export async function generatetaskDetails( req, res ) {
       },
       {
         $project: {
-          _id: 0,
+          _id: 1,
           storeName: 1,
           store_id: 1,
           userEmail: 1,
@@ -676,6 +691,7 @@ export async function generatetaskDetails( req, res ) {
           _id: '$planoId',
           count: { $sum: 1 },
           storeName: { $first: '$storeName' },
+          taskId: { $last: '$_id' },
           checklistStatus: { $push: '$checklistStatus' },
           date_string: { $push: '$date_string' },
         },
@@ -683,6 +699,7 @@ export async function generatetaskDetails( req, res ) {
       {
         $project: {
           _id: 0,
+          taskId: 1,
           storeName: 1,
           checklistStatus: 1,
           count: 1,
@@ -692,7 +709,8 @@ export async function generatetaskDetails( req, res ) {
       },
     ];
     let taskDetails = await processedService.aggregate( query );
-    let processedTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.fromDate, $lte: req.body.toDate }, type: 'layout' }, { status: 1, planoId: 1, date_string: 1, _id: 0 } );
+    console.log( taskDetails.map( ( ele ) => ele.taskId ) );
+    let processedTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.fromDate, $lte: req.body.toDate }, type: 'layout', ...( req.body.store.length ) ? { storeName: { $in: req.body.store } } : {}, taskId: { $in: taskDetails.map( ( ele ) => ele.taskId ) } }, { status: 1, planoId: 1, date_string: 1, _id: 0, taskId: 1 } );
     processedTaskDetails.forEach( ( item ) => {
       let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus.includes( 'submit' ) && taskItem.date_string.includes( item.date_string ) && item.planoId.toString() == taskItem.planoId.toString() );
       if ( taskIndex != -1 ) {
