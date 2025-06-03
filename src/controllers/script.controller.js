@@ -7705,7 +7705,7 @@ export async function migrateCrestv1( req, res ) {
               'productPerShelf': configShelf.productPerShelf,
               'trayRows': configShelf.trayRows,
               'productPerTray': configShelf.productPerTray,
-              'sectionZone': configShelf.zone,
+              'zone': configShelf.zone,
             };
 
             await fixtureShelfService.upsertOne(
@@ -7938,7 +7938,7 @@ export async function migrateCrestv1( req, res ) {
               'productPerShelf': configShelf.productPerShelf,
               'trayRows': configShelf.trayRows,
               'productPerTray': configShelf.productPerTray,
-              'sectionZone': configShelf.zone,
+              'zone': configShelf.zone,
             };
 
             await fixtureShelfService.upsertOne(
@@ -8170,7 +8170,7 @@ export async function migrateCrestv1( req, res ) {
               'productPerShelf': configShelf.productPerShelf,
               'trayRows': configShelf.trayRows,
               'productPerTray': configShelf.productPerTray,
-              'sectionZone': configShelf.zone,
+              'zone': configShelf.zone,
             };
 
             await fixtureShelfService.upsertOne(
@@ -8337,8 +8337,6 @@ export async function migrateCrestv1( req, res ) {
             'storeId': storeDetails?.toObject()?.storeId ? storeDetails.toObject().storeId : 'nil',
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
-            'associatedElementType': 'wall',
-            'associatedElementNumber': 3,
             'relativePosition': {
               'x': xPos,
               'y': yPos,
@@ -8383,7 +8381,7 @@ export async function migrateCrestv1( req, res ) {
               'productPerShelf': configShelf.productPerShelf,
               'trayRows': configShelf.trayRows,
               'productPerTray': configShelf.productPerTray,
-              'sectionZone': configShelf.zone,
+              'zone': configShelf.zone,
             };
 
             await fixtureShelfService.upsertOne(

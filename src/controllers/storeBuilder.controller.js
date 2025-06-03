@@ -2707,7 +2707,7 @@ export async function storeFixturesv2( req, res ) {
                               shelfCount: shelves.length,
                               productCount: productCount,
                               vmCount: vmCount,
-                              shelfDetails: shelfDetails,
+                              shelfConfig: shelfDetails,
                               vmConfig: vmDetails,
                             };
                           } ),
@@ -2802,7 +2802,7 @@ export async function storeFixturesv2( req, res ) {
                         shelfCount: shelves.shelves,
                         productCount: productCount,
                         vmCount: vmCount,
-                        shelfDetails: shelfDetails,
+                        shelfConfig: shelfDetails,
                         vmConfig: vmDetails,
 
                       };
@@ -3004,7 +3004,7 @@ export async function storeFixturesTaskv2( req, res ) {
                               shelfCount: shelves.length,
                               productCount: productCount,
                               vmCount: vmCount,
-                              shelfDetails: shelfDetails,
+                              shelfConfig: shelfDetails,
                               vmConfig: vmDetails,
                             };
                           } ),
@@ -3082,7 +3082,7 @@ export async function storeFixturesTaskv2( req, res ) {
                         shelfCount: shelves.shelves,
                         productCount: productCount,
                         vmCount: vmCount,
-                        shelfDetails: shelfDetails,
+                        shelfConfig: shelfDetails,
                         vms: vmDetails,
                       };
                     } ),
