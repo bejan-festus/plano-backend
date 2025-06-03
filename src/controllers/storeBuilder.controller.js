@@ -760,7 +760,7 @@ export async function storeFixturesv1( req, res ) {
                     } ),
                 );
 
-                const productCount = await planoMappingService.count( { floorId: floor._id } );
+                // const productCount = await planoMappingService.count( { floorId: floor._id } );
 
                 const otherElements = await storeFixtureService.find( {
                   floorId: floor._id,
@@ -1776,7 +1776,7 @@ export async function storeFixturesTask( req, res ) {
                     } ),
                 );
 
-                const productCount = await planoMappingService.count( { floorId: floor._id } );
+                // const productCount = await planoMappingService.count( { floorId: floor._id } );
 
                 const otherElements = await storeFixtureService.find( {
                   floorId: floor._id,
@@ -3088,7 +3088,7 @@ export async function storeFixturesTaskv2( req, res ) {
                     } ),
                 );
 
-                const productCount = await planoMappingService.count( { floorId: floor._id } );
+                // const productCount = await planoMappingService.count( { floorId: floor._id } );
 
                 const otherElements = await storeFixtureService.find( {
                   floorId: floor._id,

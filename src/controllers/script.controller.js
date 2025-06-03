@@ -8411,73 +8411,73 @@ export async function migrateCrestv1( req, res ) {
     return res.sendError( e.message || 'Internal Server Error', 500 );
   }
 }
-function fillFeedbackFromJson( excelPath, jsonData, outputPath ) {
-  const workbook = xlsx.readFile( excelPath );
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
+// function fillFeedbackFromJson( excelPath, jsonData, outputPath ) {
+//   const workbook = xlsx.readFile( excelPath );
+//   const sheetName = workbook.SheetNames[0];
+//   const sheet = workbook.Sheets[sheetName];
 
-  const data = xlsx.utils.sheet_to_json( sheet, { defval: 'Transformed by Data.Page' } );
+//   const data = xlsx.utils.sheet_to_json( sheet, { defval: 'Transformed by Data.Page' } );
 
-  const feedbackMap = {};
-  jsonData.forEach( ( entry ) => {
-    feedbackMap[entry.store] = entry.videoUrl;
-  } );
+//   const feedbackMap = {};
+//   jsonData.forEach( ( entry ) => {
+//     feedbackMap[entry.store] = entry.videoUrl;
+//   } );
 
-  const updatedData = data.map( ( row ) => {
-    const store = row.storeName;
-    if ( feedbackMap[store] ) {
-      row.FeedBack = feedbackMap[store];
-    }
-    return row;
-  } );
+//   const updatedData = data.map( ( row ) => {
+//     const store = row.storeName;
+//     if ( feedbackMap[store] ) {
+//       row.FeedBack = feedbackMap[store];
+//     }
+//     return row;
+//   } );
 
-  const newSheet = xlsx.utils.json_to_sheet( updatedData );
+//   const newSheet = xlsx.utils.json_to_sheet( updatedData );
 
-  workbook.Sheets[sheetName] = newSheet;
+//   workbook.Sheets[sheetName] = newSheet;
 
-  xlsx.writeFile( workbook, outputPath );
-}
+//   xlsx.writeFile( workbook, outputPath );
+// }
 
 // fillFeedbackFromJson('input.xlsx', feedbackJson, 'output.xlsx');
 
 
-function exportFixtureJsonToExcel( fixtures, filePath ) {
-  const fixtureInfoArr = [];
-  const shelfConfigArr = [];
-  const vmConfigArr = [];
+// function exportFixtureJsonToExcel( fixtures, filePath ) {
+//   const fixtureInfoArr = [];
+//   const shelfConfigArr = [];
+//   const vmConfigArr = [];
 
-  for ( const fixture of fixtures ) {
-    fixtureInfoArr.push( {
-      clientId: fixture.clientId,
-      fixtureCode: fixture.fixtureCode,
-      fixtureCategory: fixture.fixtureCategory,
-      fixtureConfigType: fixture.fixtureConfigType,
-      fixtureLength: `${fixture.fixtureLength?.value} ${fixture.fixtureLength?.unit}`,
-      fixtureCapacity: fixture.fixtureCapacity,
-    } );
+//   for ( const fixture of fixtures ) {
+//     fixtureInfoArr.push( {
+//       clientId: fixture.clientId,
+//       fixtureCode: fixture.fixtureCode,
+//       fixtureCategory: fixture.fixtureCategory,
+//       fixtureConfigType: fixture.fixtureConfigType,
+//       fixtureLength: `${fixture.fixtureLength?.value} ${fixture.fixtureLength?.unit}`,
+//       fixtureCapacity: fixture.fixtureCapacity,
+//     } );
 
-    ( fixture.shelfConfig || [] ).forEach( ( shelf ) => {
-      shelfConfigArr.push( {
-        fixtureCode: fixture.fixtureCode,
-        ...shelf,
-      } );
-    } );
+//     ( fixture.shelfConfig || [] ).forEach( ( shelf ) => {
+//       shelfConfigArr.push( {
+//         fixtureCode: fixture.fixtureCode,
+//         ...shelf,
+//       } );
+//     } );
 
-    ( fixture.vmConfig || [] ).forEach( ( vm ) => {
-      vmConfigArr.push( {
-        fixtureCode: fixture.fixtureCode,
-        ...vm,
-      } );
-    } );
-  }
+//     ( fixture.vmConfig || [] ).forEach( ( vm ) => {
+//       vmConfigArr.push( {
+//         fixtureCode: fixture.fixtureCode,
+//         ...vm,
+//       } );
+//     } );
+//   }
 
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( fixtureInfoArr ), 'Fixture Info' );
-  xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( shelfConfigArr ), 'Shelf Config' );
-  xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( vmConfigArr ), 'VM Config' );
+//   const workbook = xlsx.utils.book_new();
+//   xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( fixtureInfoArr ), 'Fixture Info' );
+//   xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( shelfConfigArr ), 'Shelf Config' );
+//   xlsx.utils.book_append_sheet( workbook, xlsx.utils.json_to_sheet( vmConfigArr ), 'VM Config' );
 
-  xlsx.writeFile( workbook, filePath );
-}
+//   xlsx.writeFile( workbook, filePath );
+// }
 
 // const fixtures = JSON.parse( fs.readFileSync( './input.json', 'utf-8' ) );
 // exportFixtureJsonToExcel( fixtures, 'output.xlsx' );

@@ -5,4 +5,5 @@ import * as managePlanoController from '../controllers/managePlano.controller.js
 export const managePlanoRouter = express.Router();
 
 managePlanoRouter
-    .post( '/updateStorePlano', managePlanoController.updateStorePlano );
+    .post( '/updateStorePlano', managePlanoController.updateStorePlano )
+    .post( '/getplanoFeedback', managePlanoController.getplanoFeedback );
