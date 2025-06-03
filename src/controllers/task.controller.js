@@ -533,6 +533,30 @@ export async function updateAnswers( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+export async function updateAnswersv2( req, res ) {
+  try {
+    let taskDetails = await processedService.findOne( { date_string: dayjs().format( 'YYYY-MM-DD' ), userId: req.user._id, isPlano: true, planoType: 'layout' } );
+    let data = {
+      fixtureId: req.body.fixtureId,
+      answers: req.body.answers,
+      status: req.body.answers?.find( ( ans ) => typeof ans.answer == 'boolean' && ans?.answer == false ) ? 'incomplete' : 'complete',
+      planoId: req.body.planoId,
+      floorId: req.body.floorId,
+      type: req.body.type,
+      date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
+      taskId: taskDetails?._id,
+      storeName: taskDetails?.storeName,
+      storeId: taskDetails?.store_id,
+    };
+    console.log( data );
+    await planoTaskService.updateOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
+
+    return res.sendSuccess( 'Fixture details updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateAnswers', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
 
 export async function getFixtureDetails( req, res ) {
   try {
