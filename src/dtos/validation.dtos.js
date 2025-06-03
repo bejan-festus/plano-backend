@@ -141,6 +141,7 @@ export const fixtureVMListSchema = joi.object( {
     size: joi.array().items( joi.any() ).min( 0 ).optional(),
     brand: joi.array().items( joi.any() ).min( 0 ).optional(),
     category: joi.array().items( joi.any() ).min( 0 ).optional(),
+    subCategory: joi.array().items( joi.any() ).min( 0 ).optional(),
   } ).required(),
   export: joi.boolean().required(),
   emptyDownload: joi.boolean().required(),
@@ -199,8 +200,8 @@ export const uploadBrandList = {
 export const fixtureBulkUploadSchema = joi.object( {
   clientId: joi.string().required(),
   fixtureData: joi.array().items( joi.any() ).min( 1 ).required(),
-  newFixtureStatus: joi.boolean().required(),
-  updateFixtureStatus: joi.boolean().optional(),
+  newFixtureStatus: joi.string().optional(),
+  updateFixtureStatus: joi.string().optional(),
   deleteFixtureList: joi.array().items( joi.any() ).min( 0 ),
 } );
 
@@ -212,7 +213,8 @@ export const addUpdateBrandSchema = joi.object( {
   clientId: joi.string().required(),
   brandId: joi.string().optional(),
   brandName: joi.string().required(),
-  brandDetails: joi.array().items( joi.any() ).min( 1 ).required(),
+  subCategory: joi.array().items( joi.any() ).min( 0 ).required(),
+  category: joi.array().items( joi.any() ).min( 1 ).required(),
 } );
 
 export const addUpdateBrand = {
@@ -240,20 +242,21 @@ export const addUpdateVmSchema = joi.object( {
   vmName: joi.string().required(),
   vmType: joi.string().required(),
   vmBrand: joi.string().required(),
-  vmSubBrand: joi.string().required(),
-  vmCategory: joi.string().required(),
-  vmSubcategory: joi.string().required(),
+  vmSubBrand: joi.string().optional().allow( '' ),
+  vmCategory: joi.string().optional().allow( '' ),
+  vmSubCategory: joi.string().optional().allow( '' ),
   vmHeight: joi.object( {
-    value: joi.string().required(),
+    value: joi.number().required(),
     unit: joi.string().required(),
   } ).required(),
   vmWidth: joi.object( {
-    value: joi.string().required(),
+    value: joi.number().required(),
     unit: joi.string().required(),
   } ).required(),
-  vmImageUrl: joi.string().required(),
+  vmImageUrl: joi.string().optional(),
   isDoubleSided: joi.boolean().required(),
   status: joi.string().required(),
+  _id: joi.string().optional(),
 } );
 
 export const addUpdateVm = {
@@ -270,5 +273,38 @@ export const vmBulkUploadSchema = joi.object( {
 
 export const vmBulkUpload = {
   body: vmBulkUploadSchema,
+};
+
+export const createTemplateSchema = joi.object( {
+  clientId: joi.string().required(),
+  fixtureLibraryId: joi.string().required(),
+} );
+
+export const createTemplate = {
+  body: createTemplateSchema,
+};
+
+export const templateIdSchema = joi.object( {
+  templateId: joi.string().required(),
+} );
+
+export const templateId = {
+  body: templateIdSchema,
+};
+
+export const queryTemplateId = {
+  query: templateIdSchema,
+};
+
+export const updateFixtureTaskSchema = joi.object( {
+  endDate: joi.string().required(),
+  clientId: joi.string().required(),
+  storeList: joi.array().items( joi.any() ).min( 1 ).required(),
+  endTime: joi.string().required(),
+  geoFencing: joi.boolean().required(),
+} );
+
+export const updateFixtureTask = {
+  body: updateFixtureTaskSchema,
 };
 

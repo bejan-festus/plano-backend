@@ -1,4 +1,4 @@
-import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
+import { logger, fileUpload } from 'tango-app-api-middleware';
 import * as planoLibraryService from '../service/planoLibrary.service.js';
 import * as fixtureTemplateService from '../service/fixtureConfig.service.js';
 import * as vmTypeService from '../service/vmType.service.js';
@@ -18,43 +18,47 @@ export async function fixtureBulkUpload( req, res ) {
     let groupedData = inputData.fixtureData.reduce( ( acc, ele ) => {
       if ( !acc[ele.fixtureName] ) {
         acc[ele.fixtureName] = {
-          'clientId': inputData.clientId,
-          'fixtureCategory': ele.fixtureName,
-          'fixtureType': ele.fixtureType,
-          'fixtureLength': {
-            value: ele.length,
+          clientId: inputData.clientId,
+          fixtureCategory: ele.fixtureName,
+          fixtureType: ele.fixtureType,
+          fixtureLength: {
+            value: ele.height,
             unit: 'ft',
           },
-          'fixtureWidth': {
+          fixtureWidth: {
             value: ele.width,
             unit: 'ft',
           },
-          'fixtureLibCode': ele?.FixLibCode || '',
-          'header.height': {
-            value: ele.headerHeight,
-            unit: 'ft',
+          fixtureLibCode: ele?.fixLibCode || '',
+          header: {
+            height: {
+              value: ele.headerHeight,
+              unit: 'ft',
+            },
           },
-          'footer.height': {
-            value: ele.footerHeight,
-            unit: 'ft',
+          footer: {
+            height: {
+              value: ele.footerHeight,
+              unit: 'ft',
+            },
           },
-          'shelfConfig': [
+          shelfConfig: [
             {
               shelfNumber: ele.shelfNumber,
               shelfType: ele.shelfType,
-              trayRow: ele.shelfType =='shelf' ? 0 : ele.trayRows,
+              trayRows: ele.shelfType =='shelf' ? 0 : ele.trayRows,
               productPerShelf: ele.productPerShelf,
               label: ele.shelfName,
             },
           ],
-          ...( typeof ele?.isEdit == undefined ) ? { 'status': ele?.FixLibCode ? inputData.updateFixtureStatus : inputData.newFixtureStatus } :{},
+          ...( typeof ele?.isEdit == undefined ) ? { 'status': ele?.fixLibCode ? inputData.updateFixtureStatus : inputData.newFixtureStatus } :{},
         };
       } else {
         acc[ele.fixtureName].shelfConfig.push(
             {
               shelfNumber: ele.shelfNumber,
               shelfType: ele.shelfType,
-              trayRow: ele.trayRows,
+              trayRows: ele.shelfType =='shelf' ? 0 : ele.trayRows,
               productPerShelf: ele.productPerShelf,
               label: ele.shelfName,
             },
@@ -65,7 +69,7 @@ export async function fixtureBulkUpload( req, res ) {
     let fixtureData = [];
     await Promise.all( Object.keys( groupedData ).map( async ( ele ) => {
       if ( groupedData[ele]?.fixtureLibCode && !groupedData[ele]?.status ) {
-        await planoLibraryService.updateOne( { fixtureLibCode: ele.fixtureLibCode }, fixtureEle );
+        await planoLibraryService.updateOne( { fixtureLibCode: groupedData[ele]?.fixtureLibCode }, groupedData[ele] );
       } else {
         let FixLibCode = await getMaxFixtureLibCode();
         groupedData[ele].fixtureLibCode = FixLibCode;
@@ -123,8 +127,9 @@ export async function createFixture( req, res ) {
       },
       {
         $match: {
-          clientId: req.body.clientId,
-          fixtureCategoryLower: req.body.fixtureCategory.toLowerCase(),
+          'clientId': req.body.clientId,
+          'fixtureCategoryLower': req.body.fixtureCategory.toLowerCase(),
+          'fixtureWidth.value': 10,
         },
       },
     ];
@@ -152,13 +157,36 @@ export async function updateFixture( req, res ) {
     if ( !fixtureLibraryDetails ) {
       return res.sendError( 'No data found', 204 );
     }
+    let templateMapped = await fixtureTemplateService.find( { fixtureLibraryId: req.params.fixtureId } );
+    if ( templateMapped.length ) {
+      return res.sendError( 'Fixture library is mapped with template', 400 );
+    }
+    let query = [
+      {
+        $addFields: {
+          fixtureCategoryLower: { $toLower: '$fixtureCategory' },
+        },
+      },
+      {
+        $match: {
+          'clientId': req.body.clientId,
+          'fixtureCategoryLower': req.body.fixtureCategory.toLowerCase(),
+          'fixtureWidth.value': req.body.fixtureWidth.value,
+          '_id': { $ne: req.params.fixtureId },
+        },
+      },
+    ];
+    let fixLibDetails = await planoLibraryService.aggregate( query );
+    if ( fixLibDetails.length ) {
+      return res.sendError( `${req.body.fixtureCategory} is already exists`, 400 );
+    }
 
     let fixtureData = {
       ...req.body,
       updatedAt: new Date(),
     };
     await planoLibraryService.updateOne( { _id: req.params.fixtureId }, fixtureData );
-    return res.sendSuccess( 'Fixture library details updates successfully' );
+    return res.sendSuccess( 'Fixture library details updated successfully' );
   } catch ( e ) {
     console.log( e );
     logger.error( { functionName: 'updateFixture', error: e } );
@@ -175,15 +203,20 @@ export async function getFixture( req, res ) {
     if ( !fixtureLibDetails ) {
       return res.sendError( 'No data found', 204 );
     }
+    let fixtureTemplateDetails = await fixtureTemplateService.find( { fixtureLibraryId: req.query?.fixtureId } );
     let fixtureDetails = await storeFixtureService.findOne( { fixtureLibraryId: req.query?.fixtureId }, { planoId: 1 } );
     if ( fixtureDetails ) {
       let planoStatus = await planoService.findOne( { planoId: fixtureDetails.planoId }, { status: 1 } );
       if ( planoStatus ) {
-        fixtureLibDetails.status = planoStatus.status == 'completed' ? 'Active' :'Inactive';
+        fixtureLibDetails.status = planoStatus.status == 'complete' ? 'Active' :'Inactive';
       }
     } else {
       fixtureLibDetails.status = fixtureLibDetails.status == 'draft' ? 'Draft' : 'Inactive';
     }
+    fixtureLibDetails = {
+      ...fixtureLibDetails.toObject(),
+      templateId: fixtureTemplateDetails.length,
+    };
     return res.sendSuccess( fixtureLibDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getFixture', error: e } );
@@ -343,7 +376,7 @@ export async function FixtureLibraryList( req, res ) {
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
             $cond: {
-              if: { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] },
+              if: { $and: [ { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] }, { $gt: [ { $size: '$templateId' }, 0 ] } ] },
               then: 'active',
               else: {
                 $cond: {
@@ -390,12 +423,12 @@ export async function FixtureLibraryList( req, res ) {
         },
     );
     let fixtureDetails = await planoLibraryService.aggregate( query );
-    if ( !fixtureDetails[0]?.fixtureData.length ) {
+    if ( !req.body.export && !fixtureDetails[0]?.fixtureData.length ) {
       return res.sendError( 'No data found', 204 );
     }
     let result = {
-      count: fixtureDetails[0].count[0].total,
-      data: fixtureDetails[0].fixtureData,
+      count: fixtureDetails[0]?.count?.[0]?.total || 0,
+      data: fixtureDetails[0]?.fixtureData || [],
     };
     if ( !req.body.export ) {
       return res.sendSuccess( result );
@@ -403,7 +436,7 @@ export async function FixtureLibraryList( req, res ) {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet( 'Fixture Library' );
 
-      sheet.getRow( 1 ).values = [ 'Fixture Code', 'Fixture Name', 'Fixture Type', 'Fixture Height(ft)', 'Fixture Width(ft)', 'Fixture Header height(ft)', 'Fixture Footer Height(ft)', 'Shelf Number', 'Shelf Type', 'Tray Rows', 'Product Per Shelf/Tray', 'Panel Name' ];
+      sheet.getRow( 1 ).values = [ 'Fixture Code', 'Fixture Name', 'Fixture Type', 'Fixture Height(ft)', 'Fixture Width(ft)', 'Fixture Header Height(ft)', 'Fixture Footer Height(ft)', 'Shelf Number', 'Shelf Type', 'Tray Rows', 'Product Per Shelf/Tray', 'Panel Name' ];
 
       let rowStart = 2;
       let lockedRowNumber = [];
@@ -596,24 +629,36 @@ export async function addVmType( req, res ) {
         error.push( ele.vmType );
       }
       vmTypeList.push( ele.vmType.toLowerCase() );
-      delete ele._id;
-      if ( ele?.imageUrls?.length ) {
-        ele.imageUrls = ele.imageUrls.map( ( image ) => {
-          let url = image.split( '?' )[0].split( '/' );
-          url.splice( 0, 3 );
-          image = decodeURIComponent( url.join( '/' ) );
-          return image;
-        } );
-      }
     } );
     if ( error.length ) {
       return res.sendError( `${error.toString()} - Vm types are duplicated.`, 400 );
     }
-    await vmTypeService.deleteMany( { clientId: inputData.clientId } );
+    await vmTypeService.deleteMany( { clientId: inputData.clientId, _id: { $ne: req.body.mappedTypeList } } );
     await vmTypeService.insertMany( inputData.vmData );
     return res.sendSuccess( 'Vm type is created successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'addVmType', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function deleteVmType( req, res ) {
+  try {
+    if ( !req.body?.vmId ) {
+      return res.sendError( 'Vm id is required', 400 );
+    }
+    let vmtypeDetails = await vmTypeService.findOne( { _id: req.body.vmId } );
+    if ( !vmtypeDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    let mappedType = await vmService.findOne( { vmType: vmtypeDetails.vmType } );
+    if ( mappedType ) {
+      return res.sendError( `${vmtypeDetails.vmType}-vmtype is mapped with Vmlibrary`, 400 );
+    }
+    await vmTypeService.deleteOne( { _id: req.body.vmId } );
+    return res.sendSuccess( 'Vmtype is deleted successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'deleteVmType', error: e } );
     return res.sendError( e, 500 );
   }
 }
@@ -636,13 +681,8 @@ export async function uploadVmImage( req, res ) {
     };
     let fileRes = await fileUpload( params );
     if ( fileRes.Key ) {
-      params = {
-        Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-        file_path: fileRes.Key,
-      };
-      let imageUrl = await signedUrl( params );
       await vmTypeService.updateKeys( { _id: req.params.vmId }, { $push: { imageUrls: fileRes.Key } } );
-      return res.sendSuccess( { url: imageUrl, path: fileRes.Key } );
+      return res.sendSuccess( { url: fileRes.Key } );
     }
   } catch ( e ) {
     logger.error( { functionName: 'updateVmType', error: e } );
@@ -654,14 +694,11 @@ export async function getVmTypeList( req, res ) {
   try {
     let vmDetails = await vmTypeService.find( { ...( req.query.clientId ) ? { clientId: req.query.clientId } : {}, ...( req.query.id ) ? { _id: req.query.id } : {} }, { createdAt: 0, updatedAt: 0 } );
     vmDetails = await Promise.all( vmDetails.map( async ( ele ) => {
-      ele.imageUrls = await Promise.all( ele.imageUrls.map( async ( image ) => {
-        let params = {
-          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-          file_path: image,
-        };
-        image = await signedUrl( params );
-        return image;
-      } ) );
+      ele= { ...ele.toObject(), isUsed: false };
+      let mappedDetails = await vmService.findOne( { vmType: ele.vmType } );
+      if ( mappedDetails ) {
+        ele['isUsed'] = true;
+      }
       return ele;
     } ) );
     return res.sendSuccess( vmDetails );
@@ -721,20 +758,12 @@ export async function uploadBrandList( req, res ) {
         acc[ele.brandName] = {
           brandName: ele.brandName,
           clientId: inputData.clientId,
-          brandDetails: [
-            {
-              subBrandName: ele.subBrandName,
-              category: ele.category,
-              subCategory: ele.subCategory,
-            },
-          ],
-        };
-      } else {
-        acc[ele.brandName].brandDetails.push( {
-          subBrandName: ele.subBrandName,
           category: ele.category,
           subCategory: ele.subCategory,
-        } );
+        };
+      } else {
+        acc[ele.brandName].category.push( ...ele.category );
+        acc[ele.brandName].subCategory.push( ...ele.subCategory );
       }
       return acc;
     }, {} );
@@ -795,11 +824,11 @@ export async function addUpdateVm( req, res ) {
     if ( checkVmExists.length ) {
       return res.sendError( 'VmName is already exists', 400 );
     }
-    if ( req.body?.vmImageUrl && ( req.body?.vmImageUrl.startsWith( 'https://' ) || req.body?.vmImageUrl.startsWith( 'http://' ) ) ) {
-      req.body.vmImageUrl = req.body?.vmImageUrl.split( '?' )?.[0]?.split( '/' );
-      req.body.vmImageUrl.splice( 0, 3 );
-      req.body.vmImageUrl = decodeURIComponent( req.body.vmImageUrl.join( '/' ) );
-    }
+    // if ( req.body?.vmImageUrl && ( req.body?.vmImageUrl.startsWith( 'https://' ) || req.body?.vmImageUrl.startsWith( 'http://' ) ) ) {
+    //   req.body.vmImageUrl = req.body?.vmImageUrl.split( '?' )?.[0]?.split( '/' );
+    //   req.body.vmImageUrl.splice( 0, 3 );
+    //   req.body.vmImageUrl = decodeURIComponent( req.body.vmImageUrl.join( '/' ) );
+    // }
     if ( !req.body?._id ) {
       req.body.vmLibCode = await getMaxVMLibCode();
     }
@@ -844,7 +873,7 @@ export async function getVmLibList( req, res ) {
             {
               $match: {
                 $expr: {
-                  $in: [ '$$libraryId', '$vmConfig.vmId' ],
+                  $in: [ '$$libraryId', { $ifNull: [ '$vmConfig.vmId', [] ] } ],
                 },
               },
             },
@@ -870,7 +899,6 @@ export async function getVmLibList( req, res ) {
           vmType: 1,
           vmBrand: 1,
           vmCategory: 1,
-          vmSubBrand: 1,
           clientId: 1,
           vmHeight: 1,
           status: 1,
@@ -890,7 +918,7 @@ export async function getVmLibList( req, res ) {
             {
               $match: {
                 $expr: {
-                  $in: [ '$$libraryId', '$vmConfig.vmId' ],
+                  $in: [ '$$libraryId', { $ifNull: [ '$vmConfig.vmId', [] ] } ],
                 },
               },
             },
@@ -916,7 +944,6 @@ export async function getVmLibList( req, res ) {
           vmType: 1,
           vmBrand: 1,
           vmCategory: 1,
-          vmSubBrand: 1,
           clientId: 1,
           vmHeight: 1,
           status: 1,
@@ -957,7 +984,6 @@ export async function getVmLibList( req, res ) {
           vmType: 1,
           vmBrand: 1,
           vmCategory: 1,
-          vmSubBrand: 1,
           clientId: 1,
           vmHeight: 1,
           status: 1,
@@ -971,7 +997,7 @@ export async function getVmLibList( req, res ) {
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
             $cond: {
-              if: { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] },
+              if: { $and: [ { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] }, { $gt: [ { $size: '$templateId' }, 0 ] } ] },
               then: 'active',
               else: {
                 $cond: {
@@ -1017,30 +1043,20 @@ export async function getVmLibList( req, res ) {
         },
     );
     let fixtureDetails = await vmService.aggregate( query );
-    if ( !fixtureDetails[0]?.fixtureData.length ) {
+    if ( !req.body.export && !fixtureDetails[0]?.fixtureData.length ) {
       return res.sendError( 'No data found', 204 );
     }
     let result = {
       count: fixtureDetails[0].count[0].total,
       data: fixtureDetails[0].fixtureData,
     };
-    result.data = await Promise.all( result.data.map( async ( ele ) => {
-      if ( ele.vmImageUrl ) {
-        let params = {
-          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-          file_path: ele.vmImageUrl,
-        };
-        ele.vmImageUrl = await signedUrl( params );
-      }
-      return ele;
-    } ) );
     if ( !req.body.export ) {
       return res.sendSuccess( result );
     } else {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet( 'Fixture Library' );
 
-      sheet.getRow( 1 ).values = [ 'VM Lib Code', 'VM Name', 'VM Type', 'VM Brand', 'VM SubBrand', 'VM Category', 'VM Subcategory', 'VM Height(mm)', 'VM Width(mm)', 'VM ImageUrl', 'isDoubleSided' ];
+      sheet.getRow( 1 ).values = [ 'VM Lib Code', 'VM Name', 'VM Type', 'VM Brand', 'VM Category', 'VM SubCategory', 'Unit', 'VM Height', 'VM Width', 'VM ImageUrl' ];
 
       let rowStart = 2;
       let lockedRowNumber = [];
@@ -1050,13 +1066,19 @@ export async function getVmLibList( req, res ) {
       for ( let i=0; i<result.data.length; i++ ) {
         let height = 0;
         let width = 0;
+        let unit = 'mm';
         if ( result.data[i]?.vmHeight ) {
           height = result.data[i].vmHeight.value;
+          unit = result.data[i].vmHeight.unit;
         }
         if ( result.data[i]?.vmWidth ) {
           width = result.data[i].vmWidth.value;
+          unit = result.data[i].vmWidth.unit;
         }
-        sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmSubBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', height, width, result.data[i]?.vmImageUrl || '', result.data[i].isDoubleSided || '' ];
+        if ( result.data[i]?.vmImageUrl ) {
+          result.data[i].vmImageUrl = process.env.PLANOCDNURL +'/'+result.data[i].vmImageUrl;
+        }
+        sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', unit, height, width, result.data[i]?.vmImageUrl || '' ];
         if ( result.data[i].templateId.length || result.data[i].status == 'active' ) {
           lockedRowNumber.push( rowStart );
         }
@@ -1067,15 +1089,14 @@ export async function getVmLibList( req, res ) {
       let vmTypeList = await vmTypeService.find( { clientId: req.body.clientId } );
       vmTypeList = vmTypeList.map( ( ele ) => ele.vmType );
       let brand = productBrandDetails.map( ( ele ) => ele.brandName );
-      let brandSubBrand = [ ...new Set( productBrandDetails.flatMap( ( ele ) => ele.brandDetails.map( ( brand ) => brand.subBrandName ) ) ) ];
-      let brandCategories = productBrandDetails.flatMap( ( ele ) => ele.brandDetails.flatMap( ( brand ) => [ ...brand.category ] ) );
-      let brandSubCategories = productBrandDetails.flatMap( ( ele ) => ele.brandDetails.flatMap( ( brand ) => [ ...brand.subCategory ] ) );
+      let brandCategories = productBrandDetails.flatMap( ( ele ) => [ ...ele.category ] );
+      let brandSubCategories = productBrandDetails.flatMap( ( ele ) => [ ...ele.subCategory ] );
       brandCategories = [ ...new Set( brandCategories.map( ( ele ) => ele ) ) ];
       brandSubCategories = [ ...new Set( brandSubCategories.map( ( ele ) => ele ) ) ];
 
       const maxRows = 1048576;
 
-      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `D2:D${maxRows}`, optionList: [ `"${brand.toString()}"` ] }, { key: `E2:E${maxRows}`, optionList: [ `"${brandSubBrand.toString()}"` ] }, { key: `F2:F${maxRows}`, optionList: [ `"${brandCategories.toString()}"` ] }, { key: `G2:G${maxRows}`, optionList: [ `"${brandSubCategories.toString()}"` ] } ];
+      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `D2:D${maxRows}`, optionList: [ `"${brand.toString()}"` ] }, { key: `E2:E${maxRows}`, optionList: [ `"${brandCategories.toString()}"` ] }, { key: `F2:F${maxRows}`, optionList: [ `"${brandSubCategories.toString()}"` ] }, { key: `G2:G${maxRows}`, optionList: [ '"mm,cm,inches,feet"' ] } ];
 
       dropDownRange.forEach( ( ele ) => {
         sheet.dataValidations.add( ele.key, {
@@ -1099,7 +1120,7 @@ export async function getVmLibList( req, res ) {
         for ( let i=item.start; i<=item.end; i++ ) {
           const row = sheet.getRow( i );
           if ( i > rowStart - 1 ) {
-            row.values = [ '', '', '', '', '', '', '', '', '' ];
+            row.values = [ '', '', '', '', '', '', '', '', '', '' ];
           }
           if ( !lockedRowNumber.includes( i ) && i != 1 ) {
             row.eachCell( ( cell ) => {
@@ -1224,7 +1245,7 @@ export async function vmBulkUpload( req, res ) {
   try {
     let inputData = req.body;
     await Promise.all( inputData.vmData.map( async ( ele ) => {
-      ele = { ...ele, clientId: req.body.clientId, vmWidth: { value: ele.vmWidth, unit: 'mm' }, vmHeight: { value: ele.vmHeight, unit: 'mm' } };
+      ele = { ...ele, clientId: req.body.clientId, vmWidth: { value: ele.vmWidth, unit: ele.unit }, vmHeight: { value: ele.vmHeight, unit: ele.unit } };
       let vmLibData;
       if ( !ele?.vmLibCode ) {
         ele.vmLibCode = await getMaxVMLibCode();
