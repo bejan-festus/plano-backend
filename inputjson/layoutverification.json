@@ -1,0 +1,111 @@
+[
+    {
+        "answers": [
+            {
+                "userId": "6819df859741a6b2e0d7090e",
+                "userName": "LKST98",
+                "role": "admin",
+                "qno": 1,
+                "question": "Are the below layout details correct ?",
+                "timeStamp": "2024-05-23T06:26:04.487Z",
+                "answer": true,
+                "comment": "everythig correct",
+                "video": "682ef0e951d4dcf69692e0ba/3/1747907795933/c5880562-5eef-42cb-b4f4-36a9f1beac0c7086775584813486347.mp4",
+                "image": ""
+            }
+        ]
+    },
+    {
+        "fixtureId": "67f61933a1199892ebac5a49",
+        "date_string": "2025-05-22",
+        "planoId": "67c1a271dad5d3cfdbf18c0a",
+        "taskId": "67c6949bb83e5b5bf2b024ce",
+        "type": "layout",
+        "floorId": "6819df849741a6b2e0d70904",
+        "answers": [
+            {
+                "userId": "6819df859741a6b2e0d7090e",
+                "userName": "LKST98",
+                "role": "admin",
+                "qno": 1,
+                "question": "Are the below layout details correct ?",
+                "answer": false,
+                "comment": "",
+                "issues": []
+            },
+            {
+                "userId": "6819df859741a6b2e0d7090e",
+                "userName": "LKST98",
+                "role": "admin",
+                "qno": 2,
+                "question": "Capture fixture image",
+                "answer": false,
+                "issues": [
+                    {
+                        "userId": "6819df859741a6b2e0d7090e",
+                        "userName": "LKST98",
+                        "role": "admin",
+                        "qno": 1,
+                        "question": "Fixture in-store, not in planogram",
+                        "Details": [
+                            {
+                                "fixturetype": "Hybrid_4ft",
+                                "fixturetemplate": "Temp_hybd_5ft_Vincent Chase+Lenskart",
+                                "fixtureId": "6837eace2692f29eff7f8f69",
+                                "templateId": "6837eed55caa00ec973be4c8",
+                                "associatedElementFixtureNumber": 1,
+                                "associatedElementNumber": 1,
+                                "associatedElementType": "wall",
+                                "shelfConfig": [
+                                    {
+                                        "shelfNumber": 1,
+                                        "shelfType": "",
+                                        "productPerShelf": 6,
+                                        "trayRows": 5,
+                                        "label": "Top",
+                                        "fixtureBrandCategory": [],
+                                        "fixtureBrandSubCategory": []
+                                    },
+                                    {
+                                        "shelfNumber": 2,
+                                        "shelfType": "",
+                                        "productPerShelf": 6,
+                                        "trayRows": 5,
+                                        "label": "waewqe",
+                                        "fixtureBrandCategory": [],
+                                        "fixtureBrandSubCategory": []
+                                    }
+                                ]
+                            }
+                        ],
+                        "comment": "missing fixure details given",
+                        "video": "",
+                        "image": ""
+                    },
+                    {
+                        "userId": "6819df859741a6b2e0d7090e",
+                        "userName": "LKST98",
+                        "role": "admin",
+                        "qno": 2,
+                        "question": "Fixture in planogram, not in store",
+                        "Details": [],
+                        "comment": "",
+                        "video": "",
+                        "image": ""
+                    },
+                    {
+                        "userId": "6819df859741a6b2e0d7090e",
+                        "userName": "LKST98",
+                        "role": "admin",
+                        "qno": 3,
+                        "question": "Fixture position is in-correct",
+                        "Details": [],
+                        "comment": "",
+                        "video": "",
+                        "image": ""
+                    }
+                ]
+            }
+        ]
+    }
+]

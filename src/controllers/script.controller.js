@@ -18,7 +18,7 @@ import mongoose from 'mongoose';
 import JSZip from 'jszip';
 import { signedUrl } from 'tango-app-api-middleware';
 import fs from 'fs';
-import https from 'https';
+// import https from 'https';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -1135,7 +1135,7 @@ export async function updateFixturesShelves( req, res ) {
 
         const createdFixture = await storeFixtureService.findOneAndUpdate2( { storeName: layoutDoc.storeName, fixtureNumber: fixture?.['fixtureNumber'] }, { fixtureCode: fixture?.['Fixture ID'] } );
 
-        // console.log( 'Fixture Data', fixtureData );
+        console.log( 'Fixture Data', fixtureData );
 
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
@@ -1251,7 +1251,7 @@ export async function updateFixturesShelves( req, res ) {
 
         const createdFixture = await storeFixtureService.findOneAndUpdate2( { storeName: layoutDoc.storeName, fixtureNumber: fixture?.['fixtureNumber'] }, { fixtureCode: fixture?.['Fixture ID'] } );
 
-        // console.log( 'Fixture Data', fixtureData );
+        console.log( 'Fixture Data', fixtureData );
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
@@ -1300,7 +1300,7 @@ export async function updateFixturesShelves( req, res ) {
 
               const createdShelf = await fixtureShelfService.create( shelfData );
 
-              // console.log( 'Shelf Data:', createdShelf );
+              console.log( 'Shelf Data:', createdShelf );
 
               shelfIndex++;
             }
@@ -1362,7 +1362,7 @@ export async function updateFixturesShelves( req, res ) {
 
         const createdFixture = await storeFixtureService.findOneAndUpdate2( { storeName: layoutDoc.storeName, fixtureNumber: fixture?.['fixtureNumber'] }, { fixtureCode: fixture?.['Fixture ID'] } );
 
-        // console.log( 'Fixture Data', fixtureData );
+        console.log( 'Fixture Data', fixtureData );
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
@@ -1487,7 +1487,7 @@ export async function updateFixturesShelves( req, res ) {
         };
 
         const createdFixture = await storeFixtureService.findOneAndUpdate2( { storeName: layoutDoc.storeName, fixtureNumber: fixture?.['fixtureNumber'] }, { fixtureCode: fixture?.['Fixture ID'] } );
-        // console.log( 'Fixture Data', fixtureData );
+        console.log( 'Fixture Data', fixtureData );
 
         const vms = typeof fixture?.['VM Template ID'] === 'string' ? fixture?.['VM Template ID']?.split( ', ' ).map( ( item ) => item.trim() ) : [];
 
@@ -1700,6 +1700,7 @@ export async function updateInventory( req, res ) {
       console.log( updateData );
 
       const product = await planoProductService.create( updateData );
+      console.log( product );
     }
 
 
@@ -1824,6 +1825,7 @@ export async function updatelayoutFeedback( req, res ) {
       const layoutDoc = layoutFeedbacks[i].toObject();
 
       const [ q1, q2, q3 ] = layoutDoc.answers;
+      console.log( q3 );
 
       if ( q1.value === false ) {
         const floor = await storeBuilderService.findOne( { _id: layoutDoc.floorId } );
@@ -2136,6 +2138,7 @@ export async function updateFixtureFeedback( req, res ) {
         const vmTask = vmTaskList[j].toObject();
 
         const [ q1, q2 ] = vmTask.answers;
+        console.log( q2 );
 
         if ( q1.value ) continue;
 
@@ -2317,73 +2320,73 @@ export async function updateVmData( req, res ) {
 }
 
 
-async function scrapeCrest() {
-  const storeIds = [];
-  const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzNjY5ODIyLCJpYXQiOjE3NDM2NjYyMjIsImp0aSI6IjA5ZDRjYTVhZGRiNzQxMDVhYjhjOWVjMmU3MjZiM2NiIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.C3wLXzbv0bTDGiZqs8jSA3up0cq0wqA5PIMw45_T4Wg';
-  const filePath = 'response.json';
-  let allResults = [];
+// async function scrapeCrest() {
+//   const storeIds = [];
+//   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
+//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzNjY5ODIyLCJpYXQiOjE3NDM2NjYyMjIsImp0aSI6IjA5ZDRjYTVhZGRiNzQxMDVhYjhjOWVjMmU3MjZiM2NiIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.C3wLXzbv0bTDGiZqs8jSA3up0cq0wqA5PIMw45_T4Wg';
+//   const filePath = 'response.json';
+//   let allResults = [];
 
-  if ( fs.existsSync( filePath ) ) {
-    try {
-      const existingData = fs.readFileSync( filePath, 'utf8' );
-      allResults = JSON.parse( existingData );
-      if ( !Array.isArray( allResults ) ) {
-        allResults = [];
-      }
-    } catch ( error ) {
-      console.error( 'Error reading existing JSON file:', error.message );
-      allResults = [];
-    }
-  }
+//   if ( fs.existsSync( filePath ) ) {
+//     try {
+//       const existingData = fs.readFileSync( filePath, 'utf8' );
+//       allResults = JSON.parse( existingData );
+//       if ( !Array.isArray( allResults ) ) {
+//         allResults = [];
+//       }
+//     } catch ( error ) {
+//       console.error( 'Error reading existing JSON file:', error.message );
+//       allResults = [];
+//     }
+//   }
 
-  for ( const storeId of storeIds ) {
-    try {
-      const result = await new Promise( ( resolve ) => {
-        const payload = JSON.stringify( { store_id: storeId } );
-        const options = {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${bearerToken}`,
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength( payload ),
-          },
-        };
+//   for ( const storeId of storeIds ) {
+//     try {
+//       const result = await new Promise( ( resolve ) => {
+//         const payload = JSON.stringify( { store_id: storeId } );
+//         const options = {
+//           method: 'POST',
+//           headers: {
+//             'Authorization': `Bearer ${bearerToken}`,
+//             'Content-Type': 'application/json',
+//             'Content-Length': Buffer.byteLength( payload ),
+//           },
+//         };
 
-        const req = https.request( apiUrl, options, ( res ) => {
-          let data = '';
-          res.on( 'data', ( chunk ) => {
-            data += chunk;
-          } );
-          res.on( 'end', () => {
-            try {
-              const jsonData = JSON.parse( data );
-              const result = { storeName: storeId, data: jsonData };
-              allResults.push( result );
-              fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
-              console.log( 'Received Data:', result );
-              resolve( result );
-            } catch ( error ) {
-              console.error( `Error parsing JSON for ${storeId}:`, error.message );
-              resolve( { storeName: storeId, data: null } );
-            }
-          } );
-        } );
+//         const req = https.request( apiUrl, options, ( res ) => {
+//           let data = '';
+//           res.on( 'data', ( chunk ) => {
+//             data += chunk;
+//           } );
+//           res.on( 'end', () => {
+//             try {
+//               const jsonData = JSON.parse( data );
+//               const result = { storeName: storeId, data: jsonData };
+//               allResults.push( result );
+//               fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
+//               console.log( 'Received Data:', result );
+//               resolve( result );
+//             } catch ( error ) {
+//               console.error( `Error parsing JSON for ${storeId}:`, error.message );
+//               resolve( { storeName: storeId, data: null } );
+//             }
+//           } );
+//         } );
 
-        req.on( 'error', ( error ) => {
-          console.error( `Error fetching data for ${storeId}:`, error.message );
-          resolve( { storeName: storeId, data: null } );
-        } );
+//         req.on( 'error', ( error ) => {
+//           console.error( `Error fetching data for ${storeId}:`, error.message );
+//           resolve( { storeName: storeId, data: null } );
+//         } );
 
-        req.write( payload );
-        req.end();
-      } );
-    } catch ( error ) {
-      console.error( `Unexpected error for ${storeId}:`, error.message );
-    }
-    await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
-  }
-}
+//         req.write( payload );
+//         req.end();
+//       } );
+//     } catch ( error ) {
+//       console.error( `Unexpected error for ${storeId}:`, error.message );
+//     }
+//     await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
+//   }
+// }
 
 export async function createCrestPlanogram( req, res ) {
   try {
@@ -3317,246 +3320,246 @@ export async function updateCrestVms( req, res ) {
 }
 
 
-async function filterStores() {
-  const stores = [
-    'ST338', 'LKST1304', 'ST303', 'LKST1228', 'LKST499', 'LKST479', 'ST320',
-    'LKST515', 'LKST406', 'ST392', 'ST328', 'ST332', 'LKST487', 'ST312',
-    'LKST615', 'LKST352', 'LKST457', 'LKST439', 'LKST347', 'LKST1084',
-    'LKST380', 'ST298', 'LKST356', 'LKST223', 'LKST480', 'ST30', 'ST285',
-    'LKST500', 'LKST466', 'LKST321', 'LKST678', 'LKST383', 'LKST365',
-    'LKST374', 'ST302', 'LKST420', 'LKST394', 'LKST444', 'LKST314',
-    'LKST01', 'LKST357', 'LKST465', 'LKST331', 'LKST440', 'LKST345',
-    'LKST389', 'ST330', 'LKST299', 'ST244', 'LKST294', 'ST314', 'LKST361',
-    'LKST377', 'LKST390', 'ST335', 'LKST416', 'ST293', 'LKST341', 'LKST501',
-    'LKST408', 'LKST227', 'LKST353', 'LKST364', 'ST318', 'LKST326',
-    'LKST344', 'ST321', 'LKST384', 'LKST496', 'LKST427', 'LKST325',
-    'LKST282', 'ST197', 'LKST388', 'LKST338', 'LKST371', 'ST326', 'LKST428',
-    'LKST112', 'LKST334', 'ST319', 'LKST464', 'LKST490', 'LKST11',
-    'LKST502', 'LKST1438',
-  ];
+// async function filterStores() {
+//   const stores = [
+//     'ST338', 'LKST1304', 'ST303', 'LKST1228', 'LKST499', 'LKST479', 'ST320',
+//     'LKST515', 'LKST406', 'ST392', 'ST328', 'ST332', 'LKST487', 'ST312',
+//     'LKST615', 'LKST352', 'LKST457', 'LKST439', 'LKST347', 'LKST1084',
+//     'LKST380', 'ST298', 'LKST356', 'LKST223', 'LKST480', 'ST30', 'ST285',
+//     'LKST500', 'LKST466', 'LKST321', 'LKST678', 'LKST383', 'LKST365',
+//     'LKST374', 'ST302', 'LKST420', 'LKST394', 'LKST444', 'LKST314',
+//     'LKST01', 'LKST357', 'LKST465', 'LKST331', 'LKST440', 'LKST345',
+//     'LKST389', 'ST330', 'LKST299', 'ST244', 'LKST294', 'ST314', 'LKST361',
+//     'LKST377', 'LKST390', 'ST335', 'LKST416', 'ST293', 'LKST341', 'LKST501',
+//     'LKST408', 'LKST227', 'LKST353', 'LKST364', 'ST318', 'LKST326',
+//     'LKST344', 'ST321', 'LKST384', 'LKST496', 'LKST427', 'LKST325',
+//     'LKST282', 'ST197', 'LKST388', 'LKST338', 'LKST371', 'ST326', 'LKST428',
+//     'LKST112', 'LKST334', 'ST319', 'LKST464', 'LKST490', 'LKST11',
+//     'LKST502', 'LKST1438',
+//   ];
 
-  const rawData = fs.readFileSync( 'crest_scrap_v1.json', 'utf8' );
-  const allStores = JSON.parse( rawData );
+//   const rawData = fs.readFileSync( 'crest_scrap_v1.json', 'utf8' );
+//   const allStores = JSON.parse( rawData );
 
-  const filteredStores = allStores.filter( ( store ) => stores.includes( store.storeName ) );
+//   const filteredStores = allStores.filter( ( store ) => stores.includes( store.storeName ) );
 
-  fs.writeFileSync( 'crest_filtered.json', JSON.stringify( filteredStores, null, 2 ) );
-}
+//   fs.writeFileSync( 'crest_filtered.json', JSON.stringify( filteredStores, null, 2 ) );
+// }
 
-import fsp from 'fs/promises';
+// import fsp from 'fs/promises';
 
 import sharp from 'sharp';
 
 
-const stitchImagesFromZips = async () => {
-  const zip1Path = 'crest_plano.zip';
-  const zip2Path = 'tango_plano.zip';
-  const outputDir = 'stitched';
+// const stitchImagesFromZips = async () => {
+//   const zip1Path = 'crest_plano.zip';
+//   const zip2Path = 'tango_plano.zip';
+//   const outputDir = 'stitched';
 
-  const loadZip = async ( zipPath ) => {
-    const buffer = await fsp.readFile( zipPath );
-    return await JSZip.loadAsync( buffer );
-  };
+//   const loadZip = async ( zipPath ) => {
+//     const buffer = await fsp.readFile( zipPath );
+//     return await JSZip.loadAsync( buffer );
+//   };
 
-  const extractImages = async ( zip ) => {
-    const imageFiles = {};
-    const imageRegex = /\.(png|jpe?g)$/i;
+//   const extractImages = async ( zip ) => {
+//     const imageFiles = {};
+//     const imageRegex = /\.(png|jpe?g)$/i;
 
-    for ( const [ name, file ] of Object.entries( zip.files ) ) {
-      const base = path.basename( name );
-      if ( !file.dir && imageRegex.test( base ) ) {
-        imageFiles[base] = await file.async( 'nodebuffer' );
-      }
-    }
+//     for ( const [ name, file ] of Object.entries( zip.files ) ) {
+//       const base = path.basename( name );
+//       if ( !file.dir && imageRegex.test( base ) ) {
+//         imageFiles[base] = await file.async( 'nodebuffer' );
+//       }
+//     }
 
-    return imageFiles;
-  };
+//     return imageFiles;
+//   };
 
-  const stitchOrCenter = async ( buffer1, buffer2, outputPath ) => {
-    const totalWidth = 7000;
-    const width1 = Math.round( totalWidth * 0.3 );
-    const width2 = Math.round( totalWidth * 0.7 );
+//   const stitchOrCenter = async ( buffer1, buffer2, outputPath ) => {
+//     const totalWidth = 7000;
+//     const width1 = Math.round( totalWidth * 0.3 );
+//     const width2 = Math.round( totalWidth * 0.7 );
 
-    let img1 = buffer1 ? await sharp( buffer1 ).resize( { width: width1 } ).toBuffer() : null;
-    let img2 = buffer2 ? await sharp( buffer2 ).resize( { width: width2 } ).toBuffer() : null;
+//     let img1 = buffer1 ? await sharp( buffer1 ).resize( { width: width1 } ).toBuffer() : null;
+//     let img2 = buffer2 ? await sharp( buffer2 ).resize( { width: width2 } ).toBuffer() : null;
 
-    const [ meta1, meta2 ] = await Promise.all( [
-      img1 ? sharp( img1 ).metadata() : Promise.resolve( { height: 0 } ),
-      img2 ? sharp( img2 ).metadata() : Promise.resolve( { height: 0 } ),
-    ] );
+//     const [ meta1, meta2 ] = await Promise.all( [
+//       img1 ? sharp( img1 ).metadata() : Promise.resolve( { height: 0 } ),
+//       img2 ? sharp( img2 ).metadata() : Promise.resolve( { height: 0 } ),
+//     ] );
 
-    const maxHeight = Math.max( meta1.height, meta2.height );
+//     const maxHeight = Math.max( meta1.height, meta2.height );
 
-    const composites = [];
-    if ( img1 ) composites.push( { input: img1, top: 0, left: 0 } );
-    if ( img2 ) composites.push( { input: img2, top: 0, left: width1 } );
+//     const composites = [];
+//     if ( img1 ) composites.push( { input: img1, top: 0, left: 0 } );
+//     if ( img2 ) composites.push( { input: img2, top: 0, left: width1 } );
 
-    await sharp( {
-      create: {
-        width: totalWidth,
-        height: maxHeight,
-        channels: 4,
-        background: { r: 255, g: 255, b: 255, alpha: 0 },
-      },
-    } )
-        .composite( composites )
-        .png()
-        .toFile( outputPath );
-  };
+//     await sharp( {
+//       create: {
+//         width: totalWidth,
+//         height: maxHeight,
+//         channels: 4,
+//         background: { r: 255, g: 255, b: 255, alpha: 0 },
+//       },
+//     } )
+//         .composite( composites )
+//         .png()
+//         .toFile( outputPath );
+//   };
 
-  try {
-    await fsp.mkdir( outputDir, { recursive: true } );
+//   try {
+//     await fsp.mkdir( outputDir, { recursive: true } );
 
-    const [ zip1, zip2 ] = await Promise.all( [ loadZip( zip1Path ), loadZip( zip2Path ) ] );
-    const [ images1, images2 ] = await Promise.all( [ extractImages( zip1 ), extractImages( zip2 ) ] );
+//     const [ zip1, zip2 ] = await Promise.all( [ loadZip( zip1Path ), loadZip( zip2Path ) ] );
+//     const [ images1, images2 ] = await Promise.all( [ extractImages( zip1 ), extractImages( zip2 ) ] );
 
-    const allFilenames = new Set( [ ...Object.keys( images1 ), ...Object.keys( images2 ) ] );
+//     const allFilenames = new Set( [ ...Object.keys( images1 ), ...Object.keys( images2 ) ] );
 
-    for ( const name of allFilenames ) {
-      const buffer1 = images1[name] || null;
-      const buffer2 = images2[name] || null;
-      const outputPath = path.join( outputDir, `${name.replace( /\.[^/.]+$/, '' )}.png` );
+//     for ( const name of allFilenames ) {
+//       const buffer1 = images1[name] || null;
+//       const buffer2 = images2[name] || null;
+//       const outputPath = path.join( outputDir, `${name.replace( /\.[^/.]+$/, '' )}.png` );
 
-      try {
-        await stitchOrCenter( buffer1, buffer2, outputPath );
-        console.log( ` Processed: ${name}` );
-      } catch ( err ) {
-        console.error( ` Error processing ${name}:`, err.message );
-      }
-    }
-  } catch ( err ) {
-    console.error( ' Unexpected error:', err.message );
-  }
-};
+//       try {
+//         await stitchOrCenter( buffer1, buffer2, outputPath );
+//         console.log( ` Processed: ${name}` );
+//       } catch ( err ) {
+//         console.error( ` Error processing ${name}:`, err.message );
+//       }
+//     }
+//   } catch ( err ) {
+//     console.error( ' Unexpected error:', err.message );
+//   }
+// };
 
 // stitchImagesFromZips();
 
 
-import { Builder, By, until } from 'selenium-webdriver';
-import chrome from 'selenium-webdriver/chrome.js';
+import { Builder } from 'selenium-webdriver';
+// import chrome from 'selenium-webdriver/chrome.js';
 import fetch from 'node-fetch';
 
 import fetchCookie from 'fetch-cookie';
 
 
-async function downloadCrestImages() {
-  const storeList = await planoService.find( {} );
-  const storeIds = storeList.map( ( store ) => store.toObject().storeName );
+// async function downloadCrestImages() {
+//   const storeList = await planoService.find( {} );
+//   const storeIds = storeList.map( ( store ) => store.toObject().storeName );
 
-  const invalidateUrl = 'https://app.getcrest.ai/api/ms_iam/user/session/override/';
-  const tokenUrl = 'https://app.getcrest.ai/api/ms_iam/token/';
+//   const invalidateUrl = 'https://app.getcrest.ai/api/ms_iam/user/session/override/';
+//   const tokenUrl = 'https://app.getcrest.ai/api/ms_iam/token/';
 
-  let authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0NzE4MjUzLCJpYXQiOjE3NDQ3MTQ2NTMsImp0aSI6Ijk5ZTAyYjU4ODg2NjQ3MDk4Y2NlY2NmODZlYzYzYTU4IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.7g1XS48l7mVsOcDXHLC7VFLFyJ-p13e2kkJlb8uFc_g';
+//   let authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0NzE4MjUzLCJpYXQiOjE3NDQ3MTQ2NTMsImp0aSI6Ijk5ZTAyYjU4ODg2NjQ3MDk4Y2NlY2NmODZlYzYzYTU4IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.7g1XS48l7mVsOcDXHLC7VFLFyJ-p13e2kkJlb8uFc_g';
 
-  const fetchWithCookies = fetchCookie( fetch );
+//   const fetchWithCookies = fetchCookie( fetch );
 
-  async function fetchNewToken() {
-    const invalidate = await fetchWithCookies( invalidateUrl, {
-      'method': 'POST',
-      'headers': { 'Content-Type': 'application/json' },
-      'body': JSON.stringify( { 'email': 'tango.lenskart@getcrest.ai', 'password': 'Tangolenskart@123' } ),
-    } );
+//   async function fetchNewToken() {
+//     const invalidate = await fetchWithCookies( invalidateUrl, {
+//       'method': 'POST',
+//       'headers': { 'Content-Type': 'application/json' },
+//       'body': JSON.stringify( { 'email': 'tango.lenskart@getcrest.ai', 'password': 'Tangolenskart@123' } ),
+//     } );
 
-    const invalidateData = await invalidate.json();
+//     const invalidateData = await invalidate.json();
 
-    console.log( invalidateData );
+//     console.log( invalidateData );
 
-    console.log( 'Fetching new token...' );
-    const res = await fetchWithCookies( tokenUrl, {
-      'method': 'POST',
-      'Accept': 'application/json, text/javascript, */*; q=0.01',
-      'headers': { 'Content-Type': 'application/json' },
-      'body': JSON.stringify( { 'email': 'tango.lenskart@getcrest.ai', 'password': 'Tangolenskart@123' } ),
-    } );
+//     console.log( 'Fetching new token...' );
+//     const res = await fetchWithCookies( tokenUrl, {
+//       'method': 'POST',
+//       'Accept': 'application/json, text/javascript, */*; q=0.01',
+//       'headers': { 'Content-Type': 'application/json' },
+//       'body': JSON.stringify( { 'email': 'tango.lenskart@getcrest.ai', 'password': 'Tangolenskart@123' } ),
+//     } );
 
-    if ( !res.ok ) {
-      throw new Error( `Failed to fetch token: ${res.status}` );
-    }
+//     if ( !res.ok ) {
+//       throw new Error( `Failed to fetch token: ${res.status}` );
+//     }
 
-    const data = await res.json();
-    console.log( data );
-    authToken = data.access;
-    return authToken;
-  }
+//     const data = await res.json();
+//     console.log( data );
+//     authToken = data.access;
+//     return authToken;
+//   }
 
-  async function runAutomation( token, storeId, retries = 3 ) {
-    let attempts = 0;
+//   async function runAutomation( token, storeId, retries = 3 ) {
+//     let attempts = 0;
 
-    while ( attempts < retries ) {
-      const options = new chrome.Options();
-      options.addArguments( 'headless' );
-      options.addArguments( 'disable-gpu' );
+//     while ( attempts < retries ) {
+//       const options = new chrome.Options();
+//       options.addArguments( 'headless' );
+//       options.addArguments( 'disable-gpu' );
 
-      const driver = await new Builder()
-          .forBrowser( 'chrome' )
-          .setChromeOptions( options )
-          .build();
+//       const driver = await new Builder()
+//           .forBrowser( 'chrome' )
+//           .setChromeOptions( options )
+//           .build();
 
-      try {
-        const url = `https://app.getcrest.ai/pvt/?auth=${token}&module=planno&store_id=${storeId}`;
-        await driver.get( url );
-        const currentUrl = await driver.getCurrentUrl();
-        if ( currentUrl.includes( '/login' ) ) {
-          console.warn( `Redirected to login for store ${storeId}. Retrying with new token...` );
-          await driver.quit();
-          const newToken = await fetchNewToken();
-          return await runAutomation( newToken, storeId, retries );
-        }
+//       try {
+//         const url = `https://app.getcrest.ai/pvt/?auth=${token}&module=planno&store_id=${storeId}`;
+//         await driver.get( url );
+//         const currentUrl = await driver.getCurrentUrl();
+//         if ( currentUrl.includes( '/login' ) ) {
+//           console.warn( `Redirected to login for store ${storeId}. Retrying with new token...` );
+//           await driver.quit();
+//           const newToken = await fetchNewToken();
+//           return await runAutomation( newToken, storeId, retries );
+//         }
 
-        const button = await driver.wait( until.elementLocated(
-            By.xpath( '//*[contains(@class, "MuiButtonBase-root") and contains(@class, "MuiButton-root") and contains(@class, "MuiButton-text") and contains(@class, "MuiButton-disableElevation") and contains(@class, "jss35") and contains(@class, "jss47") and contains(@class, "jss37") and contains(@class, "jss144")]' ),
-        ), 10000 );
-        await button.click();
+//         const button = await driver.wait( until.elementLocated(
+//             By.xpath( '//*[contains(@class, "MuiButtonBase-root") and contains(@class, "MuiButton-root") and contains(@class, "MuiButton-text") and contains(@class, "MuiButton-disableElevation") and contains(@class, "jss35") and contains(@class, "jss47") and contains(@class, "jss37") and contains(@class, "jss144")]' ),
+//         ), 10000 );
+//         await button.click();
 
-        const checkbox = await driver.wait(
-            until.elementLocated(
-                By.xpath( '//*[contains(@class, "MuiCheckbox-root") and contains(@class, "MuiIconButton-root")]//input[@type="checkbox"]' ),
-            ),
-            10000,
-        );
-        await checkbox.click();
+//         const checkbox = await driver.wait(
+//             until.elementLocated(
+//                 By.xpath( '//*[contains(@class, "MuiCheckbox-root") and contains(@class, "MuiIconButton-root")]//input[@type="checkbox"]' ),
+//             ),
+//             10000,
+//         );
+//         await checkbox.click();
 
-        const downloadIcon = await driver.wait(
-            until.elementLocated(
-                By.xpath( '//button[contains(@class, "cool-tooltip")]' ),
-            ),
-            10000,
-        );
-        await downloadIcon.click();
+//         const downloadIcon = await driver.wait(
+//             until.elementLocated(
+//                 By.xpath( '//button[contains(@class, "cool-tooltip")]' ),
+//             ),
+//             10000,
+//         );
+//         await downloadIcon.click();
 
 
-        console.log( `Download triggered for store: ${storeId}` );
-        await driver.sleep( 5000 );
-        return;
-      } catch ( err ) {
-        attempts++;
-        console.error( `Error for store ${storeId}, attempt ${attempts}: ${err.message}` );
-        if ( attempts >= retries ) {
-          console.error( `Failed for store ${storeId} after ${retries} attempts` );
-        } else {
-          console.log( `Retrying for store ${storeId}, attempt ${attempts + 1}` );
-        }
-      } finally {
-        try {
-          if ( driver && ( await driver.getSession() ) ) {
-            await driver.quit();
-          }
-        } catch ( e ) {
+//         console.log( `Download triggered for store: ${storeId}` );
+//         await driver.sleep( 5000 );
+//         return;
+//       } catch ( err ) {
+//         attempts++;
+//         console.error( `Error for store ${storeId}, attempt ${attempts}: ${err.message}` );
+//         if ( attempts >= retries ) {
+//           console.error( `Failed for store ${storeId} after ${retries} attempts` );
+//         } else {
+//           console.log( `Retrying for store ${storeId}, attempt ${attempts + 1}` );
+//         }
+//       } finally {
+//         try {
+//           if ( driver && ( await driver.getSession() ) ) {
+//             await driver.quit();
+//           }
+//         } catch ( e ) {
 
-        }
-      }
-    }
-  }
+//         }
+//       }
+//     }
+//   }
 
-  for ( const storeId of storeIds ) {
-    try {
-      console.log( `Starting automation for store: ${storeId}` );
-      await runAutomation( authToken, storeId );
-    } catch ( error ) {
-      console.error( `Automation failed for store ${storeId}: ${error.message}` );
-    }
-  }
-}
+//   for ( const storeId of storeIds ) {
+//     try {
+//       console.log( `Starting automation for store: ${storeId}` );
+//       await runAutomation( authToken, storeId );
+//     } catch ( error ) {
+//       console.error( `Automation failed for store ${storeId}: ${error.message}` );
+//     }
+//   }
+// }
 
 // downloadCrestImages();
 export async function updatePlanoFixtureLayout( planoId, floorId ) {
@@ -5476,7 +5479,7 @@ export async function getVideoLinks( req, res ) {
         continue;
       }
       const [ q1, q2, q3 ] = data.answers;
-
+      console.log( q1, q2 );
       const params = {
         Bucket: 'tango-planogram',
         file_path: q3?.video || null,
@@ -6769,28 +6772,28 @@ export async function updateExcelPlanogram( req, res ) {
   }
 }
 
-async function downloadImage() {
-  const url = 'https://api.getcrest.ai/api/ms_data_preparation/master_data/attachment/?preview=0&attachment_id=2934';
+// async function downloadImage() {
+//   const url = 'https://api.getcrest.ai/api/ms_data_preparation/master_data/attachment/?preview=0&attachment_id=2934';
 
-  try {
-    const response = await fetch( url, {
-      headers: {
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3MDMyNDcyLCJpYXQiOjE3NDcwMjg4NzIsImp0aSI6IjZmN2Y0Yzk4OGY5ZjRiYjg5NmNhOTYwNzMyMTVlOTUwIiwidXNlcl9pZCI6MTA4NCwiaWQiOjEwODQsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiYWRtaW4ifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJhZG1pbiJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImFkbWluIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJhZG1pbiJ9XX0.Lt3zT1Rw4KnDWRQ8LWYRVMFPS3PHRRTgHXn6kLG8Uk0',
-        Cookie: 'prod_session_key=w144dqljxlh096487nc33rm09vwtossh; prod_session_key=xn1fry9sekk94hs2hfo78erxcmc8a3am',
-      },
-    } );
+//   try {
+//     const response = await fetch( url, {
+//       headers: {
+//         Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ3MDMyNDcyLCJpYXQiOjE3NDcwMjg4NzIsImp0aSI6IjZmN2Y0Yzk4OGY5ZjRiYjg5NmNhOTYwNzMyMTVlOTUwIiwidXNlcl9pZCI6MTA4NCwiaWQiOjEwODQsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiYWRtaW4ifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJhZG1pbiJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImFkbWluIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJhZG1pbiJ9XX0.Lt3zT1Rw4KnDWRQ8LWYRVMFPS3PHRRTgHXn6kLG8Uk0',
+//         Cookie: 'prod_session_key=w144dqljxlh096487nc33rm09vwtossh; prod_session_key=xn1fry9sekk94hs2hfo78erxcmc8a3am',
+//       },
+//     } );
 
-    if ( !response.ok ) throw new Error( `HTTP error! Status: ${response.status}` );
+//     if ( !response.ok ) throw new Error( `HTTP error! Status: ${response.status}` );
 
-    const dest = fs.createWriteStream( '2934.png' );
-    response.body.pipe( dest );
+//     const dest = fs.createWriteStream( '2934.png' );
+//     response.body.pipe( dest );
 
-    dest.on( 'finish', () => console.log( 'Image saved as image.jpg' ) );
-    dest.on( 'error', ( err ) => console.error( 'File write error:', err ) );
-  } catch ( err ) {
-    console.error( 'Fetch error:', err );
-  }
-}
+//     dest.on( 'finish', () => console.log( 'Image saved as image.jpg' ) );
+//     dest.on( 'error', ( err ) => console.error( 'File write error:', err ) );
+//   } catch ( err ) {
+//     console.error( 'Fetch error:', err );
+//   }
+// }
 
 // downloadImage();
 
