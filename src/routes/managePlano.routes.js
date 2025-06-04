@@ -6,4 +6,7 @@ export const managePlanoRouter = express.Router();
 
 managePlanoRouter
     .post( '/updateStorePlano', managePlanoController.updateStorePlano )
-    .post( '/getplanoFeedback', managePlanoController.getplanoFeedback );
+    .post( '/getplanoFeedback', managePlanoController.getplanoFeedback )
+    .get( '/fixtureList', managePlanoController.fixtureList )
+    .get( '/templateList', managePlanoController.templateList )
+    .get( '/fixtureBrandsList', managePlanoController.fixtureBrandsList );

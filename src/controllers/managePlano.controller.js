@@ -8,9 +8,12 @@
 // import * as planoMappingService from '../service/planoMapping.service.js';
 // import * as planoTaskService from '../service/planoTask.service.js';
 // import * as processedTaskService from '../service/processedTaskservice.js';
-// import * as fixtureConfigService from '../service/fixtureConfig.service.js';
-// import * as fixtureLibraryService from '../service/planoLibrary.service.js';
+import * as planoproductCategoryService from '../service/planoproductCategory.service.js';
+import * as fixtureConfigService from '../service/fixtureConfig.service.js';
+import * as fixtureLibraryService from '../service/planoLibrary.service.js';
 import * as planoTaskService from '../service/planoTask.service.js';
+import { logger } from 'tango-app-api-middleware';
+import mongoose from 'mongoose';
 export async function getplanoFeedback( req, res ) {
   try {
     let query = [];
@@ -67,8 +70,11 @@ export async function getplanoFeedback( req, res ) {
         ],
         as: 'FixtureData',
       },
-
-    }, { $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true } } );
+    },
+    {
+      $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true },
+    },
+    );
 
 
     let findPlanoCompliance = await planoTaskService.aggregate( query );
@@ -84,6 +90,42 @@ export async function updateStorePlano( req, res ) {
     console.log( 'reached' );
   } catch ( e ) {
     logger.error( { functionName: 'updateStorePlano', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function fixtureList( req, res ) {
+  try {
+    let findData = await fixtureLibraryService.find( { clientId: req.query.clientId } );
+    if ( findData.length === 0 ) {
+      return res.sendError( 'nodata found', 204 );
+    }
+    res.sendSuccess( findData );
+  } catch ( e ) {
+    logger.error( { functionName: 'fixtureList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function templateList( req, res ) {
+  try {
+    let findData = await fixtureConfigService.find( { clientId: req.query.clientId, fixtureLibraryId: new mongoose.Types.ObjectId( req.query.fixtureId ) } );
+    if ( findData.length === 0 ) {
+      return res.sendError( 'nodata found', 204 );
+    }
+    res.sendSuccess( findData );
+  } catch ( e ) {
+    logger.error( { functionName: 'templateList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function fixtureBrandsList( req, res ) {
+  try {
+    let findData = await planoproductCategoryService.find( { clientId: req.query.clientId } );
+    if ( findData.length === 0 ) {
+      return res.sendError( 'nodata found', 204 );
+    }
+    res.sendSuccess( findData );
+  } catch ( e ) {
+    logger.error( { functionName: 'templateList', error: e } );
     return res.sendError( e, 500 );
   }
 }
