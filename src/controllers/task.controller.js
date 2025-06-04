@@ -761,8 +761,10 @@ export async function generatetaskDetails( req, res ) {
     }
 
     let data = [ ...completeStore, ...incompleteStore ];
+    let yesCount = completeStore.filter( ( ele ) => ele.storeStatus == 'yes' );
+    let noCount = completeStore.filter( ( ele ) => ele.storeStatus == 'No' );
 
-    return res.sendSuccess( { count: data.length, completeStore: completeStore.length, incompleteStore: incompleteStore.length, data } );
+    return res.sendSuccess( { count: data.length, completeStore: completeStore.length, incompleteStore: incompleteStore.length, yesCount: yesCount.length, noCount: noCount.length, data } );
   } catch ( e ) {
     console.log( e );
     logger.error( { functioName: 'generatetaskDetails', error: e } );
