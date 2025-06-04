@@ -1,0 +1,647 @@
+[
+  {
+    "storeName": "LKST98",
+    "data": {
+      "message": "SUCCESS",
+      "result": [
+        {
+          "email": "rksalaigt.chennai@lenskart.mobi",
+          "storeId": "LKST98"
+        },
+        {
+          "main": "LEFT WALL",
+          "fixtures": [
+            {
+              "id": "FX01",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "JJ Eye",
+              "fixtureName": "FX01 - Fixture 1 - See Through-Shelves - 4.0ft",
+              "fixtureType": "See Through-Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye TR Flex",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ X Tilak Verma",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye Rich Acetate + JJ Eye TR Flex"
+              ]
+            },
+            {
+              "id": "FX02",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "JJ Eye",
+              "fixtureName": "FX02 - Fixture 2 - See Through-Shelves - 4.0ft",
+              "fixtureType": "See Through-Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Rich Acetate",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Gilded",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "JJ Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye Metal + JJ Eye Rich Acetate"
+              ]
+            },
+            {
+              "id": "FX03",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "JJ Eye(0.5)+OD Eye(0.5)",
+              "fixtureName": "FX03 - Fixture 3 - See Through-Shelves - 4.0ft",
+              "fixtureType": "See Through-Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "OD Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "OD Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Eye + OD Eye"
+              ]
+            },
+            {
+              "id": "FX04",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "Fossil Eye",
+              "fixtureName": "FX04 - Fixture 4 - Shelves - 4.0ft",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Fossil Eye",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "Fossil Eye"
+              ]
+            },
+            {
+              "id": "FX05",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "JJ Sun",
+              "fixtureName": "FX05 - Fixture 5 - Shelves - 4.0ft",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "JJ Sun Non Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "JJ Sun Metal + JJ Sun Non Metal"
+              ]
+            }
+          ]
+        },
+        {
+          "main": "RIGHT WALL",
+          "fixtures": [
+            {
+              "id": "FX06",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "FX06 - Fixture 1 - Hybrid - 4.0ft",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Marble",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Non-Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Non-Metal"
+              ]
+            },
+            {
+              "id": "FX07",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "FX07 - Fixture 2 - Hybrid - 4.0ft",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Swaps",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "LK Air",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "LK Air"
+              ]
+            },
+            {
+              "id": "FX08",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "FX08 - Fixture 3 - Hybrid - 4.0ft",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Phonic",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Metal"
+              ]
+            },
+            {
+              "id": "FX09",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "VC Eye / LK Air",
+              "fixtureName": "FX09 - Fixture 4 - Hybrid - 4.0ft",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Half Rim",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Half Rim",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Eye Rimless",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Eye Half Rim & Rimless"
+              ]
+            },
+            {
+              "id": "FX10",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "VC Sun",
+              "fixtureName": "FX10 - Fixture 5 - Hybrid - 3.0ft",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "VC Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Summer Edit",
+                      "isMerchandisingElement": true
+                    },
+                    {
+                      "productName": "VC Sun Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "VC Sun Non Metal",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "VC Sun Metal + VC Sun Non Metal"
+              ]
+            },
+            {
+              "id": "FX11",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "Hooper",
+              "fixtureName": "FX11 - Fixture 6 - Hybrid - 4.0ft",
+              "fixtureType": "Hybrid",
+              "productZones": [
+                {
+                  "products": [
+                    {
+                      "productName": "Hooper Sun + Hustlr (Extra Narrow)",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Top",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Creatr",
+                      "isMerchandisingElement": true
+                    }
+                  ],
+                  "zoneName": "Mid",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                },
+                {
+                  "products": [
+                    {
+                      "productName": "Flexi Hooper + Unbreakable + TR Essentials + Acetates",
+                      "isMerchandisingElement": false
+                    }
+                  ],
+                  "zoneName": "Bottom",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "Hooper"
+              ]
+            },
+            {
+              "id": "FX12",
+              "floor": "",
+              "footer": "Storage Box",
+              "header": "CL",
+              "fixtureName": "FX12 -  - Shelves - ft",
+              "fixtureType": "Shelves",
+              "productZones": [
+                {
+                  "products": [],
+                  "zoneName": "",
+                  "actual_image_url": "",
+                  "preview_image_url": ""
+                }
+              ],
+              "fixtureSpacing": 0,
+              "fixtureSubname": [
+                "CL"
+              ]
+            }
+          ]
+        },
+        {
+          "main": "Entrance"
+        },
+        {
+          "main": "Cash Counter"
+        },
+        {
+          "id": "FX13",
+          "main": "Euro Center",
+          "floor": "",
+          "centerSubMain": "Tentpole",
+          "fixtureLocator": "Fixture 1",
+          "centerSuperSubMain": [
+            {
+              "name": "Harry Potter 2.0",
+              "isVisualMerchandiser": true
+            }
+          ]
+        },
+        {
+          "id": "FX14",
+          "main": "Euro Center",
+          "floor": "",
+          "centerSubMain": "JJ Eye Half Rim & Rimless",
+          "fixtureLocator": "Fixture 2",
+          "centerSuperSubMain": [
+            {
+              "name": "JJ Eye Half Rim & Rimless",
+              "isVisualMerchandiser": false
+            }
+          ]
+        },
+        {
+          "id": "FX15",
+          "main": "Euro Center",
+          "floor": "",
+          "centerSubMain": "Hustlr",
+          "fixtureLocator": "Fixture 3",
+          "centerSuperSubMain": [
+            {
+              "name": "Hustlr",
+              "isVisualMerchandiser": true
+            }
+          ]
+        },
+        {
+          "id": "FX16",
+          "main": "Euro Center",
+          "floor": "",
+          "centerSubMain": "VC Sun Non Metal",
+          "fixtureLocator": "Fixture 4",
+          "centerSuperSubMain": [
+            {
+              "name": "VC Sun Non Metal",
+              "isVisualMerchandiser": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

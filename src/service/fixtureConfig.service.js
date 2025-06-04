@@ -24,6 +24,13 @@ export async function count( query = {} ) {
   return model.fixtureConfigModel.countDocuments( query );
 }
 
+export async function upsertOne( query, record ) {
+  return model.fixtureConfigModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}
 export async function create( data = {} ) {
   return model.fixtureConfigModel.create( data );
 }
