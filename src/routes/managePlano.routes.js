@@ -1,6 +1,7 @@
 import express from 'express';
 import * as managePlanoController from '../controllers/managePlano.controller.js';
 
+import { isAllowedSessionHandler } from 'tango-app-api-middleware';
 
 export const managePlanoRouter = express.Router();
 
@@ -9,4 +10,5 @@ managePlanoRouter
     .post( '/getplanoFeedback', managePlanoController.getplanoFeedback )
     .get( '/fixtureList', managePlanoController.fixtureList )
     .get( '/templateList', managePlanoController.templateList )
-    .get( '/fixtureBrandsList', managePlanoController.fixtureBrandsList );
+    .get( '/fixtureBrandsList', managePlanoController.fixtureBrandsList )
+    .post( '/updateFixtureStatus', isAllowedSessionHandler, managePlanoController.updateFixtureStatus );

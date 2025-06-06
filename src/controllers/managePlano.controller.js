@@ -22,7 +22,6 @@ export async function getplanoFeedback( req, res ) {
     query.push( {
       $match: {
         planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-        storeId: req.body.storeId,
         floorId: new mongoose.Types.ObjectId( req.body.floorId ),
       },
     },
@@ -126,6 +125,48 @@ export async function fixtureBrandsList( req, res ) {
     res.sendSuccess( findData );
   } catch ( e ) {
     logger.error( { functionName: 'templateList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function updateFixtureStatus( req, res ) {
+  try {
+    console.log( req.body );
+
+    let comments={
+      userId: req.user._id,
+      userName: req.user.userName,
+      role: req.user.role,
+      responsetype: req.user.type,
+      comment: req.body.comments,
+    };
+    console.log( comments );
+    // return;
+    let updateResponse = await planoTaskService.updateOnefilters(
+        { _id: new mongoose.Types.ObjectId( req.body._id ) },
+        {
+          $set: { 'answers.$[ans].issues.$[iss].Details.$[det].status': 'completed' },
+        },
+        [
+          { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+          { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+          { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
+
+        ] );
+    let updatecomment = await planoTaskService.updateOnefilters(
+        { _id: new mongoose.Types.ObjectId( req.body._id ) },
+        {
+          $push: { 'answers.$[ans].issues.$[iss].Details.$[det].comments': comments },
+        },
+        [
+          { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+          { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+          { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
+
+        ] );
+    console.log( updateResponse, updatecomment );
+    res.sendSuccess( 'updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateFixtureStatus', error: e } );
     return res.sendError( e, 500 );
   }
 }

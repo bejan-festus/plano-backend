@@ -536,10 +536,11 @@ export async function updateAnswers( req, res ) {
 export async function updateAnswersv2( req, res ) {
   try {
     let taskDetails = await processedService.findOne( { date_string: dayjs().format( 'YYYY-MM-DD' ), userId: req.user._id, isPlano: true, planoType: 'layout' } );
+    console.log( taskDetails );
     let data = {
       fixtureId: req.body.fixtureId,
       answers: req.body.answers,
-      status: req.body.answers?.find( ( ans ) => typeof ans.answer == 'boolean' && ans?.answer == false ) ? 'incomplete' : 'complete',
+      status: req.body.status,
       planoId: req.body.planoId,
       floorId: req.body.floorId,
       type: req.body.type,
