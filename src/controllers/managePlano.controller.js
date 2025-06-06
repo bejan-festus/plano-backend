@@ -8,9 +8,12 @@
 // import * as planoMappingService from '../service/planoMapping.service.js';
 // import * as planoTaskService from '../service/planoTask.service.js';
 // import * as processedTaskService from '../service/processedTaskservice.js';
-// import * as fixtureConfigService from '../service/fixtureConfig.service.js';
-// import * as fixtureLibraryService from '../service/planoLibrary.service.js';
+import * as planoproductCategoryService from '../service/planoproductCategory.service.js';
+import * as fixtureConfigService from '../service/fixtureConfig.service.js';
+import * as fixtureLibraryService from '../service/planoLibrary.service.js';
 import * as planoTaskService from '../service/planoTask.service.js';
+import { logger } from 'tango-app-api-middleware';
+import mongoose from 'mongoose';
 export async function getplanoFeedback( req, res ) {
   try {
     let query = [];
@@ -19,7 +22,6 @@ export async function getplanoFeedback( req, res ) {
     query.push( {
       $match: {
         planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-        storeId: req.body.storeId,
         floorId: new mongoose.Types.ObjectId( req.body.floorId ),
       },
     },
@@ -67,8 +69,11 @@ export async function getplanoFeedback( req, res ) {
         ],
         as: 'FixtureData',
       },
-
-    }, { $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true } } );
+    },
+    {
+      $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true },
+    },
+    );
 
 
     let findPlanoCompliance = await planoTaskService.aggregate( query );
@@ -84,6 +89,84 @@ export async function updateStorePlano( req, res ) {
     console.log( 'reached' );
   } catch ( e ) {
     logger.error( { functionName: 'updateStorePlano', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function fixtureList( req, res ) {
+  try {
+    let findData = await fixtureLibraryService.find( { clientId: req.query.clientId } );
+    if ( findData.length === 0 ) {
+      return res.sendError( 'nodata found', 204 );
+    }
+    res.sendSuccess( findData );
+  } catch ( e ) {
+    logger.error( { functionName: 'fixtureList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function templateList( req, res ) {
+  try {
+    let findData = await fixtureConfigService.find( { clientId: req.query.clientId, fixtureLibraryId: new mongoose.Types.ObjectId( req.query.fixtureId ) } );
+    if ( findData.length === 0 ) {
+      return res.sendError( 'nodata found', 204 );
+    }
+    res.sendSuccess( findData );
+  } catch ( e ) {
+    logger.error( { functionName: 'templateList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function fixtureBrandsList( req, res ) {
+  try {
+    let findData = await planoproductCategoryService.find( { clientId: req.query.clientId } );
+    if ( findData.length === 0 ) {
+      return res.sendError( 'nodata found', 204 );
+    }
+    res.sendSuccess( findData );
+  } catch ( e ) {
+    logger.error( { functionName: 'templateList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function updateFixtureStatus( req, res ) {
+  try {
+    console.log( req.body );
+
+    let comments={
+      userId: req.user._id,
+      userName: req.user.userName,
+      role: req.user.role,
+      responsetype: req.user.type,
+      comment: req.body.comments,
+    };
+    console.log( comments );
+    // return;
+    let updateResponse = await planoTaskService.updateOnefilters(
+        { _id: new mongoose.Types.ObjectId( req.body._id ) },
+        {
+          $set: { 'answers.$[ans].issues.$[iss].Details.$[det].status': 'completed' },
+        },
+        [
+          { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+          { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+          { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
+
+        ] );
+    let updatecomment = await planoTaskService.updateOnefilters(
+        { _id: new mongoose.Types.ObjectId( req.body._id ) },
+        {
+          $push: { 'answers.$[ans].issues.$[iss].Details.$[det].comments': comments },
+        },
+        [
+          { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+          { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+          { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
+
+        ] );
+    console.log( updateResponse, updatecomment );
+    res.sendSuccess( 'updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateFixtureStatus', error: e } );
     return res.sendError( e, 500 );
   }
 }
