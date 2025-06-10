@@ -11,6 +11,7 @@ storeBuilderTaskRouter
     .post( '/uploadImage', isAllowedSessionHandler, taskController.uploadImage )
     .post( '/updateStatus', isAllowedSessionHandler, taskController.updateStatus )
     .post( '/updateAnswers', isAllowedSessionHandler, taskController.updateAnswers )
+    .post( '/updateAnswersv2', isAllowedSessionHandler, taskController.updateAnswersv2 )
     .get( '/getFixtureDetails', isAllowedSessionHandler, taskController.getFixtureDetails )
     .get( '/getVmDetails', isAllowedSessionHandler, taskController.getVmDetails )
     .post( '/generateTaskExcel', taskController.generatetaskDetails )

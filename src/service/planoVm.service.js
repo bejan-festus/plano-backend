@@ -15,9 +15,15 @@ export async function insertMany( data ) {
   return model.planoVmModel.insertMany( data );
 }
 
+export async function deleteMany( data ) {
+  return model.planoVmModel.deleteMany( data );
+}
+
+
 export async function aggregate( query ) {
   return model.planoVmModel.aggregate( query );
 }
+
 
 export async function deleteOne( query ) {
   return model.planoVmModel.deleteOne( query );
@@ -27,6 +33,13 @@ export async function create( data ) {
   return model.planoVmModel.create( data );
 }
 
+export async function upsertOne( query, record ) {
+  return model.planoVmModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}
 export async function updateOne( query, record ) {
   return model.planoVmModel.updateOne( query, { $set: record }, { upsert: true } );
 }
