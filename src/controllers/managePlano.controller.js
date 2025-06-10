@@ -4,7 +4,7 @@
 // import * as storeFixtureService from '../service/storeFixture.service.js';
 // import * as fixtureShelfService from '../service/fixtureShelf.service.js';
 // import * as planoProductService from '../service/planoProduct.service.js';
-// import * as planoVmService from '../service/planoVm.service.js';
+import * as planoVmService from '../service/planoVm.service.js';
 // import * as planoMappingService from '../service/planoMapping.service.js';
 // import * as planoTaskService from '../service/planoTask.service.js';
 // import * as processedTaskService from '../service/processedTaskservice.js';
@@ -175,7 +175,20 @@ export async function fixtureBrandsList( req, res ) {
     }
     res.sendSuccess( findData );
   } catch ( e ) {
-    logger.error( { functionName: 'templateList', error: e } );
+    logger.error( { functionName: 'fixtureBrandsList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function fixtureVMList( req, res ) {
+  try {
+    let findData = await planoVmService.find( { clientId: req.query.clientId } );
+    if ( findData.length === 0 ) {
+      return res.sendError( 'nodata found', 204 );
+    }
+    res.sendSuccess( findData );
+  } catch ( e ) {
+    logger.error( { functionName: 'fixtureVMList', error: e } );
     return res.sendError( e, 500 );
   }
 }
