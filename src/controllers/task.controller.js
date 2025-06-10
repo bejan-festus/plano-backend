@@ -250,6 +250,7 @@ export async function createTask( req, res ) {
             taskData.userName = userDetails.userName;
             taskData.userEmail = userDetails.email;
             taskData.planoId = planoDetails?._id;
+            console.log( taskData );
             for ( let i=0; i<req.body.days; i++ ) {
               let currDate = dayjs().add( i, 'day' );
               let insertData = { ...taskData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 12:00 AM`, 'YYYY-MM-DD hh:mm A' ).format() };
@@ -533,10 +534,11 @@ export async function updateAnswers( req, res ) {
 export async function updateAnswersv2( req, res ) {
   try {
     let taskDetails = await processedService.findOne( { date_string: dayjs().format( 'YYYY-MM-DD' ), userId: req.user._id, isPlano: true, planoType: 'layout' } );
+    console.log( taskDetails );
     let data = {
       fixtureId: req.body.fixtureId,
       answers: req.body.answers,
-      status: req.body.answers?.find( ( ans ) => typeof ans.answer == 'boolean' && ans?.answer == false ) ? 'incomplete' : 'complete',
+      status: req.body.status,
       planoId: req.body.planoId,
       floorId: req.body.floorId,
       type: req.body.type,
