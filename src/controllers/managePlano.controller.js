@@ -23,6 +23,57 @@ export async function getplanoFeedback( req, res ) {
       $match: {
         planoId: new mongoose.Types.ObjectId( req.body.planoId ),
         floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+        type: 'layout',
+      },
+    },
+    {
+      $lookup: {
+        from: 'processedtasks',
+        let: { 'taskId': '$taskId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$taskId' ] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              'userName': 1,
+              'createdAt': 1,
+              'createdByName': 1,
+              'submitTime_string': 1,
+            },
+          },
+        ],
+        as: 'taskData',
+      },
+
+    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
+    );
+
+
+    let findPlanoCompliance = await planoTaskService.aggregate( query );
+
+    res.sendSuccess( findPlanoCompliance );
+  } catch ( e ) {
+    logger.error( { functionName: 'getplanoFeedback', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function getStoreFixturesfeedback( req, res ) {
+  try {
+    let query = [];
+
+
+    query.push( {
+      $match: {
+        planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+        floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+        type: { $ne: 'layout' },
       },
     },
     {
@@ -77,10 +128,10 @@ export async function getplanoFeedback( req, res ) {
 
 
     let findPlanoCompliance = await planoTaskService.aggregate( query );
-    console.log( findPlanoCompliance );
-    res.sendSuccess( findPlanoCompliance );
+    console.log( findPlanoCompliance.length );
+    res.sendSuccess( { count: findPlanoCompliance.length, data: findPlanoCompliance } );
   } catch ( e ) {
-    logger.error( { functionName: 'getplanoFeedback', error: e, message: req.body } );
+    logger.error( { functionName: 'getplanoFeedbackFixture', error: e, message: req.body } );
     return res.sendError( e, 500 );
   }
 }
