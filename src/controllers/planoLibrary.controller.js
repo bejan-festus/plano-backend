@@ -9,6 +9,7 @@ import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as planoService from '../service/planogram.service.js';
 import ExcelJS from 'exceljs';
 import mongoose from 'mongoose';
+import dayjs from 'dayjs';
 const ObjectId = mongoose.Types.ObjectId;
 import path from 'path';
 
@@ -610,7 +611,7 @@ export async function getFixLibWidth( req, res ) {
       return res.sendError( 'No data content', 204 );
     }
 
-    getLibDetails = getLibDetails.map( ( item ) => item.fixtureWidth.value +' '+item.fixtureWidth.unit );
+    getLibDetails = [ ...new Set( getLibDetails.map( ( item ) => item.fixtureWidth.value ) ) ];
     return res.sendSuccess( getLibDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getFixLibWidth', error: e } );
@@ -725,8 +726,79 @@ export async function deletevmTypeImage( req, res ) {
 
 export async function getBrandList( req, res ) {
   try {
-    let getBrandDetails = await planoProductService.find( { clientId: req.query.clientId }, { createdAt: 0, updatedAt: 0 } );
-    return res.sendSuccess( getBrandDetails );
+    let getBrandDetails = await planoProductService.find( { clientId: req.body.clientId }, { createdAt: 0, updatedAt: 0 } );
+
+    getBrandDetails = await Promise.all( getBrandDetails.map( async ( ele ) => {
+      ele = { ...ele.toObject(), isUsed: false };
+      let mappedDetails = await vmService.findOne( { vmBrand: ele.brandName } );
+      if ( mappedDetails ) {
+        ele.isUsed = true;
+      }
+      return ele;
+    } ) );
+    if ( !req?.body?.export ) {
+      return res.sendSuccess( getBrandDetails );
+    } else {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet( 'Brand Details' );
+
+      sheet.getRow( 1 ).values = [ 'Brand Name', 'Brand Category', 'Brand SubCategory' ];
+
+      let rowStart = 2;
+      let lockedRowNumber = [];
+      if ( req.body.emptyDownload ) {
+        getBrandDetails = [];
+      }
+      getBrandDetails.forEach( ( ele ) => {
+        sheet.getRow( rowStart ).values = [ ele.brandName, ele.category.toString(), ele.subCategory.toString() ];
+        if ( ele.isUsed ) {
+          lockedRowNumber.push( rowStart );
+        }
+        rowStart = rowStart + 1;
+      } );
+
+      let unlockCellValues = 20000;
+      let splitLoop = [];
+
+      for ( let i=1; i<=unlockCellValues; i+=2000 ) {
+        splitLoop.push( { start: i, end: i + 1999 } );
+      }
+
+      await Promise.all( splitLoop.map( ( item ) => {
+        for ( let i=item.start; i<=item.end; i++ ) {
+          const row = sheet.getRow( i );
+          if ( i > rowStart - 1 ) {
+            row.values = [ '', '', '', '', '', '', '', '', '', '' ];
+          }
+          if ( !lockedRowNumber.includes( i ) && i != 1 ) {
+            row.eachCell( ( cell ) => {
+              cell.protection = { locked: false };
+            } );
+          }
+        }
+      } ) );
+
+      await sheet.protect( 'password123', {
+        selectLockedCells: false,
+        selectUnlockedCells: true,
+      } );
+
+      sheet.columns.forEach( ( column ) => {
+        let maxLength = 10;
+        column.eachCell( { includeEmpty: true }, ( cell ) => {
+          const cellValue = cell.value ? cell.value.toString() : '';
+          if ( cellValue.length > maxLength ) {
+            maxLength = cellValue.length;
+          }
+        } );
+        column.width = maxLength + 2;
+      } );
+      const buffer = await workbook.xlsx.writeBuffer();
+      res.setHeader( 'Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
+      res.setHeader( 'Content-Disposition', 'attachment; filename="Brand Details.xlsx"' );
+
+      return res.send( buffer );
+    }
   } catch ( e ) {
     logger.error( { functionName: 'getBrandList', error: e } );
     return res.sendError( e, 500 );
@@ -736,12 +808,20 @@ export async function getBrandList( req, res ) {
 export async function addUpdateBrandList( req, res ) {
   try {
     let inputData = req.body;
-    let checkBrandExists = await planoProductService.findOne( { brandName: inputData.brandName.trim(), ...( inputData?.brandId ) ? { _id: { $ne: req.params._id } } : {} } );
-    if ( checkBrandExists ) {
-      return res.sendError( 'Brand Name already Exists', 400 );
-    }
-    inputData.brandName = inputData.brandName.trim();
-    await planoProductService.updateOne( { clientId: inputData.clientId, ...( inputData?.brandId ) ? { _id: { $ne: req.params._id } } : { brandName: inputData.brandName } }, inputData );
+    inputData.brandUsedList = inputData.brandUsedList.map( ( ele ) => new ObjectId( ele ) );
+    let brandData = [];
+    inputData.brandData.forEach( ( ele ) => {
+      if ( !ele?.isUsed ) {
+        brandData.push( {
+          clientId: inputData.clientId,
+          brandName: ele.brand,
+          category: [ ...new Set( ele.category ) ],
+          subCategory: [ ...new Set( ele.subCategory ) ],
+        } );
+      }
+    } );
+    await planoProductService.deleteMany( { clientId: inputData.clientId, _id: { $nin: inputData.brandUsedList } } );
+    await planoProductService.insertMany( brandData );
     return res.sendSuccess( 'Brand Details updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'addBrandList', error: e } );
@@ -758,8 +838,8 @@ export async function uploadBrandList( req, res ) {
         acc[ele.brandName] = {
           brandName: ele.brandName,
           clientId: inputData.clientId,
-          category: ele.category,
-          subCategory: ele.subCategory,
+          category: [ ...new Set( ele.category ) ],
+          subCategory: [ ...new Set( ele.subCategory ) ],
         };
       } else {
         acc[ele.brandName].category.push( ...ele.category );
@@ -768,10 +848,11 @@ export async function uploadBrandList( req, res ) {
       return acc;
     }, {} );
 
-
-    await Promise.all( Object.keys( brandData ).map( async ( ele ) => {
-      await planoProductService.updateOne( { brandName: brandData[ele].brandName, clientId: req.body.clientId }, brandData[ele] );
-    } ) );
+    await planoProductService.deleteMany( { clientId: inputData.clientId, _id: { $nin: inputData.brandUsedList } } );
+    await planoProductService.insertMany( brandData );
+    // await Promise.all( Object.keys( brandData ).map( async ( ele ) => {
+    //   await planoProductService.updateOne( { brandName: { $regex: brandData[ele].brandName, $options: 'i' }, clientId: req.body.clientId }, brandData[ele] );
+    // } ) );
     return res.sendSuccess( 'Brand details upload successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'uploadBrandList', error: e } );
@@ -785,6 +866,8 @@ export async function getTaskConfig( req, res ) {
     if ( !taskConfigDetails ) {
       return res.sendError( 'No data found', 204 );
     }
+    taskConfigDetails = { ...taskConfigDetails.toObject() };
+    taskConfigDetails.dueTime = dayjs( taskConfigDetails.dueTime, 'hh:mm A' ).format( 'HH:mm' );
     return res.sendSuccess( taskConfigDetails );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskConfig', error: e } );
@@ -796,6 +879,7 @@ export async function updateTaskConfig( req, res ) {
   try {
     let inputData = req.body;
     inputData.type = 'task';
+    inputData.dueTime = dayjs( inputData.dueTime, 'HH:mm' ).format( 'hh:mm A' );
     await planoStaticService.updateOne( { clientId: req.body.clientId, type: 'task' }, inputData );
     return res.sendSuccess( 'Task config updated successfully' );
   } catch ( e ) {
@@ -954,6 +1038,7 @@ export async function getVmLibList( req, res ) {
           vmLibCode: 1,
           vmSubCategory: 1,
           planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
+          templateCount: { $size: '$templateId' },
         },
       },
       {
@@ -995,6 +1080,7 @@ export async function getVmLibList( req, res ) {
           vmLibCode: 1,
           vmSubCategory: 1,
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
+          templateCount: 1,
           status: {
             $cond: {
               if: { $and: [ { $in: [ 'completed', { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] } ] }, { $gt: [ { $size: '$templateId' }, 0 ] } ] },

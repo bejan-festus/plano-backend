@@ -235,10 +235,13 @@ export async function getTemplateList( req, res ) {
       { fixtureName: { $regex: req.body.searchValue, $options: 'i' } } :
       {} ),
       ...( req.body?.filter?.brand?.length ?
-      { productBrandName: { $in: req.body.filter.brand } } :
+      { $or: [
+        { 'productBrandName': { $in: req.body.filter.brand } },
+        { 'shelfConfig.productBrandName': { $in: req.body.filter.brand } },
+      ] } :
       {} ),
       ...( req.body?.filter?.category?.length ?
-      { productCategory: { $in: req.body.filter.category } } :
+      { fixtureCategory: { $in: req.body.filter.category } } :
       {} ),
       ...( req.body?.filter?.subCategory?.length ?
       { productSubCategory: { $in: req.body.subCategory.category } } :
