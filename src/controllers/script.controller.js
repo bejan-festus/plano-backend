@@ -2322,12 +2322,12 @@ export async function updateVmData( req, res ) {
 }
 
 
-// async function scrapeCrest() {
-//   const storeIds = [ 'LKST682' ];
-//   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4ODUwMzMyLCJpYXQiOjE3NDg4NDY3MzIsImp0aSI6ImNkNmRmNWZhYTg4ZDRmMjQ4YmZkYzFkMzkzZWYzMTg5IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.8fclGcH6koHsKVmtGAQLscS80yNaVqPRkcpLhI3cnsk';
-//   const filePath = 'response.json';
-//   let allResults = [];
+async function scrapeCrest() {
+  const storeIds = [ 'LKST2566' ];
+  const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
+  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MDIyMjc4LCJpYXQiOjE3NDkwMTg2NzgsImp0aSI6ImYwZjY3OGU2NDliZTRhZGU4ZTY4MGNhMGM3YmUxOWJhIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.eqMyUVVB4lvBLy_YXbPBLE8fbGTvTjGkrVw9Hi0HJMI';
+  const filePath = 'response.json';
+  let allResults = [];
 
 //   if ( fs.existsSync( filePath ) ) {
 //     try {
