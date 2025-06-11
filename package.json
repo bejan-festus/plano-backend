@@ -1,50 +1,49 @@
 {
-    "name": "tango-app-api-store-builder",
-    "version": "1.0.0-beta-98",
-    "description": "storeBuilder",
-    "main": "index.js",
-    "type": "module",
-    "scripts": {
-        "start": "nodemon --exec \"eslint --fix . && node index.js\""
-    },
-    "engines": {
-        "node": ">=18.10.0"
-    },
-    "author": "praveenraj",
-    "license": "ISC",
-    "dependencies": {
-        "aws-sdk": "^2.1692.0",
-        "chromedriver": "^135.0.1",
-        "cors": "^2.8.5",
-        "dayjs": "^1.11.13",
-        "dotenv": "^16.4.7",
-        "exceljs": "^4.4.0",
-        "express": "^4.21.2",
-        "express-fileupload": "^1.5.1",
-        "fetch-cookie": "^3.1.0",
-        "handlebars": "^4.7.8",
-        "joi": "^17.13.3",
-        "jszip": "^3.10.1",
-        "mongodb": "^6.12.0",
-        "node-fetch": "^2.7.0",
-        "nodemon": "^3.1.9",
-        "os": "^0.1.2",
-        "path": "^0.12.7",
-        "selenium-webdriver": "^4.31.0",
-        "sharp": "^0.34.1",
-        "tango-api-schema": "^2.2.145",
-        "tango-app-api-middleware": "^3.1.48",
-        "url": "^0.11.4",
-        "winston": "^3.17.0",
-        "winston-daily-rotate-file": "^5.0.0",
-        "xlsx": "^0.18.5"
-    },
-    "devDependencies": {
-        "eslint": "^8.57.1",
-        "eslint-config-google": "^0.14.0",
-        "eslint-config-semistandard": "^17.0.0",
-        "eslint-config-standard": "^17.1.0",
-        "eslint-plugin-import": "^2.31.0",
-        "eslint-plugin-promise": "^6.6.0"
-    }
+  "name": "tango-app-api-store-builder",
+  "version": "1.0.0-beta-110",
+  "description": "storeBuilder",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon --exec \"eslint --fix . && node index.js\""
+  },
+  "engines": {
+    "node": ">=18.10.0"
+  },
+  "author": "praveenraj",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "chromedriver": "^135.0.1",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "express-fileupload": "^1.5.1",
+    "fetch-cookie": "^3.1.0",
+    "handlebars": "^4.7.8",
+    "joi": "^17.13.3",
+    "jszip": "^3.10.1",
+    "node-fetch": "^2.7.0",
+    "nodemon": "^3.1.9",
+    "os": "^0.1.2",
+    "path": "^0.12.7",
+    "selenium-webdriver": "^4.31.0",
+    "sharp": "^0.34.1",
+    "tango-api-schema": "^3.0.3",
+    "tango-app-api-middleware": "^3.1.82",
+    "url": "^0.11.4",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-semistandard": "^17.0.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-promise": "^6.6.0"
+  }
 }
