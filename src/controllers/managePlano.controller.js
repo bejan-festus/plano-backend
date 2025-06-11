@@ -57,8 +57,70 @@ export async function getplanoFeedback( req, res ) {
 
 
     let findPlanoCompliance = await planoTaskService.aggregate( query );
+    let queryfixture = [];
 
-    res.sendSuccess( findPlanoCompliance );
+
+    queryfixture.push( {
+      $match: {
+        planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+        floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+        type: { $ne: 'layout' },
+      },
+    },
+    {
+      $lookup: {
+        from: 'processedtasks',
+        let: { 'taskId': '$taskId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$taskId' ] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              'userName': 1,
+              'createdAt': 1,
+              'createdByName': 1,
+              'submitTime_string': 1,
+            },
+          },
+        ],
+        as: 'taskData',
+      },
+
+    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: 'fixtureconfigs',
+        let: { 'fixtureId': '$fixtureId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$fixtureId' ] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'FixtureData',
+      },
+    },
+    {
+      $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true },
+    },
+    );
+
+
+    let findfixtureCompliance = await planoTaskService.aggregate( queryfixture );
+    console.log( findfixtureCompliance );
+    res.sendSuccess( { count: findfixtureCompliance.length, layoutData: findPlanoCompliance, fixtureData: findfixtureCompliance } );
   } catch ( e ) {
     logger.error( { functionName: 'getplanoFeedback', error: e, message: req.body } );
     return res.sendError( e, 500 );
@@ -196,7 +258,7 @@ export async function updateFixtureStatus( req, res ) {
   try {
     console.log( req.body );
 
-    let comments={
+    let comments = {
       userId: req.user._id,
       userName: req.user.userName,
       role: req.user.role,
