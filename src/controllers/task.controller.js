@@ -525,9 +525,6 @@ export async function updateAnswers( req, res ) {
     };
 
     await planoTaskService.updateOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
-    // req.body.taskId = taskDetails?._id;
-    // req.body.status = 'submit';
-    // await updateStatus( req, res );
     return res.sendSuccess( 'Fixture details updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateAnswers', error: e } );
@@ -673,26 +670,44 @@ export async function generatetaskDetails( req, res ) {
           userEmail: { $nin: [ 'sandeep.pal@yopmail.com', 'balaji@tangotech.co.in', 'gowri@tangotech.co.in', 'gowri@yopmail.com' ] },
         },
       },
-      {
-        $lookup: {
-          from: 'checklistassignconfigs',
-          let: { storeId: '$store_id', email: '$userEmail' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: [ '$checkListId', new ObjectId( '6789e3c7a5683c58215ec089' ) ] },
-                    { $eq: [ '$store_id', '$$storeId' ] },
-                    { $eq: [ '$userEmail', '$$email' ] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'assignUser',
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: '$planogram',
+      //     let: { plano: '$planoId' },
+      //     pipeline: [
+      //       {
+      //         $match: {
+      //           $expr: {
+      //             $and: {
+      //               $eq: [ '$_id', '$$plano' ],
+      //             },
+      //           },
+      //         },
+      //       },
+      //     ],
+      //     as: 'planogram',
+      //   },
+      // },
+      // {
+      //   $lookup: {
+      //     from: 'checklistassignconfigs',
+      //     let: { storeId: '$store_id', email: '$userEmail' },
+      //     pipeline: [
+      //       {
+      //         $match: {
+      //           $expr: {
+      //             $and: [
+      //               // { $eq: [ '$checkListId', new ObjectId( '6789e3c7a5683c58215ec089' ) ] },
+      //               { $eq: [ '$store_id', '$$storeId' ] },
+      //               { $eq: [ '$userEmail', '$$email' ] },
+      //             ],
+      //           },
+      //         },
+      //       },
+      //     ],
+      //     as: 'assignUser',
+      //   },
+      // },
       {
         $project: {
           _id: 1,
@@ -717,7 +732,7 @@ export async function generatetaskDetails( req, res ) {
           _id: '$planoId',
           count: { $sum: 1 },
           storeName: { $first: '$storeName' },
-          taskId: { $last: '$_id' },
+          taskId: { $push: '$_id' },
           checklistStatus: { $push: '$checklistStatus' },
           date_string: { $push: '$date_string' },
         },
@@ -735,10 +750,26 @@ export async function generatetaskDetails( req, res ) {
       },
     ];
     let taskDetails = await processedService.aggregate( query );
-    console.log( taskDetails.map( ( ele ) => ele.taskId ) );
-    let processedTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.fromDate, $lte: req.body.toDate }, type: 'layout', ...( req.body.store.length ) ? { storeName: { $in: req.body.store } } : {}, taskId: { $in: taskDetails.map( ( ele ) => ele.taskId ) } }, { status: 1, planoId: 1, date_string: 1, _id: 0, taskId: 1 } );
+    console.log( taskDetails.flatMap( ( ele ) => ele.taskId ) );
+    // ...( req.body.store.length ) ? { storeName: { $in: req.body.store } } : {}, taskId: { $in: taskDetails.flatMap( ( ele ) => ele.taskId ) } },
+    let processedTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.fromDate, $lte: req.body.toDate }, type: 'layout' }, { status: 1, planoId: 1, date_string: 1, _id: 0, taskId: 1 } );
+    console.log( processedTaskDetails.length );
+
+    processedTaskDetails = await Promise.all( processedTaskDetails.map( async ( ele ) => {
+      ele = { ...ele.toObject(), storeName: '' };
+      if ( ele.planoId ) {
+        let planoDetails = await planoService.findOne( { _id: ele.planoId }, { storeName: 1 } );
+        console.log( planoDetails );
+        if ( planoDetails ) {
+          ele.storeName = planoDetails.storeName;
+        }
+      }
+      return ele;
+    } ) );
+
     processedTaskDetails.forEach( ( item ) => {
       let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus.includes( 'submit' ) && taskItem.date_string.includes( item.date_string ) && item.planoId.toString() == taskItem.planoId.toString() );
+      console.log( taskIndex, 'index' );
       if ( taskIndex != -1 ) {
         taskDetails[taskIndex].storeStatus = item.status == 'complete' ? 'yes' : 'No';
       }
@@ -787,8 +818,10 @@ export async function generatetaskDetails( req, res ) {
     }
 
     let data = [ ...completeStore, ...incompleteStore ];
+    let yesCount = completeStore.filter( ( ele ) => ele.storeStatus == 'yes' );
+    let noCount = completeStore.filter( ( ele ) => ele.storeStatus == 'No' );
 
-    return res.sendSuccess( { count: data.length, completeStore: completeStore.length, incompleteStore: incompleteStore.length, data } );
+    return res.sendSuccess( { count: data.length, completeStore: completeStore.length, incompleteStore: incompleteStore.length, yesCount: yesCount.length, noCount: noCount.length, data } );
   } catch ( e ) {
     console.log( e );
     logger.error( { functioName: 'generatetaskDetails', error: e } );

@@ -24,7 +24,7 @@ planoLibraryRouter
     .post( '/deleteVmTypeImage', isAllowedSessionHandler, validate( validateDtos.deleteVMTypeImage ), planoLibraryController.deletevmTypeImage );
 
 planoLibraryRouter
-    .get( '/getBrandList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.getBrandList )
+    .post( '/getBrandList', isAllowedSessionHandler, validate( validateDtos.brandDetails ), planoLibraryController.getBrandList )
     .post( '/addUpdateBrand', isAllowedSessionHandler, validate( validateDtos.addUpdateBrand ), planoLibraryController.addUpdateBrandList )
     .post( '/uploadBrandList', isAllowedSessionHandler, validate( validateDtos.uploadBrandList ), planoLibraryController.uploadBrandList )
     .post( '/updateTaskconfig', isAllowedSessionHandler, validate( validateDtos.updateTaskConfig ), planoLibraryController.updateTaskConfig )
