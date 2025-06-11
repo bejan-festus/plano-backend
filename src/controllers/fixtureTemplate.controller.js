@@ -41,6 +41,14 @@ export async function createTemplate( req, res ) {
       footer: getLibDetails.footer,
       isBodyEnabled: getLibDetails.isBodyEnabled,
       fixtureCapacity: fixtureCapacity,
+      fixtureStaticLength: {
+        value: 1524,
+        unit: 'mm',
+      },
+      fixtureStaticWidth: {
+        value: 1220,
+        unit: 'mm',
+      },
     };
     let fixtureData = await fixtureConfigService.create( templateData );
     return res.sendSuccess( { message: 'Fixture template created successfully', fixtureData } );
