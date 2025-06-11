@@ -6,6 +6,7 @@ import * as planoService from '../service/planogram.service.js';
 import * as storeService from '../service/store.service.js';
 import * as processedTaskService from '../service/processedTaskservice.js';
 import * as fixtureShelfService from '../service/fixtureShelf.service.js';
+import * as vmService from '../service/planoVm.service.js';
 import { createTask } from './task.controller.js';
 import mongoose from 'mongoose';
 import dayjs from 'dayjs';
@@ -191,6 +192,14 @@ export async function getTemplateDetails( req, res ) {
         },
       },
     ];
+    templateDetails = templateDetails.toObject();
+    templateDetails.vmConfig = await Promise.all( templateDetails.vmConfig.map( async ( vm ) => {
+      let vmDetails = await vmService.findOne( { _id: vm.vmId } );
+      if ( vmDetails ) {
+        vm = { ...vm, ...vmDetails.toObject() };
+        return vm;
+      }
+    } ) );
     let mappedStoreList = await storeFixtureService.aggregate( query );
     let storeList = mappedStoreList?.[0]?.store || [];
     let storeDetails = await storeService.find( { clientId: templateDetails.clientId, storeName: { $in: storeList } }, { storeName: 1, storeId: 1, spocDetails: 1 } );
@@ -202,7 +211,7 @@ export async function getTemplateDetails( req, res ) {
       templateDetails.status = planoDetails.includes( 'completed' ) ? 'active' : 'inactive';
     }
     let data = {
-      ...templateDetails.toObject(),
+      ...templateDetails,
       store: storeDetails.map( ( ele ) => {
         return { storeName: ele.storeName, storeId: ele.storeId, userEmail: ele?.spocDetails?.[0]?.email };
       } ),
@@ -226,10 +235,13 @@ export async function getTemplateList( req, res ) {
       { fixtureName: { $regex: req.body.searchValue, $options: 'i' } } :
       {} ),
       ...( req.body?.filter?.brand?.length ?
-      { productBrandName: { $in: req.body.filter.brand } } :
+      { $or: [
+        { 'productBrandName': { $in: req.body.filter.brand } },
+        { 'shelfConfig.productBrandName': { $in: req.body.filter.brand } },
+      ] } :
       {} ),
       ...( req.body?.filter?.category?.length ?
-      { productCategory: { $in: req.body.filter.category } } :
+      { fixtureCategory: { $in: req.body.filter.category } } :
       {} ),
       ...( req.body?.filter?.subCategory?.length ?
       { productSubCategory: { $in: req.body.subCategory.category } } :
