@@ -168,6 +168,16 @@ export const getClient = {
   query: getClientSchema,
 };
 
+export const brandSchema = joi.object( {
+  clientId: joi.string().required(),
+  export: joi.boolean().optional(),
+  emptyDownload: joi.boolean().optional(),
+} );
+
+export const brandDetails ={
+  body: brandSchema,
+};
+
 export const deleteVMTypeImageSchema = joi.object( {
   vmId: joi.string().required(),
   index: joi.number().required(),
@@ -211,10 +221,8 @@ export const fixtureBulkUpload = {
 
 export const addUpdateBrandSchema = joi.object( {
   clientId: joi.string().required(),
-  brandId: joi.string().optional(),
-  brandName: joi.string().required(),
-  subCategory: joi.array().items( joi.any() ).min( 0 ).required(),
-  category: joi.array().items( joi.any() ).min( 1 ).required(),
+  brandUsedList: joi.array().items( joi.any() ).min( 0 ).required(),
+  brandData: joi.array().items( joi.any() ).min( 1 ).required(),
 } );
 
 export const addUpdateBrand = {

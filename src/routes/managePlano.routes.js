@@ -8,7 +8,9 @@ export const managePlanoRouter = express.Router();
 managePlanoRouter
     .post( '/updateStorePlano', managePlanoController.updateStorePlano )
     .post( '/getplanoFeedback', managePlanoController.getplanoFeedback )
+    .post( '/getStoreFixturesfeedback', managePlanoController.getStoreFixturesfeedback )
     .get( '/fixtureList', managePlanoController.fixtureList )
     .get( '/templateList', managePlanoController.templateList )
     .get( '/fixtureBrandsList', managePlanoController.fixtureBrandsList )
+    .get( '/fixtureVMList', managePlanoController.fixtureVMList )
     .post( '/updateFixtureStatus', isAllowedSessionHandler, managePlanoController.updateFixtureStatus );
