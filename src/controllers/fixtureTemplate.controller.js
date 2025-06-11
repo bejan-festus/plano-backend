@@ -23,7 +23,7 @@ export async function createTemplate( req, res ) {
       return res.sendError( 'Fixture library id is wrong', 400 );
     }
     let fixtureCapacity = getLibDetails.shelfConfig.reduce(
-        ( acc, ele ) => acc + ele.productPerShelf,
+        ( acc, ele ) => ele.trayRows ? acc + ( ele.trayRows * ele.productPerShelf ) : ( acc + ele.productPerShelf ),
         0,
     );
     let templateId = await getTemplateId();
