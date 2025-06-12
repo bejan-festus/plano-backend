@@ -2328,56 +2328,56 @@ export async function updateVmData( req, res ) {
 //   const filePath = 'response.json';
 //   let allResults = [];
 
-  //   if ( fs.existsSync( filePath ) ) {
-  //     try {
-  //       const existingData = fs.readFileSync( filePath, 'utf8' );
-  //       allResults = JSON.parse( existingData );
-  //       if ( !Array.isArray( allResults ) ) {
-  //         allResults = [];
-  //       }
-  //     } catch ( error ) {
-  //       console.error( 'Error reading existing JSON file:', error.message );
-  //       allResults = [];
-  //     }
-  //   }
+//   if ( fs.existsSync( filePath ) ) {
+//     try {
+//       const existingData = fs.readFileSync( filePath, 'utf8' );
+//       allResults = JSON.parse( existingData );
+//       if ( !Array.isArray( allResults ) ) {
+//         allResults = [];
+//       }
+//     } catch ( error ) {
+//       console.error( 'Error reading existing JSON file:', error.message );
+//       allResults = [];
+//     }
+//   }
 
-  //   for ( const storeId of storeIds ) {
-  //     try {
-  //       const result = await new Promise( ( resolve ) => {
-  //         const payload = JSON.stringify( { store_id: storeId } );
-  //         const options = {
-  //           method: 'POST',
-  //           headers: {
-  //             'Authorization': `Bearer ${bearerToken}`,
-  //             'Content-Type': 'application/json',
-  //             'Content-Length': Buffer.byteLength( payload ),
-  //           },
-  //         };
+//   for ( const storeId of storeIds ) {
+//     try {
+//       const result = await new Promise( ( resolve ) => {
+//         const payload = JSON.stringify( { store_id: storeId } );
+//         const options = {
+//           method: 'POST',
+//           headers: {
+//             'Authorization': `Bearer ${bearerToken}`,
+//             'Content-Type': 'application/json',
+//             'Content-Length': Buffer.byteLength( payload ),
+//           },
+//         };
 
-  //         const req = https.request( apiUrl, options, ( res ) => {
-  //           let data = '';
-  //           res.on( 'data', ( chunk ) => {
-  //             data += chunk;
-  //           } );
-  //           res.on( 'end', () => {
-  //             try {
-  //               const jsonData = JSON.parse( data );
-  //               const result = { storeName: storeId, data: jsonData };
-  //               allResults.push( result );
-  //               fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
-  //               console.log( 'Received Data:', result );
-  //               resolve( result );
-  //             } catch ( error ) {
-  //               console.error( `Error parsing JSON for ${storeId}:`, error.message );
-  //               resolve( { storeName: storeId, data: null } );
-  //             }
-  //           } );
-  //         } );
+//         const req = https.request( apiUrl, options, ( res ) => {
+//           let data = '';
+//           res.on( 'data', ( chunk ) => {
+//             data += chunk;
+//           } );
+//           res.on( 'end', () => {
+//             try {
+//               const jsonData = JSON.parse( data );
+//               const result = { storeName: storeId, data: jsonData };
+//               allResults.push( result );
+//               fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
+//               console.log( 'Received Data:', result );
+//               resolve( result );
+//             } catch ( error ) {
+//               console.error( `Error parsing JSON for ${storeId}:`, error.message );
+//               resolve( { storeName: storeId, data: null } );
+//             }
+//           } );
+//         } );
 
-  //         req.on( 'error', ( error ) => {
-  //           console.error( `Error fetching data for ${storeId}:`, error.message );
-  //           resolve( { storeName: storeId, data: null } );
-  //         } );
+//         req.on( 'error', ( error ) => {
+//           console.error( `Error fetching data for ${storeId}:`, error.message );
+//           resolve( { storeName: storeId, data: null } );
+//         } );
 
 //         req.write( payload );
 //         req.end();
@@ -2387,7 +2387,7 @@ export async function updateVmData( req, res ) {
 //     }
 //     await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
 //   }
-}
+// }
 
 // scrapeCrest();
 
@@ -7648,7 +7648,7 @@ export async function migrateCrestv1( req, res ) {
             },
             'footer': {
               label: fixture.footer,
-              isEnabled: true,p
+              isEnabled: true, p,
             },
             'isBodyEnabled': true,
             'productResolutionLevel': 'L3',
@@ -7865,7 +7865,7 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
@@ -8107,7 +8107,7 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
@@ -8118,7 +8118,6 @@ export async function migrateCrestv1( req, res ) {
           }
 
           const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
-
 
 
           const fixtureTemplateData = {
@@ -8330,7 +8329,7 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
@@ -8341,7 +8340,6 @@ export async function migrateCrestv1( req, res ) {
           }
 
           const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
-
 
 
           const fixtureTemplateData = {
