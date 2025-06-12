@@ -1,8 +1,9 @@
-// import * as storeBuilderService from '../service/storeBuilder.service.js';
+import * as floorService from '../service/storeBuilder.service.js';
+import { logger } from 'tango-app-api-middleware';
 // import * as storeService from '../service/store.service.js';
 // import * as planoService from '../service/planogram.service.js';
-// import * as storeFixtureService from '../service/storeFixture.service.js';
-// import * as fixtureShelfService from '../service/fixtureShelf.service.js';
+import * as storeFixtureService from '../service/storeFixture.service.js';
+import * as fixtureShelfService from '../service/fixtureShelf.service.js';
 // import * as planoProductService from '../service/planoProduct.service.js';
 import * as planoVmService from '../service/planoVm.service.js';
 // import * as planoMappingService from '../service/planoMapping.service.js';
@@ -12,7 +13,6 @@ import * as planoproductCategoryService from '../service/planoproductCategory.se
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import * as fixtureLibraryService from '../service/planoLibrary.service.js';
 import * as planoTaskService from '../service/planoTask.service.js';
-import { logger } from 'tango-app-api-middleware';
 import mongoose from 'mongoose';
 export async function getplanoFeedback( req, res ) {
   try {
@@ -199,7 +199,95 @@ export async function getStoreFixturesfeedback( req, res ) {
 }
 export async function updateStorePlano( req, res ) {
   try {
-    console.log( 'reached' );
+    const { floorId, data } = req.body;
+
+    const floorData = await floorService.findOne( { _id: new mongoose.Types.ObjectId( floorId ) } );
+
+    const additionalMeta = {
+      clientId: '11',
+      storeId: floorData.toObject().storeId,
+      storeName: floorData.toObject().storeName,
+      planoId: floorData.toObject().planoId,
+      floorId: floorData.toObject()._id,
+    };
+
+    const layoutPolygon = JSON.parse( JSON.stringify( data.layoutPolygon ) );
+
+    layoutPolygon.forEach( ( element ) => {
+      delete element.fixtures;
+    } );
+
+    await floorService.updateOne( { _id: new mongoose.Types.ObjectId( floorId ) },
+        { layoutPolygon: layoutPolygon } );
+
+    const currentWallFixtures = data.layoutPolygon.flatMap( ( element ) =>
+      ( element.fixtures || [] ).map( ( fixture ) => fixture ),
+    );
+
+    const currentFloorFixtures = ( data.centerFixture || [] );
+
+    const currentFixtures = [ ...currentWallFixtures, ...currentFloorFixtures ];
+
+    const existingFixtures = await storeFixtureService.find( { floorId: new mongoose.Types.ObjectId( floorId ) } );
+
+    const currentIds = new Set( currentFixtures.map( ( f ) => f._id ) );
+    const removedFixtures = existingFixtures.filter(
+        ( f ) => f._id && !currentIds.has( f._id.toString() ),
+    );
+
+    if ( removedFixtures.length ) {
+      const fixtureIds = removedFixtures.map( ( fixture ) => fixture.toObject()._id );
+      await storeFixtureService.deleteMany( { _id: { $in: fixtureIds } } );
+      await fixtureShelfService.deleteMany( { fixtureId: { $in: fixtureIds } } );
+    }
+
+
+    const newWallFixtures = currentWallFixtures.filter( ( fixture ) => fixture?._id?.startsWith( 'new' ) );
+
+    const newFloorFixtures = currentFloorFixtures.filter( ( fixture ) => fixture?._id?.startsWith( 'new' ) );
+
+    const newFixtures = [ ...newWallFixtures, ...newFloorFixtures ];
+
+    if ( newFixtures.length ) {
+      newFixtures.forEach( async ( fixture ) => {
+        delete fixture._id;
+        const fixturePayload = {
+          ...additionalMeta,
+          ...fixture,
+        };
+        const createdFixture = await storeFixtureService.create( fixturePayload );
+        fixture.shelfConfig.forEach( async ( shelf ) => {
+          delete shelf._id;
+          const shelfPayload = {
+            ...additionalMeta,
+            ...shelf,
+            fixtureId: createdFixture.toObject()._id,
+
+          };
+          await fixtureShelfService.create( shelfPayload );
+        } );
+      } );
+    }
+
+    currentFixtures.forEach( async ( fixture ) => {
+      if ( mongoose.Types.ObjectId.isValid( fixture._id ) ) {
+        const updatedFixture = await storeFixtureService.upsertOne( { _id: new mongoose.Types.ObjectId( fixture._id ) }, fixture );
+
+        await fixtureShelfService.deleteMany( { fixtureId: new mongoose.Types.ObjectId( fixture._id ) } );
+
+        fixture.shelfConfig.forEach( async ( shelf ) => {
+          delete shelf._id;
+          const shelfPayload = {
+            ...additionalMeta,
+            ...shelf,
+            fixtureId: updatedFixture.toObject()._id,
+          };
+          await fixtureShelfService.create( shelfPayload );
+        } );
+      }
+    } );
+
+    res.sendSuccess( 'Updated Successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateStorePlano', error: e } );
     return res.sendError( e, 500 );
@@ -293,6 +381,26 @@ export async function updateFixtureStatus( req, res ) {
     res.sendSuccess( 'updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateFixtureStatus', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function updateStoreFixture( req, res ) {
+  try {
+    const { fixtureId, data } = req.body;
+
+  const update =   await storeFixtureService.updateOne({_id: new mongoose.Types.ObjectId( fixtureId )}, data)
+
+  console.log(update)
+
+    data.shelfConfig.forEach(async (shelf)=>{
+      await fixtureShelfService.updateOne({_id: new mongoose.Types.ObjectId( shelf._id ) }, shelf)
+    })
+
+
+    res.sendSuccess( 'Updated Successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateStoreFixture', error: e } );
     return res.sendError( e, 500 );
   }
 }
