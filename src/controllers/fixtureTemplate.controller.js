@@ -23,7 +23,7 @@ export async function createTemplate( req, res ) {
       return res.sendError( 'Fixture library id is wrong', 400 );
     }
     let fixtureCapacity = getLibDetails.shelfConfig.reduce(
-        ( acc, ele ) => acc + ele.productPerShelf,
+        ( acc, ele ) => ele.trayRows ? acc + ( ele.trayRows * ele.productPerShelf ) : ( acc + ele.productPerShelf ),
         0,
     );
     let templateId = await getTemplateId();
@@ -41,6 +41,14 @@ export async function createTemplate( req, res ) {
       footer: getLibDetails.footer,
       isBodyEnabled: getLibDetails.isBodyEnabled,
       fixtureCapacity: fixtureCapacity,
+      fixtureStaticLength: {
+        value: 1524,
+        unit: 'mm',
+      },
+      fixtureStaticWidth: {
+        value: 1220,
+        unit: 'mm',
+      },
     };
     let fixtureData = await fixtureConfigService.create( templateData );
     return res.sendSuccess( { message: 'Fixture template created successfully', fixtureData } );
