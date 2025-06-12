@@ -143,6 +143,14 @@ export async function createFixture( req, res ) {
       fixtureCategory: req.body.fixtureCategory,
       fixtureType: req.body.fixtureType,
       fixtureLibCode: FixLibCode,
+      fixtureStaticLength: {
+        'value': 1524,
+        'unit': 'mm',
+      },
+      fixtureStaticWidth: {
+        'value': 1220,
+        'unit': 'mm',
+      },
     };
     let fixtLibraryDetails = await planoLibraryService.create( data );
     return res.sendSuccess( fixtLibraryDetails );
