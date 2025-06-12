@@ -574,6 +574,7 @@ export async function storeFixturesv1( req, res ) {
           const floorsWithFixtures = await Promise.all(
               floors.map( async ( floor ) => {
                 let productCapacity = 0;
+                let fixtureCount = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.findAndSort( {
@@ -595,6 +596,7 @@ export async function storeFixturesv1( req, res ) {
                               fixture.imageUrl = '';
                             }
                             productCapacity += fixture.toObject().fixtureCapacity;
+                            fixtureCount += 1;
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -696,6 +698,8 @@ export async function storeFixturesv1( req, res ) {
                         fixture.imageUrl = '';
                       }
                       productCapacity += fixture.toObject().fixtureCapacity;
+                      fixtureCount += 1;
+
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -741,10 +745,16 @@ export async function storeFixturesv1( req, res ) {
 
                       const vmDetails = await Promise.all( vms.map( async ( vm ) => {
                         const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
-
+                        const params = {
+                          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                          file_path: vmTemplate?.productImageUrl,
+                        };
+                        const vmImage = await signedUrl( params );
                         return {
                           ...vm.toObject(),
                           ...vmTemplate?.toObject(),
+                          ...( typeof vmImage === 'string' && { productImageUrl: vmImage } ),
+
                         };
                       } ) );
 
@@ -774,6 +784,7 @@ export async function storeFixturesv1( req, res ) {
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
                   productCount: productCapacity,
+                  fixtureCount: fixtureCount,
                   // productCapacity: productCapacity,
                   otherElements: otherElements,
                 };
@@ -1626,6 +1637,7 @@ export async function storeFixturesTask( req, res ) {
           const floorsWithFixtures = await Promise.all(
               floors.map( async ( floor ) => {
                 let productCapacity = 0;
+                let fixtureCount = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.findAndSort( {
@@ -1647,6 +1659,7 @@ export async function storeFixturesTask( req, res ) {
                               fixture.imageUrl = '';
                             }
                             productCapacity += fixture.toObject().fixtureCapacity;
+                            fixtureCount += 1;
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -1677,9 +1690,16 @@ export async function storeFixturesTask( req, res ) {
 
                             const vmDetails = await Promise.all( vms.map( async ( vm ) => {
                               const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
+                              const params = {
+                                Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                                file_path: vmTemplate?.productImageUrl,
+                              };
+                              const vmImage = await signedUrl( params );
                               return {
                                 ...vm.toObject(),
                                 ...vmTemplate?.toObject(),
+                                ...( typeof vmImage === 'string' && { productImageUrl: vmImage } ),
+
                               };
                             } ) );
 
@@ -1727,6 +1747,7 @@ export async function storeFixturesTask( req, res ) {
                         fixture.imageUrl = '';
                       }
                       productCapacity += fixture.toObject().fixtureCapacity;
+                      fixtureCount += 1;
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -1758,9 +1779,16 @@ export async function storeFixturesTask( req, res ) {
                       const vmDetails = await Promise.all( vms.map( async ( vm ) => {
                         const vmTemplate = await planoProductService.findOne( { _id: vm.toObject().productId } );
 
+                        const params = {
+                          Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                          file_path: vmTemplate?.productImageUrl,
+                        };
+                        const vmImage = await signedUrl( params );
                         return {
                           ...vm.toObject(),
                           ...vmTemplate?.toObject(),
+                          ...( typeof vmImage === 'string' && { productImageUrl: vmImage } ),
+
                         };
                       } ) );
 
@@ -1790,6 +1818,7 @@ export async function storeFixturesTask( req, res ) {
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
                   productCount: productCapacity,
+                  fixtureCount: fixtureCount,
                   // productCapacity: productCapacity,
                   otherElements: otherElements,
                 };
@@ -3118,6 +3147,124 @@ export async function storeFixturesTaskv2( req, res ) {
     return res.sendSuccess( storeLayout );
   } catch ( e ) {
     logger.error( { functionName: 'storeFixturesTask', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function planoList( req, res ) {
+  try {
+    let inputData = req.body;
+    let limit = inputData?.limit || 10;
+    let page = inputData?.offset - 1 || 0;
+    let skip = limit * page;
+    let query = [
+      {
+        $match: {
+          clientId: inputData.clientId,
+        },
+      },
+      {
+        $lookup: {
+          from: 'storelayouts',
+          let: { plano: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [ '$planoId', '$$plano' ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '',
+                layoutDetails: { $push: { k: '$_id', v: '$status', planoId: '$$plano' } },
+              },
+            },
+          ],
+          as: 'layout',
+        },
+      },
+      { $unwind: { path: '$layout', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'storefixtures',
+          let: { plano: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [ '$planoId', '$$plano' ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '',
+                fixtureCount: { $sum: 1 },
+                vmCount: { $sum: { $size: '$vmConfig' } },
+                fixtureCapacity: { $sum: '$fixtureCapacity' },
+              },
+            },
+          ],
+          as: 'fixtureDetails',
+        },
+      },
+      { $unwind: { path: '$fixtureDetails', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          storeName: 1,
+          layoutName: 1,
+          layoutDetails: '$layout.layoutDetails',
+          fixtureCount: '$fixtureDetails.fixtureCount',
+          vmCount: '$fixtureDetails.vmCount',
+          fixtureCapacity: '$fixtureDetails.fixtureCapacity',
+          status: 1,
+          planoProcess: 1,
+        },
+      },
+    ];
+    if ( inputData.sortColumnName && inputData.sortBy ) {
+      query.push( { $sort: { [inputData.sortColumnName]: inputData.sortBy } } );
+    }
+    if ( inputData.searchValue ) {
+      query.push( {
+        $match: {
+          storeName: { $regex: inputData.searchValue, $options: 'i' },
+        },
+      } );
+    }
+
+    query.push( {
+      $facet: {
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+        ],
+        count: [
+          { $count: 'total' },
+        ],
+      },
+    } );
+
+    let planoDetails = await planoService.aggregate( query );
+
+    if ( !planoDetails[0].data.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    let result = {
+      data: planoDetails[0].data,
+      count: planoDetails?.[0]?.count?.[0]?.total || 0,
+    };
+    await Promise.all( planoDetails.map( ( ele ) => {
+      if ( ele.layoutDetails ) {
+
+      }
+    } ) );
+    return res.sendSuccess( result );
+  } catch ( e ) {
+    console.log( e );
+    logger.error( { functionName: 'planoList', error: e } );
     return res.sendError( e, 500 );
   }
 }
