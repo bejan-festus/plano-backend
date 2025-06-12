@@ -2320,76 +2320,76 @@ export async function updateVmData( req, res ) {
   }
 }
 
-import https from 'https';
-async function scrapeCrest() {
-  const storeIds = [ 'LKST2973' ];
-  const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5NjQ5MjU1LCJpYXQiOjE3NDk2NDU2NTUsImp0aSI6ImJmZmZhNDI1YTAwYTRkNzVhMzIwZDEyOGVhN2JlY2Q1IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.U4iPQcE3Sq7GNT7enSq17b5vwhAbW2ANMSxsMXTxNSo';
-  const filePath = 'response.json';
-  let allResults = [];
+// import https from 'https';
+// async function scrapeCrest() {
+//   const storeIds = [ 'LKST2973' ];
+//   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
+//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5NjQ5MjU1LCJpYXQiOjE3NDk2NDU2NTUsImp0aSI6ImJmZmZhNDI1YTAwYTRkNzVhMzIwZDEyOGVhN2JlY2Q1IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.U4iPQcE3Sq7GNT7enSq17b5vwhAbW2ANMSxsMXTxNSo';
+//   const filePath = 'response.json';
+//   let allResults = [];
 
-  if ( fs.existsSync( filePath ) ) {
-    try {
-      const existingData = fs.readFileSync( filePath, 'utf8' );
-      allResults = JSON.parse( existingData );
-      if ( !Array.isArray( allResults ) ) {
-        allResults = [];
-      }
-    } catch ( error ) {
-      console.error( 'Error reading existing JSON file:', error.message );
-      allResults = [];
-    }
-  }
+//   if ( fs.existsSync( filePath ) ) {
+//     try {
+//       const existingData = fs.readFileSync( filePath, 'utf8' );
+//       allResults = JSON.parse( existingData );
+//       if ( !Array.isArray( allResults ) ) {
+//         allResults = [];
+//       }
+//     } catch ( error ) {
+//       console.error( 'Error reading existing JSON file:', error.message );
+//       allResults = [];
+//     }
+//   }
 
-  for ( const storeId of storeIds ) {
-    try {
-      const result = await new Promise( ( resolve ) => {
-        const payload = JSON.stringify( { store_id: storeId } );
-        const options = {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${bearerToken}`,
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength( payload ),
-          },
-        };
+//   for ( const storeId of storeIds ) {
+//     try {
+//       const result = await new Promise( ( resolve ) => {
+//         const payload = JSON.stringify( { store_id: storeId } );
+//         const options = {
+//           method: 'POST',
+//           headers: {
+//             'Authorization': `Bearer ${bearerToken}`,
+//             'Content-Type': 'application/json',
+//             'Content-Length': Buffer.byteLength( payload ),
+//           },
+//         };
 
-        const req = https.request( apiUrl, options, ( res ) => {
-          let data = '';
-          res.on( 'data', ( chunk ) => {
-            data += chunk;
-          } );
-          res.on( 'end', () => {
-            try {
-              const jsonData = JSON.parse( data );
-              const result = { storeName: storeId, data: jsonData };
-              allResults.push( result );
-              fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
-              console.log( 'Received Data:', result );
-              resolve( result );
-            } catch ( error ) {
-              console.error( `Error parsing JSON for ${storeId}:`, error.message );
-              resolve( { storeName: storeId, data: null } );
-            }
-          } );
-        } );
+//         const req = https.request( apiUrl, options, ( res ) => {
+//           let data = '';
+//           res.on( 'data', ( chunk ) => {
+//             data += chunk;
+//           } );
+//           res.on( 'end', () => {
+//             try {
+//               const jsonData = JSON.parse( data );
+//               const result = { storeName: storeId, data: jsonData };
+//               allResults.push( result );
+//               fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
+//               console.log( 'Received Data:', result );
+//               resolve( result );
+//             } catch ( error ) {
+//               console.error( `Error parsing JSON for ${storeId}:`, error.message );
+//               resolve( { storeName: storeId, data: null } );
+//             }
+//           } );
+//         } );
 
-        req.on( 'error', ( error ) => {
-          console.error( `Error fetching data for ${storeId}:`, error.message );
-          resolve( { storeName: storeId, data: null } );
-        } );
+//         req.on( 'error', ( error ) => {
+//           console.error( `Error fetching data for ${storeId}:`, error.message );
+//           resolve( { storeName: storeId, data: null } );
+//         } );
 
-        req.write( payload );
-        req.end();
-      } );
-    } catch ( error ) {
-      console.error( `Unexpected error for ${storeId}:`, error.message );
-    }
-    await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
-  }
-}
+//         req.write( payload );
+//         req.end();
+//       } );
+//     } catch ( error ) {
+//       console.error( `Unexpected error for ${storeId}:`, error.message );
+//     }
+//     await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
+//   }
+// }
 
-scrapeCrest();
+// scrapeCrest();
 
 export async function createCrestPlanogram( req, res ) {
   try {
@@ -7622,8 +7622,17 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-          const baseFixtureName = `${fixtureConfigDoc.fixtureCategory}`;
-          const uniqueFixtureName = await generateFixtureTemplateName( baseFixtureName, fixtureConfigDoc.fixtureWidth );
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+              { fixtureCategory: fixtureConfigDoc.fixtureCategory,
+                fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
+
+          let templateIndex = 1;
+
+          if ( existingTemplateWithMaxIndex.length ) {
+            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+          }
+
+          const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
 
 
           const fixtureTemplateData = {
@@ -7631,14 +7640,15 @@ export async function migrateCrestv1( req, res ) {
             'shelfConfig': shelfTemplate,
             'vmConfig': vmTemplate,
             'clientId': fixtureConfigDoc.clientId,
-            'fixtureName': uniqueFixtureName,
+            'fixtureName': templateName,
+            'templateIndex': templateIndex,
             'header': {
               label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
               isEnabled: true,
             },
             'footer': {
               label: fixture.footer,
-              isEnabled: true,
+              isEnabled: true,p
             },
             'isBodyEnabled': true,
             'productResolutionLevel': 'L3',
@@ -7855,8 +7865,17 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-          const baseFixtureName = `${fixtureConfigDoc.fixtureCategory}`;
-          const uniqueFixtureName = await generateFixtureTemplateName( baseFixtureName, fixtureConfigDoc.fixtureWidth );
+           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+              { fixtureCategory: fixtureConfigDoc.fixtureCategory,
+                fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
+
+          let templateIndex = 1;
+
+          if ( existingTemplateWithMaxIndex.length ) {
+            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+          }
+
+          const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
 
 
           const fixtureTemplateData = {
@@ -7864,7 +7883,8 @@ export async function migrateCrestv1( req, res ) {
             'shelfConfig': shelfTemplate,
             'vmConfig': vmTemplate,
             'clientId': fixtureConfigDoc.clientId,
-            'fixtureName': uniqueFixtureName,
+            'fixtureName': templateName,
+            'templateIndex': templateIndex,
             'header': {
               label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
               isEnabled: true,
@@ -8087,8 +8107,18 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-          const baseFixtureName = `${fixtureConfigDoc.fixtureCategory}`;
-          const uniqueFixtureName = await generateFixtureTemplateName( baseFixtureName, fixtureConfigDoc.fixtureWidth );
+           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+              { fixtureCategory: fixtureConfigDoc.fixtureCategory,
+                fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
+
+          let templateIndex = 1;
+
+          if ( existingTemplateWithMaxIndex.length ) {
+            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+          }
+
+          const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
+
 
 
           const fixtureTemplateData = {
@@ -8096,7 +8126,8 @@ export async function migrateCrestv1( req, res ) {
             'shelfConfig': shelfTemplate,
             'vmConfig': vmTemplate,
             'clientId': fixtureConfigDoc.clientId,
-            'fixtureName': uniqueFixtureName,
+            'fixtureName': templateName,
+            'templateIndex': templateIndex,
             'header': {
               label: fixture.header ? fixture.header : fixture.fixtureSubname[0],
               isEnabled: true,
@@ -8299,8 +8330,18 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-          const baseFixtureName = `${fixtureConfigDoc.fixtureCategory}`;
-          const uniqueFixtureName = await generateFixtureTemplateName( baseFixtureName, fixtureConfigDoc.fixtureWidth );
+           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+              { fixtureCategory: fixtureConfigDoc.fixtureCategory,
+                fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
+
+          let templateIndex = 1;
+
+          if ( existingTemplateWithMaxIndex.length ) {
+            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+          }
+
+          const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
+
 
 
           const fixtureTemplateData = {
@@ -8308,7 +8349,8 @@ export async function migrateCrestv1( req, res ) {
             'shelfConfig': shelfTemplate,
             'vmConfig': vmTemplate,
             'clientId': fixtureConfigDoc.clientId,
-            'fixtureName': uniqueFixtureName,
+            'fixtureName': templateName,
+            'templateIndex': templateIndex,
             'header': {
               label: fixture.centerSubMain,
               isEnabled: true,
