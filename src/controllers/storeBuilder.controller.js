@@ -3150,3 +3150,115 @@ export async function storeFixturesTaskv2( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+
+export async function planoList( req, res ) {
+  try {
+    let inputData = req.body;
+    let limit = inputData?.limit || 10;
+    let page = inputData?.offset - 1 || 0;
+    let skip = limit * page;
+    let query = [
+      {
+        $match: {
+          clientId: inputData.clientId,
+        },
+      },
+      {
+        $lookup: {
+          from: 'storelayouts',
+          let: { plano: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [ '$planoId', '$$plano' ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '',
+                layoutDetails: { $push: { k: '$floorName', v: '$status' } },
+              },
+            },
+          ],
+          as: 'layout',
+        },
+      },
+      { $unwind: { path: '$layout', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'storefixtures',
+          let: { plano: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [ '$planoId', '$$plano' ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '',
+                fixtureCount: { $sum: 1 },
+                vmCount: { $sum: { $size: '$vmConfig' } },
+                fixtureCapacity: { $sum: '$fixtureCapacity' },
+              },
+            },
+          ],
+          as: 'fixtureDetails',
+        },
+      },
+      { $unwind: { path: '$fixtureDetails', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          storeName: 1,
+          layoutName: 1,
+          layoutDetails: '$layout.layoutDetails',
+          fixtureCount: '$fixtureDetails.fixtureCount',
+          vmCount: '$fixtureDetails.vmCount',
+          fixtureCapacity: '$fixtureDetails.fixtureCapacity',
+          status: 1,
+        },
+      },
+    ];
+    if ( inputData.sortColumnName && inputData.sortBy ) {
+      query.push( { $sort: { [inputData.sortColumnName]: inputData.sortBy } } );
+    }
+    if ( inputData.searchValue ) {
+      query.push( {
+        $match: {
+          storeName: { $regex: inputData.searchValue, $options: 'i' },
+        },
+      } );
+    }
+
+    query.push( {
+      $facet: {
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+        ],
+        count: [
+          { $count: 'total' },
+        ],
+      },
+    } );
+
+    let planoDetails = await planoService.aggregate( query );
+
+    if ( !planoDetails[0].data.length ) {
+      return res.sendError( 'No data found', 204 );
+    }
+    let result = {
+      data: planoDetails[0].data,
+      count: planoDetails?.[0]?.count?.[0]?.total || 0,
+    };
+    return res.sendSuccess( result );
+  } catch ( e ) {
+    console.log( e );
+    logger.error( { functionName: 'planoList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
