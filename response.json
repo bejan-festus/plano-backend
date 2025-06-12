@@ -643,5 +643,12 @@
         }
       ]
     }
+  },
+  {
+    "storeName": "LKST2973",
+    "data": {
+      "message": "FAILURE",
+      "result": "Config does not exist"
+    }
   }
 ]

@@ -20,7 +20,6 @@ import mongoose from 'mongoose';
 import JSZip from 'jszip';
 import { signedUrl } from 'tango-app-api-middleware';
 import fs from 'fs';
-// import https from 'https';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -2321,76 +2320,76 @@ export async function updateVmData( req, res ) {
   }
 }
 
-
+import https from 'https';
 async function scrapeCrest() {
-  const storeIds = [ 'LKST682' ];
+  const storeIds = [ 'LKST2973' ];
   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4ODQ3NTcxLCJpYXQiOjE3NDg4NDM5NzEsImp0aSI6ImZiZWEwODRlZjY5ZjRmYWM4MTYwNDBjODMwOTMyZDA0IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.A81bI3_-YupAf4H1ctIMijGEOPHuCvXFG0yiXN30QbQ';
+  const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5NjQ5MjU1LCJpYXQiOjE3NDk2NDU2NTUsImp0aSI6ImJmZmZhNDI1YTAwYTRkNzVhMzIwZDEyOGVhN2JlY2Q1IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.U4iPQcE3Sq7GNT7enSq17b5vwhAbW2ANMSxsMXTxNSo';
   const filePath = 'response.json';
   let allResults = [];
 
-//   if ( fs.existsSync( filePath ) ) {
-//     try {
-//       const existingData = fs.readFileSync( filePath, 'utf8' );
-//       allResults = JSON.parse( existingData );
-//       if ( !Array.isArray( allResults ) ) {
-//         allResults = [];
-//       }
-//     } catch ( error ) {
-//       console.error( 'Error reading existing JSON file:', error.message );
-//       allResults = [];
-//     }
-//   }
+  if ( fs.existsSync( filePath ) ) {
+    try {
+      const existingData = fs.readFileSync( filePath, 'utf8' );
+      allResults = JSON.parse( existingData );
+      if ( !Array.isArray( allResults ) ) {
+        allResults = [];
+      }
+    } catch ( error ) {
+      console.error( 'Error reading existing JSON file:', error.message );
+      allResults = [];
+    }
+  }
 
-//   for ( const storeId of storeIds ) {
-//     try {
-//       const result = await new Promise( ( resolve ) => {
-//         const payload = JSON.stringify( { store_id: storeId } );
-//         const options = {
-//           method: 'POST',
-//           headers: {
-//             'Authorization': `Bearer ${bearerToken}`,
-//             'Content-Type': 'application/json',
-//             'Content-Length': Buffer.byteLength( payload ),
-//           },
-//         };
+  for ( const storeId of storeIds ) {
+    try {
+      const result = await new Promise( ( resolve ) => {
+        const payload = JSON.stringify( { store_id: storeId } );
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${bearerToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength( payload ),
+          },
+        };
 
-//         const req = https.request( apiUrl, options, ( res ) => {
-//           let data = '';
-//           res.on( 'data', ( chunk ) => {
-//             data += chunk;
-//           } );
-//           res.on( 'end', () => {
-//             try {
-//               const jsonData = JSON.parse( data );
-//               const result = { storeName: storeId, data: jsonData };
-//               allResults.push( result );
-//               fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
-//               console.log( 'Received Data:', result );
-//               resolve( result );
-//             } catch ( error ) {
-//               console.error( `Error parsing JSON for ${storeId}:`, error.message );
-//               resolve( { storeName: storeId, data: null } );
-//             }
-//           } );
-//         } );
+        const req = https.request( apiUrl, options, ( res ) => {
+          let data = '';
+          res.on( 'data', ( chunk ) => {
+            data += chunk;
+          } );
+          res.on( 'end', () => {
+            try {
+              const jsonData = JSON.parse( data );
+              const result = { storeName: storeId, data: jsonData };
+              allResults.push( result );
+              fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
+              console.log( 'Received Data:', result );
+              resolve( result );
+            } catch ( error ) {
+              console.error( `Error parsing JSON for ${storeId}:`, error.message );
+              resolve( { storeName: storeId, data: null } );
+            }
+          } );
+        } );
 
-//         req.on( 'error', ( error ) => {
-//           console.error( `Error fetching data for ${storeId}:`, error.message );
-//           resolve( { storeName: storeId, data: null } );
-//         } );
+        req.on( 'error', ( error ) => {
+          console.error( `Error fetching data for ${storeId}:`, error.message );
+          resolve( { storeName: storeId, data: null } );
+        } );
 
-//         req.write( payload );
-//         req.end();
-//       } );
-//     } catch ( error ) {
-//       console.error( `Unexpected error for ${storeId}:`, error.message );
-//     }
-//     await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
-//   }
-// }
+        req.write( payload );
+        req.end();
+      } );
+    } catch ( error ) {
+      console.error( `Unexpected error for ${storeId}:`, error.message );
+    }
+    await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
+  }
+}
 
-// scrapeCrest()
+scrapeCrest();
 
 export async function createCrestPlanogram( req, res ) {
   try {
@@ -7265,10 +7264,10 @@ export async function migrateCrestv1( req, res ) {
 
     let storeList = await storeService.find( storeQuery );
 
-    const constantFixtureLength = 1220;
+    // const constantFixtureLength = 1220;
     const constantDetailedFixtureLength = 1220;
 
-    const constantFixtureWidth = 610;
+    // const constantFixtureWidth = 610;
     const constantDetailedFixtureWidth = 1524;
 
     const mmToFeet = 305;
@@ -7373,43 +7372,43 @@ export async function migrateCrestv1( req, res ) {
           floorFixtures = floorFixtures.filter( ( fixture ) => fixture.floor === floorArray[floorIndex] );
         }
 
-        const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        // const leftXDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
         const leftXDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( leftFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
 
-        const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
+        // const leftYDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantFixtureWidth / mmToFeet ) ) ) : 0;
         const leftYDetailedDistanceFeet = leftFixtures.length ? roundToTwo( ( ( constantDetailedFixtureWidth / mmToFeet ) ) ) : 0;
 
-        const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        // const rightXDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantFixtureLength / mmToFeet ) ) ) : 0;
         const rightXDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( rightFixtures.length * ( constantDetailedFixtureLength / mmToFeet ) ) ) : 0;
 
-        const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+        // const rightYDistanceFeet = rightFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
         const rightYDetailedDistanceFeet = rightFixtures.length ? roundToTwo( ( constantDetailedFixtureWidth / mmToFeet ) ): 0;
 
         const maxFixturesPerRow = floorFixtures.length/2;
         const totalRows = 2;
 
-        const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantFixtureLength / mmToFeet ) ) ) : 0;
+        // const floorXDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantFixtureLength / mmToFeet ) ) ) : 0;
         const floorXDetailedDistanceFeet = floorFixtures.length ? roundToTwo( ( ( floorFixtures.length/2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) ): 0;
 
-        const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( 2 * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
+        // const floorYDistanceFeet = floorFixtures.length ? roundToTwo( ( 2 * ( constantFixtureWidth/ mmToFeet ) ) ): 0;
         const floorYDetailedDistanceFeet = floorFixtures.length ? roundToTwo( 2 * ( constantDetailedFixtureWidth/mmToFeet ) ): 0;
 
-        const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
+        // const backXDistanceFeet = backFixtures.length ? roundToTwo( ( constantFixtureWidth / mmToFeet ) ) : 0;
         const backXDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( constantDetailedFixtureLength / mmToFeet ) ) : 0;
 
-        const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
+        // const backYDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantFixtureLength / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantFixtureWidth )/mmToFeet ) ) ) : 0;
         const backYDetailedDistanceFeet = backFixtures.length ? roundToTwo( ( ( backFixtures.length * ( constantDetailedFixtureWidth / mmToFeet ) ) + ( ( ( leftFixtures.length ? 1 : 0 ) + ( rightFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth )/mmToFeet ) ) ): 0;
 
-        const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
+        // const maxXDistance = Math.max( leftXDistanceFeet, rightXDistanceFeet, floorXDistanceFeet );
         const maxXDetailedDistance = Math.max( leftXDetailedDistanceFeet, rightXDetailedDistanceFeet, floorXDetailedDistanceFeet );
 
-        const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
+        // const maxYDistance = Math.max( floorYDistanceFeet, backYDistanceFeet );
         const maxYDetailedDistance = Math.max( floorYDetailedDistanceFeet, backYDetailedDistanceFeet );
 
-        const finalXDistance = roundToTwo( ( maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance ) );
+        // const finalXDistance = roundToTwo( ( maxXDistance < ( backXDistanceFeet + floorXDistanceFeet )? ( ( backXDistanceFeet + floorXDistanceFeet ) + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDistance + ( ( 2 * constantFixtureLength )/mmToFeet ) ) : maxXDistance ) );
         const finalXDetailedDistance = roundToTwo( ( maxXDetailedDistance < ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet )? ( ( backXDetailedDistanceFeet + floorXDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : ( floorFixtures.length && backFixtures.length ) ? ( maxXDetailedDistance + ( ( 2 * constantDetailedFixtureLength )/mmToFeet ) ) : maxXDetailedDistance ) );
 
-        const finalYDistance = roundToTwo( ( maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) ) ) );
+        // const finalYDistance = roundToTwo( ( maxYDistance < ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) ? ( ( leftYDistanceFeet + rightYDistanceFeet + floorYDistanceFeet ) + ( ( 2 * constantFixtureWidth )/mmToFeet ) ) : ( maxYDistance + ( ( constantFixtureWidth )/mmToFeet ) ) ) );
         const finalYDetailedDistance = roundToTwo( ( maxYDetailedDistance < ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) ? ( ( leftYDetailedDistanceFeet + rightYDetailedDistanceFeet + floorYDetailedDistanceFeet ) + ( ( 2 * constantDetailedFixtureWidth )/mmToFeet ) ) : ( maxYDetailedDistance + ( ( constantDetailedFixtureWidth )/mmToFeet ) ) ) );
 
 
@@ -7424,57 +7423,57 @@ export async function migrateCrestv1( req, res ) {
           layoutPolygon: [
             {
               elementType: 'wall',
-              distance: finalXDistance,
+              distance: finalXDetailedDistance,
               unit: 'ft',
               direction: 'right',
               angle: 90,
               elementNumber: 1,
-              detailedDistance: finalXDetailedDistance,
+              // detailedDistance: finalXDetailedDistance,
             },
             {
               elementType: 'wall',
-              distance: finalYDistance,
+              distance: finalYDetailedDistance,
               unit: 'ft',
               direction: 'down',
               angle: 90,
               elementNumber: 2,
-              detailedDistance: finalYDetailedDistance,
+              // detailedDistance: finalYDetailedDistance,
             },
             {
               elementType: 'wall',
-              distance: finalXDistance,
+              distance: finalXDetailedDistance,
               unit: 'ft',
               direction: 'left',
               angle: 90,
               elementNumber: 3,
-              detailedDistance: finalXDetailedDistance,
+              // detailedDistance: finalXDetailedDistance,
             },
             {
               elementType: 'wall',
-              distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+              distance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
               unit: 'ft',
               direction: 'up',
               angle: 90,
               elementNumber: 4,
-              detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+              // detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
             },
             {
               elementType: 'entrance',
-              distance: roundToTwo( ( ( finalYDistance * 20 ) / 100 ) ),
+              distance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
               unit: 'ft',
               direction: 'up',
               angle: 90,
               elementNumber: 1,
-              detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
+              // detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 30 ) / 100 ) ),
             },
             {
               elementType: 'wall',
-              distance: roundToTwo( ( ( finalYDistance * 40 ) / 100 ) ),
+              distance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
               unit: 'ft',
               direction: 'up',
               angle: 90,
               elementNumber: 5,
-              detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
+              // detailedDistance: roundToTwo( ( ( finalYDetailedDistance * 35 ) / 100 ) ),
             },
           ],
           createdBy: new mongoose.Types.ObjectId( '66a78cd82734f4f857cd6db6' ),
@@ -7665,16 +7664,16 @@ export async function migrateCrestv1( req, res ) {
             'associatedElementType': 'wall',
             'associatedElementNumber': 1,
             'relativePosition': {
-              'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
-              'y': 0,
-              'unit': 'ft',
-            },
-            'fixtureNumber': fixtureCounter,
-            'relativeDetailedPosition': {
               'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
               'y': 0,
               'unit': 'ft',
             },
+            'fixtureNumber': fixtureCounter,
+            // 'relativeDetailedPosition': {
+            //   'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+            //   'y': 0,
+            //   'unit': 'ft',
+            // },
             'associatedElementFixtureNumber': index+1,
             'fixtureConfigId': fixtureTemplate.toObject()._id,
           };
@@ -7898,16 +7897,16 @@ export async function migrateCrestv1( req, res ) {
             'associatedElementType': 'wall',
             'associatedElementNumber': 2,
             'relativePosition': {
-              'x': roundToTwo( ( finalXDistance - ( constantFixtureWidth/mmToFeet ) ) ),
-              'y': roundToTwo( ( ( index * ( ( constantFixtureLength/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantFixtureWidth/mmToFeet ) ) ),
-              'unit': 'ft',
-            },
-            'fixtureNumber': fixtureCounter,
-            'relativeDetailedPosition': {
               'x': roundToTwo( ( finalXDetailedDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
               'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
               'unit': 'ft',
             },
+            'fixtureNumber': fixtureCounter,
+            // 'relativeDetailedPosition': {
+            //   'x': roundToTwo( ( finalXDetailedDistance - ( constantDetailedFixtureLength/mmToFeet ) ) ),
+            //   'y': roundToTwo( ( ( index * ( ( constantDetailedFixtureWidth/mmToFeet ) ) ) + ( ( leftFixtures.length ? 1 : 0 ) * constantDetailedFixtureWidth/mmToFeet ) ) ),
+            //   'unit': 'ft',
+            // },
             'associatedElementFixtureNumber': index+1,
             'fixtureConfigId': fixtureTemplate.toObject()._id,
           };
@@ -8130,16 +8129,16 @@ export async function migrateCrestv1( req, res ) {
             'associatedElementType': 'wall',
             'associatedElementNumber': 3,
             'relativePosition': {
-              'x': roundToTwo( ( index * ( constantFixtureLength / mmToFeet ) ) ),
-              'y': roundToTwo( ( finalYDistance - ( constantFixtureWidth / mmToFeet ) ) ),
-              'unit': 'ft',
-            },
-            'fixtureNumber': fixtureCounter,
-            'relativeDetailedPosition': {
               'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
               'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
               'unit': 'ft',
             },
+            'fixtureNumber': fixtureCounter,
+            // 'relativeDetailedPosition': {
+            //   'x': roundToTwo( ( index * ( constantDetailedFixtureLength / mmToFeet ) ) ),
+            //   'y': roundToTwo( ( finalYDetailedDistance - ( constantDetailedFixtureWidth / mmToFeet ) ) ),
+            //   'unit': 'ft',
+            // },
             'associatedElementFixtureNumber': index+1,
             'fixtureConfigId': fixtureTemplate.toObject()._id,
           };
@@ -8191,17 +8190,17 @@ export async function migrateCrestv1( req, res ) {
 
           const centerRow = Math.floor( totalRows / 2 );
 
-          const startingX = roundToTwo( ( finalXDistance / 2 - ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) );
+          // const startingX = roundToTwo( ( finalXDistance / 2 - ( maxFixturesPerRow / 2 ) * ( constantFixtureLength / mmToFeet ) ) );
           const detailedStartingX = roundToTwo( ( finalXDetailedDistance / 2 - ( maxFixturesPerRow / 2 ) * ( constantDetailedFixtureLength / mmToFeet ) ) );
 
-          const startingY = finalYDistance / 2 - centerRow * ( constantFixtureWidth / mmToFeet );
+          // const startingY = finalYDistance / 2 - centerRow * ( constantFixtureWidth / mmToFeet );
           const detailedStartingY = finalYDetailedDistance / 2 - centerRow * ( constantDetailedFixtureWidth / mmToFeet );
 
           const colIndex = Math.floor( index / 2 );
           const rowIndex = index % 2 === 0 ? 1 : 0;
 
-          const xPos = roundToTwo( startingX + colIndex * ( constantFixtureLength / mmToFeet ) );
-          const yPos = roundToTwo( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) );
+          // const xPos = roundToTwo( startingX + colIndex * ( constantFixtureLength / mmToFeet ) );
+          // const yPos = roundToTwo( startingY + rowIndex * ( constantFixtureWidth / mmToFeet ) );
 
           const detailedXPos = roundToTwo( ( detailedStartingX + colIndex * ( constantDetailedFixtureLength / mmToFeet ) ) );
           const detailedYPos = roundToTwo( ( detailedStartingY + rowIndex * ( constantDetailedFixtureWidth / mmToFeet ) ) );
@@ -8341,16 +8340,16 @@ export async function migrateCrestv1( req, res ) {
             'planoId': layoutDoc.planoId,
             'floorId': layoutDoc._id,
             'relativePosition': {
-              'x': xPos,
-              'y': yPos,
-              'unit': 'ft',
-            },
-            'fixtureNumber': fixtureCounter,
-            'relativeDetailedPosition': {
               'x': detailedXPos,
               'y': detailedYPos,
               'unit': 'ft',
             },
+            'fixtureNumber': fixtureCounter,
+            // 'relativeDetailedPosition': {
+            //   'x': detailedXPos,
+            //   'y': detailedYPos,
+            //   'unit': 'ft',
+            // },
             'associatedElementFixtureNumber': index+1,
             'fixtureConfigId': fixtureTemplate.toObject()._id,
           };
