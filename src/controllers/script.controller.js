@@ -7223,30 +7223,30 @@ export async function migrateCrestv1( req, res ) {
     };
 
 
-    async function generateFixtureTemplateName( baseName, fixtureWidth ) {
-      function escapeRegex( str ) {
-        return str.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
-      }
+    // async function generateFixtureTemplateName( baseName, fixtureWidth ) {
+    //   function escapeRegex( str ) {
+    //     return str.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+    //   }
 
-      const escapedBase = escapeRegex( baseName );
-      const regexPattern = new RegExp( `^Template-(\\d+)-${escapedBase}$` );
+    //   const escapedBase = escapeRegex( baseName );
+    //   const regexPattern = new RegExp( `^Template-(\\d+)-${escapedBase}$` );
 
-      const existingFixtures = await fixtureConfigService.find( {
-        fixtureName: { $regex: new RegExp( `^Template-(\\d+)-${escapedBase}$` ) },
-        fixtureWidth: fixtureWidth,
-      } );
+    //   const existingFixtures = await fixtureConfigService.find( {
+    //     fixtureName: { $regex: new RegExp( `^Template-(\\d+)-${escapedBase}$` ) },
+    //     fixtureWidth: fixtureWidth,
+    //   } );
 
-      const usedNumbers = existingFixtures
-          .map( ( doc ) => {
-            const match = doc.fixtureName.match( regexPattern );
-            return match ? parseInt( match[1], 10 ) : null;
-          } )
-          .filter( ( num ) => num !== null );
+    //   const usedNumbers = existingFixtures
+    //       .map( ( doc ) => {
+    //         const match = doc.fixtureName.match( regexPattern );
+    //         return match ? parseInt( match[1], 10 ) : null;
+    //       } )
+    //       .filter( ( num ) => num !== null );
 
-      const nextNumber = usedNumbers.length > 0 ? Math.max( ...usedNumbers ) + 1 : 1;
+    //   const nextNumber = usedNumbers.length > 0 ? Math.max( ...usedNumbers ) + 1 : 1;
 
-      return `Template-${nextNumber}-${baseName}`;
-    }
+    //   return `Template-${nextNumber}-${baseName}`;
+    // }
 
 
     if ( !req?.body?.storeName ) {
@@ -7648,7 +7648,7 @@ export async function migrateCrestv1( req, res ) {
             },
             'footer': {
               label: fixture.footer,
-              isEnabled: true,p
+              isEnabled: true, p,
             },
             'isBodyEnabled': true,
             'productResolutionLevel': 'L3',
@@ -7865,7 +7865,7 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
@@ -8107,7 +8107,7 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
@@ -8118,7 +8118,6 @@ export async function migrateCrestv1( req, res ) {
           }
 
           const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
-
 
 
           const fixtureTemplateData = {
@@ -8330,7 +8329,7 @@ export async function migrateCrestv1( req, res ) {
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
@@ -8341,7 +8340,6 @@ export async function migrateCrestv1( req, res ) {
           }
 
           const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
-
 
 
           const fixtureTemplateData = {
