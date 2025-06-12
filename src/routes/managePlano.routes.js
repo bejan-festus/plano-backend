@@ -13,4 +13,5 @@ managePlanoRouter
     .get( '/templateList', managePlanoController.templateList )
     .get( '/fixtureBrandsList', managePlanoController.fixtureBrandsList )
     .get( '/fixtureVMList', managePlanoController.fixtureVMList )
-    .post( '/updateFixtureStatus', isAllowedSessionHandler, managePlanoController.updateFixtureStatus );
+    .post( '/updateFixtureStatus', isAllowedSessionHandler, managePlanoController.updateFixtureStatus )
+    .post( '/updateStoreFixture', managePlanoController.updateStoreFixture );
