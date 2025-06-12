@@ -42,3 +42,7 @@ export async function deleteOne( query = {} ) {
 export const findAndSort = async ( query={}, field={}, sort={} ) => {
   return await model.fixtureConfigModel.find( query, field ).sort( sort ).collation( { locale: 'en_US', numericOrdering: true } );
 };
+
+export const sortAndFindOne = async ( query={}, field={}, sort={} ) => {
+  return await model.fixtureConfigModel.find(query, field).sort(sort).limit(1)
+};
