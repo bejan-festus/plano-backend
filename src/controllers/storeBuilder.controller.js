@@ -3178,7 +3178,7 @@ export async function planoList( req, res ) {
             {
               $group: {
                 _id: '',
-                layoutDetails: { $push: { k: '$floorName', v: '$status' } },
+                layoutDetails: { $push: { k: '$_id', v: '$status', planoId: '$$plano' } },
               },
             },
           ],
@@ -3220,6 +3220,7 @@ export async function planoList( req, res ) {
           vmCount: '$fixtureDetails.vmCount',
           fixtureCapacity: '$fixtureDetails.fixtureCapacity',
           status: 1,
+          planoProcess: 1,
         },
       },
     ];
@@ -3255,6 +3256,11 @@ export async function planoList( req, res ) {
       data: planoDetails[0].data,
       count: planoDetails?.[0]?.count?.[0]?.total || 0,
     };
+    await Promise.all( planoDetails.map( ( ele ) => {
+      if ( ele.layoutDetails ) {
+
+      }
+    } ) );
     return res.sendSuccess( result );
   } catch ( e ) {
     console.log( e );
