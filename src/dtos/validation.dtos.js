@@ -201,6 +201,7 @@ export const updateTaskConfig = {
 export const uploadBrandListSchema = joi.object( {
   clientId: joi.string().required(),
   brandData: joi.array().items( joi.any() ).min( 1 ).required(),
+  brandUsedList:joi.array().items(joi.any()).min(0)
 } );
 
 export const uploadBrandList = {

@@ -144,10 +144,10 @@ export async function deleteTemplate( req, res ) {
     let getFixtureDetails = await storeFixtureService.find( { fixtureConfigId: req.body.templateId }, { _id: 1, planoId: 1 } );
     if ( getFixtureDetails.length ) {
       let planoDetails = await planoService.find( { _id: getFixtureDetails.map( ( ele ) => ele.planoId ) } );
-      return res.sendError( `Fixture template is mapped with ${planoDetails.length}` );
+      return res.sendError( `Fixture template is mapped with ${planoDetails.length}`, 400 );
     }
     await fixtureConfigService.deleteOne( { _id: req.body.templateId } );
-    return res.sendSuccess( 'Fixture template deleted successfully' );
+    return res.sendSuccess( 'Fixture template is deleted successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'deleteTemplate', error: e } );
     return res.sendError( e, 500 );
