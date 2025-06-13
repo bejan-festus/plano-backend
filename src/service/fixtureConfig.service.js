@@ -44,5 +44,5 @@ export const findAndSort = async ( query={}, field={}, sort={} ) => {
 };
 
 export const sortAndFindOne = async ( query={}, field={}, sort={} ) => {
-  return await model.fixtureConfigModel.find(query, field).sort(sort).limit(1)
+  return await model.fixtureConfigModel.find( query, field ).sort( sort ).limit( 1 );
 };

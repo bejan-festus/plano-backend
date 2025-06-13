@@ -33,7 +33,6 @@ import timeZone from 'dayjs/plugin/timezone.js';
 dayjs.extend( timeZone );
 
 
-
 export async function getStoreNames( req, res ) {
   try {
     if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
@@ -7234,18 +7233,18 @@ export async function migrateCrestv1( req, res ) {
       $and: [
         // { storeName: req.body.storeName },
         { storeName: { $in: [
-    "LKST81",
-    "LKST682",
-    "LKST351",
-    "LKST1193",
-    "LKST98",
-    "LKST01",
-    "LKST266",
-    "LKST495",
-    "LKST2280",
-    "LKST599",
-    "LKST267"
-  ] } },
+          'LKST81',
+          'LKST682',
+          'LKST351',
+          'LKST1193',
+          'LKST98',
+          'LKST01',
+          'LKST266',
+          'LKST495',
+          'LKST2280',
+          'LKST599',
+          'LKST267',
+        ] } },
         // { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
       ],
     };
@@ -7268,7 +7267,7 @@ export async function migrateCrestv1( req, res ) {
     for ( let i = 0; i < storeList.length; i++ ) {
       const storeData = await fetchStoreData( storeList[i], staticToken, res );
 
-      console.log( JSON.stringify(storeData) )
+      console.log( JSON.stringify( storeData ) );
 
       if ( storeData?.data?.message !== 'SUCCESS' ) continue;
 
@@ -7512,16 +7511,15 @@ export async function migrateCrestv1( req, res ) {
             };
           } );
 
-          [...fixtureProductSubBrandName].forEach( async (brand)=>{
-
+          [ ...fixtureProductSubBrandName ].forEach( async ( brand ) => {
             const upsertData = {
-              clientId:"11",
-              brandName:brand,
-              brandDetails:[]
-            }
+              clientId: '11',
+              brandName: brand,
+              brandDetails: [],
+            };
 
-            await planoProductCategoryService.upsertOne({brandName:brand}, upsertData)
-          })
+            await planoProductCategoryService.upsertOne( { brandName: brand }, upsertData );
+          } );
 
           const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
             const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
@@ -7539,11 +7537,11 @@ export async function migrateCrestv1( req, res ) {
                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
               }
 
-              if(configData.vmWidthmm === 905){
+              if ( configData.vmWidthmm === 905 ) {
                 configData.zone = 'stretch';
               }
 
-              if(configData.vmWidthmm === 230){
+              if ( configData.vmWidthmm === 230 ) {
                 configData.zone = 'left';
               }
 
@@ -7579,7 +7577,7 @@ export async function migrateCrestv1( req, res ) {
               },
               status: 'complete',
               vmBrand: vmTemplate.vmBrand,
-              vmType:"LKVM"
+              vmType: 'LKVM',
 
             };
             if ( vmTemplate?.imageUrl ) {
@@ -7629,7 +7627,7 @@ export async function migrateCrestv1( req, res ) {
               startYPosition: vmTemplate.startYPosition,
               endYPosition: vmTemplate.endYPosition,
               xZone: vmTemplate.xZone,
-              yZone:'stretch',
+              yZone: 'stretch',
 
             };
           } ) );
@@ -7640,15 +7638,14 @@ export async function migrateCrestv1( req, res ) {
 
           let templateIndex = 1;
 
-          if ( existingTemplateWithMaxIndex.length ) {   
-          const isTemplateSimilar = await fixtureConfigService.findOne({ crestMapKey: mapKey });
+          if ( existingTemplateWithMaxIndex.length ) {
+            const isTemplateSimilar = await fixtureConfigService.findOne( { crestMapKey: mapKey } );
 
-          if(isTemplateSimilar){
-            templateIndex = isTemplateSimilar.toObject().templateIndex
-          }else{
-            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
-          }
-         
+            if ( isTemplateSimilar ) {
+              templateIndex = isTemplateSimilar.toObject().templateIndex;
+            } else {
+              templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            }
           }
 
           const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
@@ -7783,16 +7780,15 @@ export async function migrateCrestv1( req, res ) {
             };
           } );
 
-           [...fixtureProductSubBrandName].forEach( async (brand)=>{
-
+          [ ...fixtureProductSubBrandName ].forEach( async ( brand ) => {
             const upsertData = {
-              clientId:"11",
-              brandName:brand,
-              brandDetails:[]
-            }
+              clientId: '11',
+              brandName: brand,
+              brandDetails: [],
+            };
 
-            await planoProductCategoryService.upsertOne({brandName:brand}, upsertData)
-          })
+            await planoProductCategoryService.upsertOne( { brandName: brand }, upsertData );
+          } );
 
           const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
             const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
@@ -7811,11 +7807,11 @@ export async function migrateCrestv1( req, res ) {
                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
               }
 
-              if(configData.vmWidthmm === 905){
+              if ( configData.vmWidthmm === 905 ) {
                 configData.zone = 'stretch';
               }
 
-              if(configData.vmWidthmm === 230){
+              if ( configData.vmWidthmm === 230 ) {
                 configData.zone = 'left';
               }
 
@@ -7851,7 +7847,7 @@ export async function migrateCrestv1( req, res ) {
               },
               status: 'complete',
               vmBrand: vmTemplate.vmBrand,
-              vmType:"LKVM"
+              vmType: 'LKVM',
             };
             if ( vmTemplate?.imageUrl ) {
               const parsedUrl = new URL( vmTemplate.imageUrl );
@@ -7901,7 +7897,7 @@ export async function migrateCrestv1( req, res ) {
               startYPosition: vmTemplate.startYPosition,
               endYPosition: vmTemplate.endYPosition,
               xZone: vmTemplate.xZone,
-              yZone:'stretch',
+              yZone: 'stretch',
             };
           } ) );
 
@@ -7911,15 +7907,14 @@ export async function migrateCrestv1( req, res ) {
 
           let templateIndex = 1;
 
-          if ( existingTemplateWithMaxIndex.length ) {   
-          const isTemplateSimilar = await fixtureConfigService.findOne({ crestMapKey: mapKey });
+          if ( existingTemplateWithMaxIndex.length ) {
+            const isTemplateSimilar = await fixtureConfigService.findOne( { crestMapKey: mapKey } );
 
-          if(isTemplateSimilar){
-            templateIndex = isTemplateSimilar.toObject().templateIndex
-          }else{
-            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
-          }
-         
+            if ( isTemplateSimilar ) {
+              templateIndex = isTemplateSimilar.toObject().templateIndex;
+            } else {
+              templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            }
           }
 
 
@@ -8055,16 +8050,15 @@ export async function migrateCrestv1( req, res ) {
             };
           } );
 
-          [...fixtureProductSubBrandName].forEach( async (brand)=>{
-
+          [ ...fixtureProductSubBrandName ].forEach( async ( brand ) => {
             const upsertData = {
-              clientId:"11",
-              brandName:brand,
-              brandDetails:[]
-            }
+              clientId: '11',
+              brandName: brand,
+              brandDetails: [],
+            };
 
-            await planoProductCategoryService.upsertOne({brandName:brand}, upsertData)
-          })
+            await planoProductCategoryService.upsertOne( { brandName: brand }, upsertData );
+          } );
 
 
           const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
@@ -8084,11 +8078,11 @@ export async function migrateCrestv1( req, res ) {
                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
               }
 
-              if(configData.vmWidthmm === 905){
+              if ( configData.vmWidthmm === 905 ) {
                 configData.zone = 'stretch';
               }
 
-              if(configData.vmWidthmm === 230){
+              if ( configData.vmWidthmm === 230 ) {
                 configData.zone = 'left';
               }
 
@@ -8124,7 +8118,7 @@ export async function migrateCrestv1( req, res ) {
               },
               status: 'complete',
               vmBrand: vmTemplate.vmBrand,
-              vmType:"LKVM"
+              vmType: 'LKVM',
             };
             if ( vmTemplate?.imageUrl ) {
               const parsedUrl = new URL( vmTemplate.imageUrl );
@@ -8173,7 +8167,7 @@ export async function migrateCrestv1( req, res ) {
               startYPosition: vmTemplate.startYPosition,
               endYPosition: vmTemplate.endYPosition,
               xZone: vmTemplate.xZone,
-              yZone:'stretch',
+              yZone: 'stretch',
             };
           } ) );
 
@@ -8183,15 +8177,14 @@ export async function migrateCrestv1( req, res ) {
 
           let templateIndex = 1;
 
-          if ( existingTemplateWithMaxIndex.length ) {   
-          const isTemplateSimilar = await fixtureConfigService.findOne({ crestMapKey: mapKey });
+          if ( existingTemplateWithMaxIndex.length ) {
+            const isTemplateSimilar = await fixtureConfigService.findOne( { crestMapKey: mapKey } );
 
-          if(isTemplateSimilar){
-            templateIndex = isTemplateSimilar.toObject().templateIndex
-          }else{
-            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
-          }
-         
+            if ( isTemplateSimilar ) {
+              templateIndex = isTemplateSimilar.toObject().templateIndex;
+            } else {
+              templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            }
           }
 
 
@@ -8348,16 +8341,15 @@ export async function migrateCrestv1( req, res ) {
             };
           } );
 
-          [...fixtureProductSubBrandName].forEach( async (brand)=>{
-
+          [ ...fixtureProductSubBrandName ].forEach( async ( brand ) => {
             const upsertData = {
-              clientId:"11",
-              brandName:brand,
-              brandDetails:[]
-            }
+              clientId: '11',
+              brandName: brand,
+              brandDetails: [],
+            };
 
-            await planoProductCategoryService.upsertOne({brandName:brand}, upsertData)
-          })
+            await planoProductCategoryService.upsertOne( { brandName: brand }, upsertData );
+          } );
 
 
           const vmConfig = fixture.centerSuperSubMain?.flatMap( ( vm ) => {
@@ -8381,7 +8373,7 @@ export async function migrateCrestv1( req, res ) {
                 startYPosition: configData2.startShelf,
                 endYPosition: configData2.endShelf,
                 xZone: 'stretch',
-                yZone:'stretch',
+                yZone: 'stretch',
                 vmName: vm.name + ' - 2',
                 vmHeight: configData2.vmHeightmm,
                 vmWidth: configData2.vmWidthmm,
@@ -8403,7 +8395,7 @@ export async function migrateCrestv1( req, res ) {
               },
               status: 'complete',
               vmBrand: vmTemplate.vmBrand,
-              vmType:"LKVM"
+              vmType: 'LKVM',
             };
 
             const vmDetails = await planoVmService.upsertOne(
@@ -8418,7 +8410,7 @@ export async function migrateCrestv1( req, res ) {
               startYPosition: vmTemplate.startYPosition,
               endYPosition: vmTemplate.endYPosition,
               xZone: vmTemplate.xZone,
-              yZone:'stretch',
+              yZone: 'stretch',
 
             };
           } ) );
@@ -8429,15 +8421,14 @@ export async function migrateCrestv1( req, res ) {
 
           let templateIndex = 1;
 
-          if ( existingTemplateWithMaxIndex.length ) {   
-          const isTemplateSimilar = await fixtureConfigService.findOne({ crestMapKey: mapKey });
+          if ( existingTemplateWithMaxIndex.length ) {
+            const isTemplateSimilar = await fixtureConfigService.findOne( { crestMapKey: mapKey } );
 
-          if(isTemplateSimilar){
-            templateIndex = isTemplateSimilar.toObject().templateIndex
-          }else{
-            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
-          }
-         
+            if ( isTemplateSimilar ) {
+              templateIndex = isTemplateSimilar.toObject().templateIndex;
+            } else {
+              templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            }
           }
 
 
