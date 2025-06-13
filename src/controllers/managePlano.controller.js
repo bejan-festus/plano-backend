@@ -64,7 +64,7 @@ export async function getplanoFeedback( req, res ) {
       $match: {
         planoId: new mongoose.Types.ObjectId( req.body.planoId ),
         floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-        type: { $ne: 'layout' },
+        type: 'fixture',
       },
     },
     {
@@ -147,7 +147,7 @@ export async function getplanoFeedback( req, res ) {
       $match: {
         planoId: new mongoose.Types.ObjectId( req.body.planoId ),
         floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-        type: { $ne: 'layout' },
+        type: 'vm',
       },
     },
     {

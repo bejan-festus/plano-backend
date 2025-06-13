@@ -2661,7 +2661,7 @@ export async function storeFixturesv2( req, res ) {
               floors.map( async ( floor ) => {
                 let productCapacity = 0;
                 let fixtureCount = 0;
-                let totalVmCount = 0
+                let totalVmCount = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.findAndSort( {
@@ -2855,8 +2855,8 @@ export async function storeFixturesv2( req, res ) {
 
                 return {
                   ...floor.toObject(),
-                  fixtureCount:fixtureCount,
-                  vmCount:totalVmCount,
+                  fixtureCount: fixtureCount,
+                  vmCount: totalVmCount,
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
                   productCount: productCapacity,
