@@ -1601,7 +1601,8 @@ export const uploadImage = async ( req, res ) => {
       return res.sendError( { message: 'Something went Wrong' }, 500 );
     }
 
-    return res.sendSuccess( { message: 'Uploaded Successfully', imgUrl: imgUrl } );
+
+    return res.sendSuccess( { message: 'Uploaded Successfully', imgUrl: imgUrl, path: imgUrl.Key } );
   } catch ( e ) {
     logger.error( 'uploadImage =>', e );
     return res.sendError( e, 500 );

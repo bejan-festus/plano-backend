@@ -532,8 +532,12 @@ export async function updateAnswers( req, res ) {
 }
 export async function updateAnswersv2( req, res ) {
   try {
-    let taskDetails = await processedService.findOne( { date_string: dayjs().format( 'YYYY-MM-DD' ), userId: req.user._id, isPlano: true, planoType: 'layout' } );
+    let taskDetails = await processedService.findOne( { _id: new mongoose.Types.ObjectId( req.body.taskId ) } );
     console.log( taskDetails );
+    if ( !taskDetails ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
     let data = {
       fixtureId: req.body.fixtureId,
       answers: req.body.answers,
@@ -542,9 +546,9 @@ export async function updateAnswersv2( req, res ) {
       floorId: req.body.floorId,
       type: req.body.type,
       date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
-      taskId: taskDetails?._id,
-      storeName: taskDetails?.storeName,
-      storeId: taskDetails?.store_id,
+      taskId: req.body.taskId,
+      storeName: req.body?.storeName,
+      storeId: req.body?.storeId,
     };
     console.log( data );
     await planoTaskService.updateOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );

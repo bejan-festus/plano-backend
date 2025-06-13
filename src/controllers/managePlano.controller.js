@@ -96,7 +96,7 @@ export async function getplanoFeedback( req, res ) {
     }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
-        from: 'fixtureconfigs',
+        from: 'storefixtures',
         let: { 'fixtureId': '$fixtureId' },
         pipeline: [
           {
@@ -104,6 +104,27 @@ export async function getplanoFeedback( req, res ) {
               $expr: {
                 $and: [
                   { $eq: [ '$_id', '$$fixtureId' ] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'storeFixtureData',
+      },
+    },
+    {
+      $unwind: { path: '$storeFixtureData', preserveNullAndEmptyArrays: true },
+    },
+    {
+      $lookup: {
+        from: 'fixtureconfigs',
+        let: { 'fixtureConfigId': '$storeFixtureData.fixtureConfigId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$fixtureConfigId' ] },
                 ],
               },
             },
@@ -389,13 +410,13 @@ export async function updateStoreFixture( req, res ) {
   try {
     const { fixtureId, data } = req.body;
 
-  const update =   await storeFixtureService.updateOne({_id: new mongoose.Types.ObjectId( fixtureId )}, data)
+    const update = await storeFixtureService.updateOne( { _id: new mongoose.Types.ObjectId( fixtureId ) }, data );
 
-  console.log(update)
+    console.log( update );
 
-    data.shelfConfig.forEach(async (shelf)=>{
-      await fixtureShelfService.updateOne({_id: new mongoose.Types.ObjectId( shelf._id ) }, shelf)
-    })
+    data.shelfConfig.forEach( async ( shelf ) => {
+      await fixtureShelfService.updateOne( { _id: new mongoose.Types.ObjectId( shelf._id ) }, shelf );
+    } );
 
 
     res.sendSuccess( 'Updated Successfully' );
