@@ -7225,35 +7225,6 @@ export async function migrateCrestv1( req, res ) {
     };
 
 
-<<<<<<< HEAD
-=======
-    // async function generateFixtureTemplateName( baseName, fixtureWidth ) {
-    //   function escapeRegex( str ) {
-    //     return str.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
-    //   }
-
-    //   const escapedBase = escapeRegex( baseName );
-    //   const regexPattern = new RegExp( `^Template-(\\d+)-${escapedBase}$` );
-
-    //   const existingFixtures = await fixtureConfigService.find( {
-    //     fixtureName: { $regex: new RegExp( `^Template-(\\d+)-${escapedBase}$` ) },
-    //     fixtureWidth: fixtureWidth,
-    //   } );
-
-    //   const usedNumbers = existingFixtures
-    //       .map( ( doc ) => {
-    //         const match = doc.fixtureName.match( regexPattern );
-    //         return match ? parseInt( match[1], 10 ) : null;
-    //       } )
-    //       .filter( ( num ) => num !== null );
-
-    //   const nextNumber = usedNumbers.length > 0 ? Math.max( ...usedNumbers ) + 1 : 1;
-
-    //   return `Template-${nextNumber}-${baseName}`;
-    // }
-
-
->>>>>>> d6a876d6e32c8c249d2691826c1b59f5a45efdfe
     if ( !req?.body?.storeName ) {
       return res.sendError( 'No store supplied', 200 );
     }
@@ -7696,11 +7667,7 @@ export async function migrateCrestv1( req, res ) {
             },
             'footer': {
               label: fixture.footer,
-<<<<<<< HEAD
               isEnabled: true,
-=======
-              isEnabled: true, p,
->>>>>>> d6a876d6e32c8c249d2691826c1b59f5a45efdfe
             },
             'isBodyEnabled': true,
             'productResolutionLevel': 'L3',
