@@ -96,7 +96,7 @@ export async function getplanoFeedback( req, res ) {
     }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
-        from: 'fixtureconfigs',
+        from: 'storefixtures',
         let: { 'fixtureId': '$fixtureId' },
         pipeline: [
           {
@@ -104,6 +104,27 @@ export async function getplanoFeedback( req, res ) {
               $expr: {
                 $and: [
                   { $eq: [ '$_id', '$$fixtureId' ] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'storeFixtureData',
+      },
+    },
+    {
+      $unwind: { path: '$storeFixtureData', preserveNullAndEmptyArrays: true },
+    },
+    {
+      $lookup: {
+        from: 'fixtureconfigs',
+        let: { 'fixtureConfigId': '$storeFixtureData.fixtureConfigId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$fixtureConfigId' ] },
                 ],
               },
             },
