@@ -242,15 +242,14 @@ export async function createTask( req, res ) {
             let taskData = { ...data };
             if ( floorDetails.length > 1 ) {
               taskData.checkListName = taskData.checkListName +' - '+ floorDetails[i].floorName;
-              taskData.floorId = floorDetails[i]._id;
             }
+            taskData.floorId = floorDetails[i]._id;
             taskData.store_id = store.storeId;
             taskData.storeName = store.storeName;
             taskData.userId = userDetails._id;
             taskData.userName = userDetails.userName;
             taskData.userEmail = userDetails.email;
             taskData.planoId = planoDetails?._id;
-            console.log( req.body.days );
             for ( let i=0; i<req.body.days; i++ ) {
               let currDate = dayjs().add( i, 'day' );
               let insertData = { ...taskData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 12:00 AM`, 'YYYY-MM-DD hh:mm A' ).format() };
