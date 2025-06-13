@@ -1182,9 +1182,9 @@ export async function getVmLibList( req, res ) {
       let productBrandDetails = await planoProductService.find( { clientId: req.body.clientId } );
       let vmTypeList = await vmTypeService.find( { clientId: req.body.clientId } );
       vmTypeList = vmTypeList.map( ( ele ) => ele.vmType );
-      let brand = productBrandDetails.map( ( ele ) => ele.brandName );
-      let brandCategories = productBrandDetails.flatMap( ( ele ) => [ ...ele.category ] );
-      let brandSubCategories = productBrandDetails.flatMap( ( ele ) => [ ...ele.subCategory ] );
+      let brand = productBrandDetails.map( ( ele ) => ele?.brandName );
+      let brandCategories = productBrandDetails.flatMap( ( ele ) => [ ...(ele?.category ?? []) ] );
+      let brandSubCategories = productBrandDetails.flatMap( ( ele ) => [ ...(ele?.subCategory?? []) ] );
       brandCategories = [ ...new Set( brandCategories.map( ( ele ) => ele ) ) ];
       brandSubCategories = [ ...new Set( brandSubCategories.map( ( ele ) => ele ) ) ];
 
