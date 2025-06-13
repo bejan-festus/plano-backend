@@ -732,11 +732,11 @@ export async function generatetaskDetails( req, res ) {
       },
       {
         $group: {
-          _id: '$planoId',
+          _id: '$storeName',
           count: { $sum: 1 },
-          storeName: { $first: '$storeName' },
+          planoId: { $last: '$planoId' },
           taskId: { $push: '$_id' },
-          checklistStatus: { $push: '$checklistStatus' },
+          checklistStatus: { $last: '$checklistStatus' },
           date_string: { $push: '$date_string' },
         },
       },
@@ -744,11 +744,11 @@ export async function generatetaskDetails( req, res ) {
         $project: {
           _id: 0,
           taskId: 1,
-          storeName: 1,
+          planoId: 1,
           checklistStatus: 1,
           count: 1,
           date_string: 1,
-          planoId: '$_id',
+          storeName: '$_id',
         },
       },
     ];
@@ -771,7 +771,7 @@ export async function generatetaskDetails( req, res ) {
     } ) );
 
     processedTaskDetails.forEach( ( item ) => {
-      let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus.includes( 'submit' ) && taskItem.date_string.includes( item.date_string ) && item.planoId.toString() == taskItem.planoId.toString() );
+      let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus =='submit' && taskItem.date_string.includes( item.date_string ) && item.planoId.toString() == taskItem.planoId.toString() );
       console.log( taskIndex, 'index' );
       if ( taskIndex != -1 ) {
         taskDetails[taskIndex].storeStatus = item.status == 'complete' ? 'yes' : 'No';
