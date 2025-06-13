@@ -140,8 +140,91 @@ export async function getplanoFeedback( req, res ) {
 
 
     let findfixtureCompliance = await planoTaskService.aggregate( queryfixture );
-    console.log( findfixtureCompliance );
-    res.sendSuccess( { count: findfixtureCompliance.length, layoutData: findPlanoCompliance, fixtureData: findfixtureCompliance } );
+    let queryVm = [];
+
+
+    queryVm.push( {
+      $match: {
+        planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+        floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+        type: { $ne: 'layout' },
+      },
+    },
+    {
+      $lookup: {
+        from: 'processedtasks',
+        let: { 'taskId': '$taskId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$taskId' ] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              'userName': 1,
+              'createdAt': 1,
+              'createdByName': 1,
+              'submitTime_string': 1,
+            },
+          },
+        ],
+        as: 'taskData',
+      },
+
+    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: 'storefixtures',
+        let: { 'fixtureId': '$fixtureId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$fixtureId' ] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'storeFixtureData',
+      },
+    },
+    {
+      $unwind: { path: '$storeFixtureData', preserveNullAndEmptyArrays: true },
+    },
+    {
+      $lookup: {
+        from: 'fixtureconfigs',
+        let: { 'fixtureConfigId': '$storeFixtureData.fixtureConfigId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$fixtureConfigId' ] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'FixtureData',
+      },
+    },
+    {
+      $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true },
+    },
+    );
+
+
+    let findvmCompliance = await planoTaskService.aggregate( queryVm );
+    console.log( findvmCompliance );
+    res.sendSuccess( { count: findfixtureCompliance.length, layoutData: findPlanoCompliance, fixtureData: findfixtureCompliance, VmData: findvmCompliance } );
   } catch ( e ) {
     logger.error( { functionName: 'getplanoFeedback', error: e, message: req.body } );
     return res.sendError( e, 500 );
