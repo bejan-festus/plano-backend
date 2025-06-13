@@ -3012,7 +3012,7 @@ export async function storeFixturesTaskv2( req, res ) {
                               fixtureId: fixture._id,
                               type: req.body?.type ? req.body.type : 'fixture',
                               date_string: req.body?.date,
-                            }, { status: 1 } );
+                            }, { status: 1, answers: 1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3040,11 +3040,20 @@ export async function storeFixturesTaskv2( req, res ) {
                               };
                             } ) );
 
+                            let disabled = true;
+                            if ( compliance?.status && compliance.status == 'incomplete' ) {
+                              let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
+                              if ( issueDetails ) {
+                                disabled = false;
+                              }
+                            }
+
                             return {
                               ...fixture.toObject(),
                               status: compliance?.status ? compliance.status : '',
                               shelfCount: shelves.length,
                               productCount: productCount,
+                              disabled: disabled,
                               vmCount: vmCount,
                               shelfConfig: shelfDetails,
                               vmConfig: vmDetails,
@@ -3143,8 +3152,8 @@ export async function storeFixturesTaskv2( req, res ) {
 
                 return {
                   ...floor.toObject(),
-                  fixtureCount:fixtureCount,
-                  vmCount:totalVmCount,
+                  fixtureCount: fixtureCount,
+                  vmCount: totalVmCount,
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
                   productCount: productCapacity,
