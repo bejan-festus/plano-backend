@@ -2324,62 +2324,62 @@ export async function updateVmData( req, res ) {
 
 // import https from 'https';
 // async function scrapeCrest() {
-//   const storeIds = [ 'LKST2973' ];
+//   const storeIds = [ 'LKST494' ];
 //   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5NjQ5MjU1LCJpYXQiOjE3NDk2NDU2NTUsImp0aSI6ImJmZmZhNDI1YTAwYTRkNzVhMzIwZDEyOGVhN2JlY2Q1IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.U4iPQcE3Sq7GNT7enSq17b5vwhAbW2ANMSxsMXTxNSo';
+//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5NzkxNzUzLCJpYXQiOjE3NDk3ODgxNTMsImp0aSI6IjhmNDY4MTY0NTY5NTQ0YTU4OWJjMDU2NmU0ZGE0ZjI3IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.wHQ2RPML7Jr6yE0V0mNvIrtUT8mFrvp7sBBtH6bhlSc';
 //   const filePath = 'response.json';
 //   let allResults = [];
 
-  //   if ( fs.existsSync( filePath ) ) {
-  //     try {
-  //       const existingData = fs.readFileSync( filePath, 'utf8' );
-  //       allResults = JSON.parse( existingData );
-  //       if ( !Array.isArray( allResults ) ) {
-  //         allResults = [];
-  //       }
-  //     } catch ( error ) {
-  //       console.error( 'Error reading existing JSON file:', error.message );
-  //       allResults = [];
-  //     }
-  //   }
+//     if ( fs.existsSync( filePath ) ) {
+//       try {
+//         const existingData = fs.readFileSync( filePath, 'utf8' );
+//         allResults = JSON.parse( existingData );
+//         if ( !Array.isArray( allResults ) ) {
+//           allResults = [];
+//         }
+//       } catch ( error ) {
+//         console.error( 'Error reading existing JSON file:', error.message );
+//         allResults = [];
+//       }
+//     }
 
-  //   for ( const storeId of storeIds ) {
-  //     try {
-  //       const result = await new Promise( ( resolve ) => {
-  //         const payload = JSON.stringify( { store_id: storeId } );
-  //         const options = {
-  //           method: 'POST',
-  //           headers: {
-  //             'Authorization': `Bearer ${bearerToken}`,
-  //             'Content-Type': 'application/json',
-  //             'Content-Length': Buffer.byteLength( payload ),
-  //           },
-  //         };
+//     for ( const storeId of storeIds ) {
+//       try {
+//         const result = await new Promise( ( resolve ) => {
+//           const payload = JSON.stringify( { store_id: storeId } );
+//           const options = {
+//             method: 'POST',
+//             headers: {
+//               'Authorization': `Bearer ${bearerToken}`,
+//               'Content-Type': 'application/json',
+//               'Content-Length': Buffer.byteLength( payload ),
+//             },
+//           };
 
-  //         const req = https.request( apiUrl, options, ( res ) => {
-  //           let data = '';
-  //           res.on( 'data', ( chunk ) => {
-  //             data += chunk;
-  //           } );
-  //           res.on( 'end', () => {
-  //             try {
-  //               const jsonData = JSON.parse( data );
-  //               const result = { storeName: storeId, data: jsonData };
-  //               allResults.push( result );
-  //               fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
-  //               console.log( 'Received Data:', result );
-  //               resolve( result );
-  //             } catch ( error ) {
-  //               console.error( `Error parsing JSON for ${storeId}:`, error.message );
-  //               resolve( { storeName: storeId, data: null } );
-  //             }
-  //           } );
-  //         } );
+//           const req = https.request( apiUrl, options, ( res ) => {
+//             let data = '';
+//             res.on( 'data', ( chunk ) => {
+//               data += chunk;
+//             } );
+//             res.on( 'end', () => {
+//               try {
+//                 const jsonData = JSON.parse( data );
+//                 const result = { storeName: storeId, data: jsonData };
+//                 allResults.push( result );
+//                 fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
+//                 console.log( 'Received Data:', result );
+//                 resolve( result );
+//               } catch ( error ) {
+//                 console.error( `Error parsing JSON for ${storeId}:`, error.message );
+//                 resolve( { storeName: storeId, data: null } );
+//               }
+//             } );
+//           } );
 
-  //         req.on( 'error', ( error ) => {
-  //           console.error( `Error fetching data for ${storeId}:`, error.message );
-  //           resolve( { storeName: storeId, data: null } );
-  //         } );
+//           req.on( 'error', ( error ) => {
+//             console.error( `Error fetching data for ${storeId}:`, error.message );
+//             resolve( { storeName: storeId, data: null } );
+//           } );
 
 //         req.write( payload );
 //         req.end();
@@ -7234,7 +7234,17 @@ export async function migrateCrestv1( req, res ) {
       $and: [
         // { storeName: req.body.storeName },
         { storeName: { $in: [
-    "LKST682"
+    "LKST81",
+    "LKST682",
+    "LKST351",
+    "LKST1193",
+    "LKST98",
+    "LKST01",
+    "LKST266",
+    "LKST495",
+    "LKST2280",
+    "LKST599",
+    "LKST267"
   ] } },
         // { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
       ],

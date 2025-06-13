@@ -2659,6 +2659,8 @@ export async function storeFixturesv2( req, res ) {
           const floorsWithFixtures = await Promise.all(
               floors.map( async ( floor ) => {
                 let productCapacity = 0;
+                let fixtureCount = 0;
+                let totalVmCount = 0
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.findAndSort( {
@@ -2680,6 +2682,7 @@ export async function storeFixturesv2( req, res ) {
                               fixture.imageUrl = '';
                             }
                             productCapacity += fixture.toObject().fixtureCapacity;
+                            fixtureCount += 1;
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -2723,6 +2726,7 @@ export async function storeFixturesv2( req, res ) {
 
 
                             const vmDetails = await Promise.all( fixture.toObject()?.vmConfig?.map( async ( vm ) => {
+                              totalVmCount += 1;
                               const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
                               return {
                                 ...vm,
@@ -2774,6 +2778,7 @@ export async function storeFixturesv2( req, res ) {
                         fixture.imageUrl = '';
                       }
                       productCapacity += fixture.toObject().fixtureCapacity;
+                      fixtureCount += 1;
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -2817,6 +2822,7 @@ export async function storeFixturesv2( req, res ) {
 
 
                       const vmDetails = await Promise.all( fixture.toObject().vmConfig.map( async ( vm ) => {
+                        totalVmCount += 1;
                         const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
 
                         return {
@@ -2848,6 +2854,8 @@ export async function storeFixturesv2( req, res ) {
 
                 return {
                   ...floor.toObject(),
+                  fixtureCount:fixtureCount,
+                  vmCount:totalVmCount,
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
                   productCount: productCapacity,
