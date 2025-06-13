@@ -420,6 +420,10 @@ export async function FixtureLibraryList( req, res ) {
         },
       },
       );
+    } else {
+      query.push( {
+        $sort: { _id: -1 },
+      } );
     }
     query.push(
         {
@@ -1128,6 +1132,10 @@ export async function getVmLibList( req, res ) {
         },
       },
       );
+    } else {
+      query.push( {
+        $sort: { _id: -1 },
+      } );
     }
     query.push(
         {

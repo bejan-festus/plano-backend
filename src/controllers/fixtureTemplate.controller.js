@@ -384,6 +384,10 @@ export async function getTemplateList( req, res ) {
         },
       },
       );
+    } else {
+      query.push( {
+        $sort: { _id: -1 },
+      } );
     }
     query.push(
         {
