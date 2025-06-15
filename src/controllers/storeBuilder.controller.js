@@ -3143,8 +3143,8 @@ export async function storeFixturesTaskv2( req, res ) {
 
                 return {
                   ...floor.toObject(),
-                  fixtureCount:fixtureCount,
-                  vmCount:totalVmCount,
+                  fixtureCount: fixtureCount,
+                  vmCount: totalVmCount,
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
                   productCount: productCapacity,
