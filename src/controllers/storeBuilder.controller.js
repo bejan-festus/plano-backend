@@ -3129,11 +3129,20 @@ export async function storeFixturesTaskv2( req, res ) {
                         };
                       } ) );
 
+                      let disabled = true;
+                      if ( compliance?.status && compliance.status == 'incomplete' ) {
+                        let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
+                        if ( issueDetails ) {
+                          disabled = false;
+                        }
+                      }
+
                       return {
                         ...fixture.toObject(),
                         status: compliance?.status ? compliance.status : '',
                         shelfCount: shelves.shelves,
                         productCount: productCount,
+                        disabled: disabled,
                         vmCount: vmCount,
                         shelfConfig: shelfDetails,
                         vms: vmDetails,
@@ -3247,6 +3256,8 @@ export async function planoList( req, res ) {
           fixtureCapacity: '$fixtureDetails.fixtureCapacity',
           status: 1,
           planoProgress: 1,
+          createdAt: 1,
+          lastUpdate: '$updatedAt',
         },
       },
     ];
@@ -3272,7 +3283,6 @@ export async function planoList( req, res ) {
         ],
       },
     } );
-
     let planoDetails = await planoService.aggregate( query );
 
     if ( !planoDetails[0].data.length ) {
