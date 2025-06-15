@@ -458,8 +458,14 @@ export async function updateStatus( req, res ) {
     } else {
       currentDateTime = requestData?.currentTime ? dayjs( requestData.currentTime, 'HH:mm:ss' ) : dayjs();
     }
-    let submitTimeString = currentDateTime.format( 'hh:mm A, DD MMM YYYY' );
-    await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status, ...( req.body.status == 'inprogress' ) ? { startTime_string: submitTimeString } : { submitTime_string: submitTimeString } } );
+    let timeString = currentDateTime.format( 'hh:mm A, DD MMM YYYY' );
+    let comments = {
+      userId: req.user._id,
+      userName: req.user.Name,
+      email: req.user.email,
+      comment: req.body.comments,
+    };
+    await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status, ...( req.body.status == 'inprogress' ) ? { startTime_string: timeString } : { submitTime_string: timeString }, comments: { $push: comments } } );
     if ( req.body.status == 'submit' ) {
       await processedService.deleteMany( { planoId: taskDetails.planoId, userEmail: taskDetails.userEmail, store_id: taskDetails.store_id, ...( taskDetails?.floorId ) ? { floorId: taskDetails.floorId } : {}, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } } );
     }
@@ -732,11 +738,11 @@ export async function generatetaskDetails( req, res ) {
       },
       {
         $group: {
-          _id: '$planoId',
+          _id: '$storeName',
           count: { $sum: 1 },
-          storeName: { $first: '$storeName' },
+          planoId: { $last: '$planoId' },
           taskId: { $push: '$_id' },
-          checklistStatus: { $push: '$checklistStatus' },
+          checklistStatus: { $last: '$checklistStatus' },
           date_string: { $push: '$date_string' },
         },
       },
@@ -744,11 +750,11 @@ export async function generatetaskDetails( req, res ) {
         $project: {
           _id: 0,
           taskId: 1,
-          storeName: 1,
+          planoId: 1,
           checklistStatus: 1,
           count: 1,
           date_string: 1,
-          planoId: '$_id',
+          storeName: '$_id',
         },
       },
     ];
@@ -771,7 +777,7 @@ export async function generatetaskDetails( req, res ) {
     } ) );
 
     processedTaskDetails.forEach( ( item ) => {
-      let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus.includes( 'submit' ) && taskItem.date_string.includes( item.date_string ) && item.planoId.toString() == taskItem.planoId.toString() );
+      let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus =='submit' && taskItem.date_string.includes( item.date_string ) && item.planoId.toString() == taskItem.planoId.toString() );
       console.log( taskIndex, 'index' );
       if ( taskIndex != -1 ) {
         taskDetails[taskIndex].storeStatus = item.status == 'complete' ? 'yes' : 'No';
@@ -892,6 +898,23 @@ export async function taskSubmitDetails( req, res ) {
     return res.sendSuccess( { count: processedTaskDetails.length, data: processedTaskDetails } );
   } catch ( e ) {
     logger.error( { functioName: 'taskSubmitDetails', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function redoTask( req, res ) {
+  try {
+    if ( !req.body.taskId ) {
+      return res.sendError( 'Task id is required', 400 );
+    }
+    let getTaskDetails = await processedService.findOne( { _id: req.body.taskId } );
+    if ( !getTaskDetails ) {
+      return res.sendError( e, 204 );
+    }
+    await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: 'open', redoStatus: true } );
+    return res.sendSuccess( 'Task is republished successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'redoTask', error: e } );
     return res.sendError( e, 500 );
   }
 }

@@ -3012,7 +3012,7 @@ export async function storeFixturesTaskv2( req, res ) {
                               fixtureId: fixture._id,
                               type: req.body?.type ? req.body.type : 'fixture',
                               date_string: req.body?.date,
-                            }, { status: 1 } );
+                            }, { status: 1, answers: 1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3040,11 +3040,20 @@ export async function storeFixturesTaskv2( req, res ) {
                               };
                             } ) );
 
+                            let disabled = true;
+                            if ( compliance?.status && compliance.status == 'incomplete' ) {
+                              let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
+                              if ( issueDetails ) {
+                                disabled = false;
+                              }
+                            }
+
                             return {
                               ...fixture.toObject(),
                               status: compliance?.status ? compliance.status : '',
                               shelfCount: shelves.length,
                               productCount: productCount,
+                              disabled: disabled,
                               vmCount: vmCount,
                               shelfConfig: shelfDetails,
                               vmConfig: vmDetails,
@@ -3120,11 +3129,20 @@ export async function storeFixturesTaskv2( req, res ) {
                         };
                       } ) );
 
+                      let disabled = true;
+                      if ( compliance?.status && compliance.status == 'incomplete' ) {
+                        let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
+                        if ( issueDetails ) {
+                          disabled = false;
+                        }
+                      }
+
                       return {
                         ...fixture.toObject(),
                         status: compliance?.status ? compliance.status : '',
                         shelfCount: shelves.shelves,
                         productCount: productCount,
+                        disabled: disabled,
                         vmCount: vmCount,
                         shelfConfig: shelfDetails,
                         vms: vmDetails,
@@ -3237,7 +3255,9 @@ export async function planoList( req, res ) {
           vmCount: '$fixtureDetails.vmCount',
           fixtureCapacity: '$fixtureDetails.fixtureCapacity',
           status: 1,
-          planoProcess: 1,
+          planoProgress: 1,
+          createdAt: 1,
+          lastUpdate: '$updatedAt',
         },
       },
     ];
@@ -3263,7 +3283,6 @@ export async function planoList( req, res ) {
         ],
       },
     } );
-
     let planoDetails = await planoService.aggregate( query );
 
     if ( !planoDetails[0].data.length ) {
@@ -3273,11 +3292,6 @@ export async function planoList( req, res ) {
       data: planoDetails[0].data,
       count: planoDetails?.[0]?.count?.[0]?.total || 0,
     };
-    await Promise.all( planoDetails.map( ( ele ) => {
-      if ( ele.layoutDetails ) {
-
-      }
-    } ) );
     return res.sendSuccess( result );
   } catch ( e ) {
     console.log( e );
