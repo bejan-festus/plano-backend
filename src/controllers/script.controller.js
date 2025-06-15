@@ -7267,8 +7267,6 @@ export async function migrateCrestv1( req, res ) {
     for ( let i = 0; i < storeList.length; i++ ) {
       const storeData = await fetchStoreData( storeList[i], staticToken, res );
 
-      console.log( JSON.stringify( storeData ) );
-
       if ( storeData?.data?.message !== 'SUCCESS' ) continue;
 
 
