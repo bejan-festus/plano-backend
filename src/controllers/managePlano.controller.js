@@ -454,7 +454,7 @@ export async function updateFixtureStatus( req, res ) {
       userId: req.user._id,
       userName: req.user.userName,
       role: req.user.role,
-      responsetype: req.user.type,
+      responsetype: req.body.type,
       comment: req.body.comments,
     };
     console.log( comments );
@@ -462,7 +462,7 @@ export async function updateFixtureStatus( req, res ) {
     let updateResponse = await planoTaskService.updateOnefilters(
         { _id: new mongoose.Types.ObjectId( req.body._id ) },
         {
-          $set: { 'answers.$[ans].issues.$[iss].Details.$[det].status': 'completed' },
+          $set: { 'answers.$[ans].issues.$[iss].Details.$[det].status': req.body.type },
         },
         [
           { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
@@ -470,18 +470,33 @@ export async function updateFixtureStatus( req, res ) {
           { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
 
         ] );
-    let updatecomment = await planoTaskService.updateOnefilters(
-        { _id: new mongoose.Types.ObjectId( req.body._id ) },
-        {
-          $push: { 'answers.$[ans].issues.$[iss].Details.$[det].comments': comments },
-        },
-        [
-          { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
-          { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
-          { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
+    if ( req.body.taskType==='layout' ) {
+      let updatecomment = await planoTaskService.updateOnefilters(
+          { _id: new mongoose.Types.ObjectId( req.body._id ) },
+          {
+            $push: { 'answers.$[ans].issues.$[iss].Details.$[det].comments': comments },
+          },
+          [
+            { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+            { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+            { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
 
-        ] );
-    console.log( updateResponse, updatecomment );
+          ] );
+      console.log( updatecomment );
+    } else {
+      let updatecomment = await planoTaskService.updateOnefilters(
+          { _id: new mongoose.Types.ObjectId( req.body._id ) },
+          {
+            $push: { 'answers.$[ans].issues.$[iss].comments': comments },
+          },
+          [
+            { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+            { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+          ] );
+      console.log( updatecomment );
+    }
+    console.log( updateResponse );
+
     res.sendSuccess( 'updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateFixtureStatus', error: e } );
