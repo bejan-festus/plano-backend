@@ -15,4 +15,5 @@ storeBuilderTaskRouter
     .get( '/getFixtureDetails', isAllowedSessionHandler, taskController.getFixtureDetails )
     .get( '/getVmDetails', isAllowedSessionHandler, taskController.getVmDetails )
     .post( '/generateTaskExcel', taskController.generatetaskDetails )
-    .post( '/getSubmitDetails', taskController.taskSubmitDetails );
+    .post( '/getSubmitDetails', taskController.taskSubmitDetails )
+    .post( '/redoTask', isAllowedSessionHandler, taskController.redoTask );

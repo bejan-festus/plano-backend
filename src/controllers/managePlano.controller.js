@@ -64,7 +64,7 @@ export async function getplanoFeedback( req, res ) {
       $match: {
         planoId: new mongoose.Types.ObjectId( req.body.planoId ),
         floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-        type: { $ne: 'layout' },
+        type: 'fixture',
       },
     },
     {
@@ -96,7 +96,7 @@ export async function getplanoFeedback( req, res ) {
     }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
-        from: 'fixtureconfigs',
+        from: 'storefixtures',
         let: { 'fixtureId': '$fixtureId' },
         pipeline: [
           {
@@ -104,6 +104,27 @@ export async function getplanoFeedback( req, res ) {
               $expr: {
                 $and: [
                   { $eq: [ '$_id', '$$fixtureId' ] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'storeFixtureData',
+      },
+    },
+    {
+      $unwind: { path: '$storeFixtureData', preserveNullAndEmptyArrays: true },
+    },
+    {
+      $lookup: {
+        from: 'fixtureconfigs',
+        let: { 'fixtureConfigId': '$storeFixtureData.fixtureConfigId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$fixtureConfigId' ] },
                 ],
               },
             },
@@ -119,8 +140,91 @@ export async function getplanoFeedback( req, res ) {
 
 
     let findfixtureCompliance = await planoTaskService.aggregate( queryfixture );
-    console.log( findfixtureCompliance );
-    res.sendSuccess( { count: findfixtureCompliance.length, layoutData: findPlanoCompliance, fixtureData: findfixtureCompliance } );
+    let queryVm = [];
+
+
+    queryVm.push( {
+      $match: {
+        planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+        floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+        type: 'vm',
+      },
+    },
+    {
+      $lookup: {
+        from: 'processedtasks',
+        let: { 'taskId': '$taskId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$taskId' ] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              'userName': 1,
+              'createdAt': 1,
+              'createdByName': 1,
+              'submitTime_string': 1,
+            },
+          },
+        ],
+        as: 'taskData',
+      },
+
+    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: 'storefixtures',
+        let: { 'fixtureId': '$fixtureId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$fixtureId' ] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'storeFixtureData',
+      },
+    },
+    {
+      $unwind: { path: '$storeFixtureData', preserveNullAndEmptyArrays: true },
+    },
+    {
+      $lookup: {
+        from: 'fixtureconfigs',
+        let: { 'fixtureConfigId': '$storeFixtureData.fixtureConfigId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$fixtureConfigId' ] },
+                ],
+              },
+            },
+          },
+        ],
+        as: 'FixtureData',
+      },
+    },
+    {
+      $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true },
+    },
+    );
+
+
+    let findvmCompliance = await planoTaskService.aggregate( queryVm );
+    console.log( findvmCompliance );
+    res.sendSuccess( { count: findfixtureCompliance.length, layoutData: findPlanoCompliance, fixtureData: findfixtureCompliance, VmData: findvmCompliance } );
   } catch ( e ) {
     logger.error( { functionName: 'getplanoFeedback', error: e, message: req.body } );
     return res.sendError( e, 500 );
@@ -385,22 +489,84 @@ export async function updateFixtureStatus( req, res ) {
   }
 }
 
-export async function updateStoreFixture( req, res ) {
+export async function updateStoreFixture(req, res) {
   try {
     const { fixtureId, data } = req.body;
 
-  const update =   await storeFixtureService.updateOne({_id: new mongoose.Types.ObjectId( fixtureId )}, data)
+    const currentFixture = await storeFixtureService.findOne({ _id: new mongoose.Types.ObjectId(fixtureId) });
+    let currentFixtureDoc = currentFixture.toObject()
 
-  console.log(update)
+    const productBrandName = new Set();
+    const productCategory = new Set();
+    const productSubCategory = new Set();
 
-    data.shelfConfig.forEach(async (shelf)=>{
-      await fixtureShelfService.updateOne({_id: new mongoose.Types.ObjectId( shelf._id ) }, shelf)
-    })
+      data.shelfConfig.forEach((shelf) => {
+  const { productBrandName: brand, productCategory: category, productSubCategory: subCategory } = shelf;
+
+  if (Array.isArray(brand)) {
+    brand.forEach((b) => productBrandName.add(b));
+  }
+
+  if (Array.isArray(category)) {
+    category.forEach((c) => productCategory.add(c));
+  }
+
+  if (Array.isArray(subCategory)) {
+    subCategory.forEach((s) => productSubCategory.add(s));
+  }
+});
+    
 
 
-    res.sendSuccess( 'Updated Successfully' );
-  } catch ( e ) {
-    logger.error( { functionName: 'updateStoreFixture', error: e } );
-    return res.sendError( e, 500 );
+    if (currentFixtureDoc.fixtureConfigId.toString() !== data.fixtureConfigId) {
+      const newTemplate = await fixtureConfigService.findOne({_id: data.fixtureConfigId})
+      currentFixtureDoc = {
+        ...currentFixtureDoc,
+        ...newTemplate.toObject(),
+        fixtureConfigDoc:newTemplate.toObject()._id,
+        productBrandName:[...productBrandName],
+        productCategory:[...productCategory],
+        productSubCategory:[...productSubCategory]
+      }
+    }else{
+      currentFixtureDoc = {
+        ...currentFixtureDoc,
+        ...data,
+        productBrandName:[...productBrandName],
+        productCategory:[...productCategory],
+        productSubCategory:[...productSubCategory]
+      }
+    }
+
+    delete currentFixtureDoc._id
+
+
+    await storeFixtureService.updateOne({ _id: new mongoose.Types.ObjectId(fixtureId) }, currentFixtureDoc);
+
+        if (data?.shelfConfig?.length) {
+      await fixtureShelfService.deleteMany({ fixtureId: new mongoose.Types.ObjectId(fixtureId) })
+
+
+      data.shelfConfig.forEach(async (shelf) => {
+        delete shelf?._id
+        const additionalMeta = {
+        clientId: currentFixture.clientId,
+        storeId: currentFixture.storeId,
+        storeName: currentFixture.storeName,
+        planoId: currentFixture.planoId,
+        floorId: currentFixture.floorId,
+        fixtureId: currentFixture._id,
+      }
+
+      await fixtureShelfService.create({ ...additionalMeta, ...shelf });
+      });
+
+    }
+
+    res.sendSuccess('Updated Successfully');
+  } catch (e) {
+    logger.error({ functionName: 'updateStoreFixture', error: e });
+    return res.sendError(e, 500);
   }
 }
+

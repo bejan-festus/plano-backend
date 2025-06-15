@@ -1601,7 +1601,8 @@ export const uploadImage = async ( req, res ) => {
       return res.sendError( { message: 'Something went Wrong' }, 500 );
     }
 
-    return res.sendSuccess( { message: 'Uploaded Successfully', imgUrl: imgUrl } );
+
+    return res.sendSuccess( { message: 'Uploaded Successfully', imgUrl: imgUrl, path: imgUrl.Key } );
   } catch ( e ) {
     logger.error( 'uploadImage =>', e );
     return res.sendError( e, 500 );
@@ -2659,6 +2660,8 @@ export async function storeFixturesv2( req, res ) {
           const floorsWithFixtures = await Promise.all(
               floors.map( async ( floor ) => {
                 let productCapacity = 0;
+                let fixtureCount = 0;
+                let totalVmCount = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.findAndSort( {
@@ -2680,6 +2683,7 @@ export async function storeFixturesv2( req, res ) {
                               fixture.imageUrl = '';
                             }
                             productCapacity += fixture.toObject().fixtureCapacity;
+                            fixtureCount += 1;
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -2723,6 +2727,7 @@ export async function storeFixturesv2( req, res ) {
 
 
                             const vmDetails = await Promise.all( fixture.toObject()?.vmConfig?.map( async ( vm ) => {
+                              totalVmCount += 1;
                               const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
                               return {
                                 ...vm,
@@ -2774,6 +2779,7 @@ export async function storeFixturesv2( req, res ) {
                         fixture.imageUrl = '';
                       }
                       productCapacity += fixture.toObject().fixtureCapacity;
+                      fixtureCount += 1;
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -2817,6 +2823,7 @@ export async function storeFixturesv2( req, res ) {
 
 
                       const vmDetails = await Promise.all( fixture.toObject().vmConfig.map( async ( vm ) => {
+                        totalVmCount += 1;
                         const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
 
                         return {
@@ -2848,6 +2855,8 @@ export async function storeFixturesv2( req, res ) {
 
                 return {
                   ...floor.toObject(),
+                  fixtureCount: fixtureCount,
+                  vmCount: totalVmCount,
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
                   productCount: productCapacity,
@@ -2971,6 +2980,8 @@ export async function storeFixturesTaskv2( req, res ) {
           const floorsWithFixtures = await Promise.all(
               floors.map( async ( floor ) => {
                 let productCapacity = 0;
+                let fixtureCount = 0;
+                let totalVmCount = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.findAndSort( {
@@ -2992,6 +3003,7 @@ export async function storeFixturesTaskv2( req, res ) {
                               fixture.imageUrl = '';
                             }
                             productCapacity += fixture.toObject().fixtureCapacity;
+                            fixtureCount += 1;
                             const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -3000,7 +3012,7 @@ export async function storeFixturesTaskv2( req, res ) {
                               fixtureId: fixture._id,
                               type: req.body?.type ? req.body.type : 'fixture',
                               date_string: req.body?.date,
-                            }, { status: 1 } );
+                            }, { status: 1, answers: 1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3020,6 +3032,7 @@ export async function storeFixturesTaskv2( req, res ) {
 
 
                             const vmDetails = await Promise.all( fixture.toObject()?.vmConfig?.map( async ( vm ) => {
+                              totalVmCount += 1;
                               const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
                               return {
                                 ...vm,
@@ -3027,11 +3040,20 @@ export async function storeFixturesTaskv2( req, res ) {
                               };
                             } ) );
 
+                            let disabled = true;
+                            if ( compliance?.status && compliance.status == 'incomplete' ) {
+                              let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
+                              if ( issueDetails ) {
+                                disabled = false;
+                              }
+                            }
+
                             return {
                               ...fixture.toObject(),
                               status: compliance?.status ? compliance.status : '',
                               shelfCount: shelves.length,
                               productCount: productCount,
+                              disabled: disabled,
                               vmCount: vmCount,
                               shelfConfig: shelfDetails,
                               vmConfig: vmDetails,
@@ -3071,6 +3093,7 @@ export async function storeFixturesTaskv2( req, res ) {
                         fixture.imageUrl = '';
                       }
                       productCapacity += fixture.toObject().fixtureCapacity;
+                      fixtureCount += 1;
                       const productCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'product' } );
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
@@ -3081,7 +3104,7 @@ export async function storeFixturesTaskv2( req, res ) {
                         date_string: req.body?.date,
                       }, { status: 1 } );
 
-                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, {  }, { shelfNumber: 1 } );
+                      const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
                       const shelfDetails = await Promise.all(
                           shelves.map( async ( shelf ) => {
@@ -3098,6 +3121,7 @@ export async function storeFixturesTaskv2( req, res ) {
                       );
 
                       const vmDetails = await Promise.all( fixture.toObject()?.vmConfig?.map( async ( vm ) => {
+                        totalVmCount += 1;
                         const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
                         return {
                           ...vm,
@@ -3105,11 +3129,20 @@ export async function storeFixturesTaskv2( req, res ) {
                         };
                       } ) );
 
+                      let disabled = true;
+                      if ( compliance?.status && compliance.status == 'incomplete' ) {
+                        let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
+                        if ( issueDetails ) {
+                          disabled = false;
+                        }
+                      }
+
                       return {
                         ...fixture.toObject(),
                         status: compliance?.status ? compliance.status : '',
                         shelfCount: shelves.shelves,
                         productCount: productCount,
+                        disabled: disabled,
                         vmCount: vmCount,
                         shelfConfig: shelfDetails,
                         vms: vmDetails,
@@ -3128,6 +3161,8 @@ export async function storeFixturesTaskv2( req, res ) {
 
                 return {
                   ...floor.toObject(),
+                  fixtureCount: fixtureCount,
+                  vmCount: totalVmCount,
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
                   productCount: productCapacity,
@@ -3220,7 +3255,9 @@ export async function planoList( req, res ) {
           vmCount: '$fixtureDetails.vmCount',
           fixtureCapacity: '$fixtureDetails.fixtureCapacity',
           status: 1,
-          planoProcess: 1,
+          planoProgress: 1,
+          createdAt: 1,
+          lastUpdate: '$updatedAt',
         },
       },
     ];
@@ -3246,7 +3283,6 @@ export async function planoList( req, res ) {
         ],
       },
     } );
-
     let planoDetails = await planoService.aggregate( query );
 
     if ( !planoDetails[0].data.length ) {
@@ -3256,11 +3292,6 @@ export async function planoList( req, res ) {
       data: planoDetails[0].data,
       count: planoDetails?.[0]?.count?.[0]?.total || 0,
     };
-    await Promise.all( planoDetails.map( ( ele ) => {
-      if ( ele.layoutDetails ) {
-
-      }
-    } ) );
     return res.sendSuccess( result );
   } catch ( e ) {
     console.log( e );

@@ -420,6 +420,10 @@ export async function FixtureLibraryList( req, res ) {
         },
       },
       );
+    } else {
+      query.push( {
+        $sort: { _id: -1 },
+      } );
     }
     query.push(
         {
@@ -842,22 +846,25 @@ export async function uploadBrandList( req, res ) {
     let inputData = req.body;
 
     let brandData = inputData.brandData.reduce( ( acc, ele ) => {
+      console.log( ele?.category, ele );
       if ( !acc[ele.brandName] ) {
         acc[ele.brandName] = {
           brandName: ele.brandName,
           clientId: inputData.clientId,
-          category: [ ...new Set( ele.category ) ],
-          subCategory: [ ...new Set( ele.subCategory ) ],
+          category: [ ...new Set( ele?.category?.map( ( ele ) => ele ) ) ],
+          subCategory: [ ...new Set( ele?.subCategory?.map( ( ele ) => ele ) ) ],
         };
       } else {
         acc[ele.brandName].category.push( ...ele.category );
-        acc[ele.brandName].subCategory.push( ...ele.subCategory );
+        if ( ele?.subCategory.length ) {
+          acc[ele.brandName].subCategory.push( ...ele?.subCategory );
+        }
       }
       return acc;
     }, {} );
 
     await planoProductService.deleteMany( { clientId: inputData.clientId, _id: { $nin: inputData.brandUsedList } } );
-    await planoProductService.insertMany( brandData );
+    await planoProductService.insertMany( Object.values( brandData ) );
     // await Promise.all( Object.keys( brandData ).map( async ( ele ) => {
     //   await planoProductService.updateOne( { brandName: { $regex: brandData[ele].brandName, $options: 'i' }, clientId: req.body.clientId }, brandData[ele] );
     // } ) );
@@ -1125,6 +1132,10 @@ export async function getVmLibList( req, res ) {
         },
       },
       );
+    } else {
+      query.push( {
+        $sort: { _id: -1 },
+      } );
     }
     query.push(
         {

@@ -14,6 +14,7 @@ import * as processedTaskService from '../service/processedTaskservice.js';
 // import * as planoComplianceService from '../service/planoCompliance.service.js';
 // import * as planoTaskComplianceService from '../service/planoTask.service.js';
 // import * as planoQrConversionRequestService from '../service/planoQrConversionRequest.service.js';
+import * as planoProductCategoryService from '../service/planoproductCategory.service.js';
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import * as fixtureLibraryService from '../service/planoLibrary.service.js';
 import mongoose from 'mongoose';
@@ -2322,62 +2323,62 @@ export async function updateVmData( req, res ) {
 
 // import https from 'https';
 // async function scrapeCrest() {
-//   const storeIds = [ 'LKST2973' ];
+//   const storeIds = [ 'LKST494' ];
 //   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5NjQ5MjU1LCJpYXQiOjE3NDk2NDU2NTUsImp0aSI6ImJmZmZhNDI1YTAwYTRkNzVhMzIwZDEyOGVhN2JlY2Q1IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.U4iPQcE3Sq7GNT7enSq17b5vwhAbW2ANMSxsMXTxNSo';
+//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5NzkxNzUzLCJpYXQiOjE3NDk3ODgxNTMsImp0aSI6IjhmNDY4MTY0NTY5NTQ0YTU4OWJjMDU2NmU0ZGE0ZjI3IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.wHQ2RPML7Jr6yE0V0mNvIrtUT8mFrvp7sBBtH6bhlSc';
 //   const filePath = 'response.json';
 //   let allResults = [];
 
-  //   if ( fs.existsSync( filePath ) ) {
-  //     try {
-  //       const existingData = fs.readFileSync( filePath, 'utf8' );
-  //       allResults = JSON.parse( existingData );
-  //       if ( !Array.isArray( allResults ) ) {
-  //         allResults = [];
-  //       }
-  //     } catch ( error ) {
-  //       console.error( 'Error reading existing JSON file:', error.message );
-  //       allResults = [];
-  //     }
-  //   }
+//     if ( fs.existsSync( filePath ) ) {
+//       try {
+//         const existingData = fs.readFileSync( filePath, 'utf8' );
+//         allResults = JSON.parse( existingData );
+//         if ( !Array.isArray( allResults ) ) {
+//           allResults = [];
+//         }
+//       } catch ( error ) {
+//         console.error( 'Error reading existing JSON file:', error.message );
+//         allResults = [];
+//       }
+//     }
 
-  //   for ( const storeId of storeIds ) {
-  //     try {
-  //       const result = await new Promise( ( resolve ) => {
-  //         const payload = JSON.stringify( { store_id: storeId } );
-  //         const options = {
-  //           method: 'POST',
-  //           headers: {
-  //             'Authorization': `Bearer ${bearerToken}`,
-  //             'Content-Type': 'application/json',
-  //             'Content-Length': Buffer.byteLength( payload ),
-  //           },
-  //         };
+//     for ( const storeId of storeIds ) {
+//       try {
+//         const result = await new Promise( ( resolve ) => {
+//           const payload = JSON.stringify( { store_id: storeId } );
+//           const options = {
+//             method: 'POST',
+//             headers: {
+//               'Authorization': `Bearer ${bearerToken}`,
+//               'Content-Type': 'application/json',
+//               'Content-Length': Buffer.byteLength( payload ),
+//             },
+//           };
 
-  //         const req = https.request( apiUrl, options, ( res ) => {
-  //           let data = '';
-  //           res.on( 'data', ( chunk ) => {
-  //             data += chunk;
-  //           } );
-  //           res.on( 'end', () => {
-  //             try {
-  //               const jsonData = JSON.parse( data );
-  //               const result = { storeName: storeId, data: jsonData };
-  //               allResults.push( result );
-  //               fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
-  //               console.log( 'Received Data:', result );
-  //               resolve( result );
-  //             } catch ( error ) {
-  //               console.error( `Error parsing JSON for ${storeId}:`, error.message );
-  //               resolve( { storeName: storeId, data: null } );
-  //             }
-  //           } );
-  //         } );
+//           const req = https.request( apiUrl, options, ( res ) => {
+//             let data = '';
+//             res.on( 'data', ( chunk ) => {
+//               data += chunk;
+//             } );
+//             res.on( 'end', () => {
+//               try {
+//                 const jsonData = JSON.parse( data );
+//                 const result = { storeName: storeId, data: jsonData };
+//                 allResults.push( result );
+//                 fs.writeFileSync( filePath, JSON.stringify( allResults, null, 2 ) );
+//                 console.log( 'Received Data:', result );
+//                 resolve( result );
+//               } catch ( error ) {
+//                 console.error( `Error parsing JSON for ${storeId}:`, error.message );
+//                 resolve( { storeName: storeId, data: null } );
+//               }
+//             } );
+//           } );
 
-  //         req.on( 'error', ( error ) => {
-  //           console.error( `Error fetching data for ${storeId}:`, error.message );
-  //           resolve( { storeName: storeId, data: null } );
-  //         } );
+//           req.on( 'error', ( error ) => {
+//             console.error( `Error fetching data for ${storeId}:`, error.message );
+//             resolve( { storeName: storeId, data: null } );
+//           } );
 
 //         req.write( payload );
 //         req.end();
@@ -7223,32 +7224,6 @@ export async function migrateCrestv1( req, res ) {
     };
 
 
-    async function generateFixtureTemplateName( baseName, fixtureWidth ) {
-      function escapeRegex( str ) {
-        return str.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
-      }
-
-      const escapedBase = escapeRegex( baseName );
-      const regexPattern = new RegExp( `^Template-(\\d+)-${escapedBase}$` );
-
-      const existingFixtures = await fixtureConfigService.find( {
-        fixtureName: { $regex: new RegExp( `^Template-(\\d+)-${escapedBase}$` ) },
-        fixtureWidth: fixtureWidth,
-      } );
-
-      const usedNumbers = existingFixtures
-          .map( ( doc ) => {
-            const match = doc.fixtureName.match( regexPattern );
-            return match ? parseInt( match[1], 10 ) : null;
-          } )
-          .filter( ( num ) => num !== null );
-
-      const nextNumber = usedNumbers.length > 0 ? Math.max( ...usedNumbers ) + 1 : 1;
-
-      return `Template-${nextNumber}-${baseName}`;
-    }
-
-
     if ( !req?.body?.storeName ) {
       return res.sendError( 'No store supplied', 200 );
     }
@@ -7256,8 +7231,20 @@ export async function migrateCrestv1( req, res ) {
     let storeQuery = {
       clientId: '11',
       $and: [
-        { storeName: req.body.storeName },
-        // { storeName: { $in: [ 'LKST98' ] } },
+        // { storeName: req.body.storeName },
+        { storeName: { $in: [
+          'LKST81',
+          'LKST682',
+          'LKST351',
+          'LKST1193',
+          'LKST98',
+          'LKST01',
+          'LKST266',
+          'LKST495',
+          'LKST2280',
+          'LKST599',
+          'LKST267',
+        ] } },
         // { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
       ],
     };
@@ -7279,6 +7266,8 @@ export async function migrateCrestv1( req, res ) {
 
     for ( let i = 0; i < storeList.length; i++ ) {
       const storeData = await fetchStoreData( storeList[i], staticToken, res );
+
+      console.log( JSON.stringify( storeData ) );
 
       if ( storeData?.data?.message !== 'SUCCESS' ) continue;
 
@@ -7522,6 +7511,16 @@ export async function migrateCrestv1( req, res ) {
             };
           } );
 
+          [ ...fixtureProductSubBrandName ].forEach( async ( brand ) => {
+            const upsertData = {
+              clientId: '11',
+              brandName: brand,
+              brandDetails: [],
+            };
+
+            await planoProductCategoryService.upsertOne( { brandName: brand }, upsertData );
+          } );
+
           const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
             const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
             const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
@@ -7532,11 +7531,18 @@ export async function migrateCrestv1( req, res ) {
 
               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' ) {
                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 905 );
-                configData.zone = 'stretch';
               }
 
               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+              }
+
+              if ( configData.vmWidthmm === 905 ) {
+                configData.zone = 'stretch';
+              }
+
+              if ( configData.vmWidthmm === 230 ) {
+                configData.zone = 'left';
               }
 
               if ( !configData ) return;
@@ -7571,6 +7577,8 @@ export async function migrateCrestv1( req, res ) {
               },
               status: 'complete',
               vmBrand: vmTemplate.vmBrand,
+              vmType: 'LKVM',
+
             };
             if ( vmTemplate?.imageUrl ) {
               const parsedUrl = new URL( vmTemplate.imageUrl );
@@ -7619,6 +7627,8 @@ export async function migrateCrestv1( req, res ) {
               startYPosition: vmTemplate.startYPosition,
               endYPosition: vmTemplate.endYPosition,
               xZone: vmTemplate.xZone,
+              yZone: 'stretch',
+
             };
           } ) );
 
@@ -7629,7 +7639,13 @@ export async function migrateCrestv1( req, res ) {
           let templateIndex = 1;
 
           if ( existingTemplateWithMaxIndex.length ) {
-            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            const isTemplateSimilar = await fixtureConfigService.findOne( { crestMapKey: mapKey } );
+
+            if ( isTemplateSimilar ) {
+              templateIndex = isTemplateSimilar.toObject().templateIndex;
+            } else {
+              templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            }
           }
 
           const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
@@ -7648,7 +7664,7 @@ export async function migrateCrestv1( req, res ) {
             },
             'footer': {
               label: fixture.footer,
-              isEnabled: true,p
+              isEnabled: true,
             },
             'isBodyEnabled': true,
             'productResolutionLevel': 'L3',
@@ -7764,6 +7780,16 @@ export async function migrateCrestv1( req, res ) {
             };
           } );
 
+          [ ...fixtureProductSubBrandName ].forEach( async ( brand ) => {
+            const upsertData = {
+              clientId: '11',
+              brandName: brand,
+              brandDetails: [],
+            };
+
+            await planoProductCategoryService.upsertOne( { brandName: brand }, upsertData );
+          } );
+
           const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
             const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
             const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
@@ -7779,6 +7805,14 @@ export async function migrateCrestv1( req, res ) {
 
               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+              }
+
+              if ( configData.vmWidthmm === 905 ) {
+                configData.zone = 'stretch';
+              }
+
+              if ( configData.vmWidthmm === 230 ) {
+                configData.zone = 'left';
               }
 
               if ( !configData ) return;
@@ -7813,6 +7847,7 @@ export async function migrateCrestv1( req, res ) {
               },
               status: 'complete',
               vmBrand: vmTemplate.vmBrand,
+              vmType: 'LKVM',
             };
             if ( vmTemplate?.imageUrl ) {
               const parsedUrl = new URL( vmTemplate.imageUrl );
@@ -7862,18 +7897,26 @@ export async function migrateCrestv1( req, res ) {
               startYPosition: vmTemplate.startYPosition,
               endYPosition: vmTemplate.endYPosition,
               xZone: vmTemplate.xZone,
+              yZone: 'stretch',
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
           let templateIndex = 1;
 
           if ( existingTemplateWithMaxIndex.length ) {
-            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            const isTemplateSimilar = await fixtureConfigService.findOne( { crestMapKey: mapKey } );
+
+            if ( isTemplateSimilar ) {
+              templateIndex = isTemplateSimilar.toObject().templateIndex;
+            } else {
+              templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            }
           }
+
 
           const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
 
@@ -8007,6 +8050,17 @@ export async function migrateCrestv1( req, res ) {
             };
           } );
 
+          [ ...fixtureProductSubBrandName ].forEach( async ( brand ) => {
+            const upsertData = {
+              clientId: '11',
+              brandName: brand,
+              brandDetails: [],
+            };
+
+            await planoProductCategoryService.upsertOne( { brandName: brand }, upsertData );
+          } );
+
+
           const vmConfig = fixture.productZones?.flatMap( ( zone ) => {
             const vms = zone.products.filter( ( vm ) => vm.isMerchandisingElement );
             const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
@@ -8022,6 +8076,14 @@ export async function migrateCrestv1( req, res ) {
 
               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
+              }
+
+              if ( configData.vmWidthmm === 905 ) {
+                configData.zone = 'stretch';
+              }
+
+              if ( configData.vmWidthmm === 230 ) {
+                configData.zone = 'left';
               }
 
               if ( !configData ) return;
@@ -8056,6 +8118,7 @@ export async function migrateCrestv1( req, res ) {
               },
               status: 'complete',
               vmBrand: vmTemplate.vmBrand,
+              vmType: 'LKVM',
             };
             if ( vmTemplate?.imageUrl ) {
               const parsedUrl = new URL( vmTemplate.imageUrl );
@@ -8104,21 +8167,28 @@ export async function migrateCrestv1( req, res ) {
               startYPosition: vmTemplate.startYPosition,
               endYPosition: vmTemplate.endYPosition,
               xZone: vmTemplate.xZone,
+              yZone: 'stretch',
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
           let templateIndex = 1;
 
           if ( existingTemplateWithMaxIndex.length ) {
-            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            const isTemplateSimilar = await fixtureConfigService.findOne( { crestMapKey: mapKey } );
+
+            if ( isTemplateSimilar ) {
+              templateIndex = isTemplateSimilar.toObject().templateIndex;
+            } else {
+              templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            }
           }
 
-          const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
 
+          const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
 
 
           const fixtureTemplateData = {
@@ -8271,6 +8341,17 @@ export async function migrateCrestv1( req, res ) {
             };
           } );
 
+          [ ...fixtureProductSubBrandName ].forEach( async ( brand ) => {
+            const upsertData = {
+              clientId: '11',
+              brandName: brand,
+              brandDetails: [],
+            };
+
+            await planoProductCategoryService.upsertOne( { brandName: brand }, upsertData );
+          } );
+
+
           const vmConfig = fixture.centerSuperSubMain?.flatMap( ( vm ) => {
             if ( !vm?.isVisualMerchandiser ) {
               return [];
@@ -8283,7 +8364,7 @@ export async function migrateCrestv1( req, res ) {
               {
                 startYPosition: configData1.startShelf,
                 endYPosition: configData1.endShelf,
-                xZone: configData1.zone,
+                xZone: 'left',
                 vmName: vm.name + ' - 1',
                 vmHeight: configData1.vmHeightmm,
                 vmWidth: configData1.vmWidthmm,
@@ -8291,7 +8372,8 @@ export async function migrateCrestv1( req, res ) {
               {
                 startYPosition: configData2.startShelf,
                 endYPosition: configData2.endShelf,
-                xZone: configData2.zone,
+                xZone: 'stretch',
+                yZone: 'stretch',
                 vmName: vm.name + ' - 2',
                 vmHeight: configData2.vmHeightmm,
                 vmWidth: configData2.vmWidthmm,
@@ -8313,6 +8395,7 @@ export async function migrateCrestv1( req, res ) {
               },
               status: 'complete',
               vmBrand: vmTemplate.vmBrand,
+              vmType: 'LKVM',
             };
 
             const vmDetails = await planoVmService.upsertOne(
@@ -8327,21 +8410,29 @@ export async function migrateCrestv1( req, res ) {
               startYPosition: vmTemplate.startYPosition,
               endYPosition: vmTemplate.endYPosition,
               xZone: vmTemplate.xZone,
+              yZone: 'stretch',
+
             };
           } ) );
 
-           const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
+          const existingTemplateWithMaxIndex = await fixtureConfigService.sortAndFindOne(
               { fixtureCategory: fixtureConfigDoc.fixtureCategory,
                 fixtureWidth: fixtureConfigDoc.fixtureWidth }, {}, { templateIndex: -1 } );
 
           let templateIndex = 1;
 
           if ( existingTemplateWithMaxIndex.length ) {
-            templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            const isTemplateSimilar = await fixtureConfigService.findOne( { crestMapKey: mapKey } );
+
+            if ( isTemplateSimilar ) {
+              templateIndex = isTemplateSimilar.toObject().templateIndex;
+            } else {
+              templateIndex = existingTemplateWithMaxIndex[0].toObject().templateIndex + 1;
+            }
           }
 
-          const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
 
+          const templateName = `Template-${templateIndex}-${fixtureConfigDoc.fixtureCategory}`;
 
 
           const fixtureTemplateData = {

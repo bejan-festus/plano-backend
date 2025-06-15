@@ -36,4 +36,12 @@ export const aggregate = async ( query=[] ) => {
   return await model.planoProductCategoryModel.aggregate( query );
 };
 
+export async function upsertOne( query, record ) {
+  return model.planoProductCategoryModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}
+
 
