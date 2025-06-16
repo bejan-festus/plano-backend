@@ -3666,9 +3666,33 @@ export async function planoList( req, res ) {
 
     let planoList = await planoService.find( { clientId: req.body.clientId }, { _id: 1 } );
     let idList = planoList?.map( ( ele ) => new mongoose.Types.ObjectId( ele._id ) );
-    let planoTaskDetails = await planotaskService.find( { planoId: { $in: idList }, checklistStatus: 'submit' } );
-    idList = planoTaskDetails.map( ( ele ) => new mongoose.Types.ObjectId( ele.planoId ) );
     let taskQuery = [
+      {
+        $match: {
+          client_id: req.body.clientId,
+          planoId: { $in: idList },
+        },
+      },
+      {
+        $group: {
+          _id: '$planoType',
+          checklistStatus: { $last: '$checklistStatus' },
+          planoId: { $last: '$planoId' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          checklistStatus: 1,
+          planoId: 1,
+        },
+      },
+    ];
+    let planoTaskDetails = await planotaskService.aggregate( taskQuery );
+    console.log( planoTaskDetails );
+    idList = planoTaskDetails.map( ( ele ) => new mongoose.Types.ObjectId( ele.planoId ) );
+    console.log( idList, 'list' );
+    taskQuery = [
       {
         $match: {
           planoId: { $in: idList },
