@@ -7231,20 +7231,20 @@ export async function migrateCrestv1( req, res ) {
     let storeQuery = {
       clientId: '11',
       $and: [
-        // { storeName: req.body.storeName },
-        { storeName: { $in: [
-          'LKST81',
-          'LKST682',
-          'LKST351',
-          'LKST1193',
-          'LKST98',
-          'LKST01',
-          'LKST266',
-          'LKST495',
-          'LKST2280',
-          'LKST599',
-          'LKST267',
-        ] } },
+        { storeName: req.body.storeName },
+        // { storeName: { $in: [
+        //   'LKST81',
+        //   'LKST682',
+        //   'LKST351',
+        //   'LKST1193',
+        //   'LKST98',
+        //   'LKST01',
+        //   'LKST266',
+        //   'LKST495',
+        //   'LKST2280',
+        //   'LKST599',
+        //   'LKST267',
+        // ] } },
         // { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
       ],
     };
@@ -7524,6 +7524,7 @@ export async function migrateCrestv1( req, res ) {
             const vmConfig = fixtureConfigDoc.vmConfig.filter( ( vm ) => vm.position === zone.zoneName );
             const pids = zone.products.filter( ( vm ) => !vm.isMerchandisingElement );
 
+
             return vms.map( ( vm, k ) => {
               let configData = vmConfig[0];
 
@@ -7534,6 +7535,7 @@ export async function migrateCrestv1( req, res ) {
               if ( vm.productName === 'Creatr' && zone.zoneName === 'Mid' && pids.length ) {
                 configData = vmConfig.find( ( config ) => config.vmWidthmm === 230 );
               }
+
 
               if ( configData.vmWidthmm === 905 ) {
                 configData.zone = 'stretch';
@@ -7615,7 +7617,7 @@ export async function migrateCrestv1( req, res ) {
 
             const vmDetails = await planoVmService.upsertOne(
                 {
-                  'productName': vmInsertData.vmName,
+                  'vmName': vmInsertData.vmName,
                 },
                 vmInsertData,
             );
@@ -7885,7 +7887,7 @@ export async function migrateCrestv1( req, res ) {
 
             const vmDetails = await planoVmService.upsertOne(
                 {
-                  'productName': vmInsertData.vmName,
+                  'vmName': vmInsertData.vmName,
                 },
                 vmInsertData,
             );
@@ -8155,7 +8157,7 @@ export async function migrateCrestv1( req, res ) {
 
             const vmDetails = await planoVmService.upsertOne(
                 {
-                  'productName': vmInsertData.vmName,
+                  'vmName': vmInsertData.vmName,
                 },
                 vmInsertData,
             );
@@ -8308,7 +8310,7 @@ export async function migrateCrestv1( req, res ) {
           if ( !fixtureConfig ) continue;
           const fixtureConfigDoc = fixtureConfig.toObject();
 
-          let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.header}`;
+          let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.centerSubMain}`;
 
           const fixtureProductSubBrandName = new Set();
 
@@ -8316,7 +8318,7 @@ export async function migrateCrestv1( req, res ) {
           const shelfTemplate = fixtureConfigDoc.shelfConfig.map( ( configShelf, j ) => {
             const shelfSection = fixture?.centerSuperSubMain?.find( ( product ) => !product.isVisualMerchandiser );
 
-            const shelfIdentifier = `shelf${j + 1}=${shelfSection?.productName}`;
+            const shelfIdentifier = `shelf${j + 1}=${fixture?.centerSubMain}`;
 
             mapKey += ','+shelfIdentifier;
 
@@ -8379,7 +8381,7 @@ export async function migrateCrestv1( req, res ) {
             ];
           } );
 
-          const vmTemplate = await Promise.all( vmConfig.map( async ( vmTemplate ) => {
+          const vmTemplate = await Promise.all( vmConfig.map( async ( vmTemplate, k ) => {
             const vmInsertData = {
               clientId: '11',
               vmName: vmTemplate.vmName,
@@ -8395,6 +8397,10 @@ export async function migrateCrestv1( req, res ) {
               vmBrand: vmTemplate.vmBrand,
               vmType: 'LKVM',
             };
+
+            const vmIdentifier = `vm${k+1}=${vmTemplate.vmName}+${vmTemplate.vmHeight}+${vmTemplate.vmWidth}+${vmTemplate.startYPosition}+${vmTemplate.endYPosition}+${vmTemplate.xZone}`;
+
+            mapKey += ','+vmIdentifier;
 
             const vmDetails = await planoVmService.upsertOne(
                 {
