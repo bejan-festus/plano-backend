@@ -2323,9 +2323,9 @@ export async function updateVmData( req, res ) {
 
 // import https from 'https';
 // async function scrapeCrest() {
-//   const storeIds = [ 'LKST494' ];
+//   const storeIds = [ 'LKST3020' ];
 //   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5NzkxNzUzLCJpYXQiOjE3NDk3ODgxNTMsImp0aSI6IjhmNDY4MTY0NTY5NTQ0YTU4OWJjMDU2NmU0ZGE0ZjI3IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.wHQ2RPML7Jr6yE0V0mNvIrtUT8mFrvp7sBBtH6bhlSc';
+//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwMDU1OTMxLCJpYXQiOjE3NTAwNTIzMzEsImp0aSI6IjY5MGM1YTVhYjc3NDRlMmQ5YjlhMmZkYThhODM2MGYxIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.juirYxGNCsCe75vwgL2AR9_LeFsr8r4cJmEdygRZGO0';
 //   const filePath = 'response.json';
 //   let allResults = [];
 

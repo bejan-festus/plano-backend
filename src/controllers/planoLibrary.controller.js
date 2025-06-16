@@ -1326,8 +1326,10 @@ export async function getVmDetails( req, res ) {
     if ( !getVmDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-    let templateDetails = await fixtureTemplateService.findOne( { 'vmConfig.vmId': { $in: req.query.vmId } } );
-    if ( templateDetails && getVmDetails.status != 'draft' ) {
+    getVmDetails = getVmDetails.toObject();
+    let templateDetails = await fixtureTemplateService.find( { 'vmConfig.vmId': { $in: req.query.vmId } } );
+    if ( templateDetails.length && getVmDetails.status != 'draft' ) {
+      getVmDetails.templateCount = templateDetails.length;
       getVmDetails.status = 'inactive';
     }
     let fixtureDetails = await storeFixtureService.find( { 'vmConfig.vmId': { $in: req.query.vmId } }, { planoId: 1 } );

@@ -3124,6 +3124,7 @@ export async function storeFixturesTaskv2( req, res ) {
                       const vmDetails = await Promise.all( fixture.toObject()?.vmConfig?.map( async ( vm ) => {
                         totalVmCount += 1;
                         const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
+                        console.log(vmInfo?.toObject())
                         return {
                           ...vm,
                           ...vmInfo?.toObject(),
@@ -3146,7 +3147,7 @@ export async function storeFixturesTaskv2( req, res ) {
                         disabled: req?.body?.redo ? disabled : false,
                         vmCount: vmCount,
                         shelfConfig: shelfDetails,
-                        vms: vmDetails,
+                        vmConfig: vmDetails,
                       };
                     } ),
                 );
@@ -3665,9 +3666,33 @@ export async function planoList( req, res ) {
 
     let planoList = await planoService.find( { clientId: req.body.clientId }, { _id: 1 } );
     let idList = planoList?.map( ( ele ) => new mongoose.Types.ObjectId( ele._id ) );
-    let planoTaskDetails = await planotaskService.find( { planoId: { $in: idList }, checklistStatus: 'submit' } );
-    idList = planoTaskDetails.map( ( ele ) => new mongoose.Types.ObjectId( ele.planoId ) );
     let taskQuery = [
+      {
+        $match: {
+          client_id: req.body.clientId,
+          planoId: { $in: idList },
+        },
+      },
+      {
+        $group: {
+          _id: '$planoType',
+          checklistStatus: { $last: '$checklistStatus' },
+          planoId: { $last: '$planoId' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          checklistStatus: 1,
+          planoId: 1,
+        },
+      },
+    ];
+    let planoTaskDetails = await planotaskService.aggregate( taskQuery );
+    console.log( planoTaskDetails );
+    idList = planoTaskDetails.map( ( ele ) => new mongoose.Types.ObjectId( ele.planoId ) );
+    console.log( idList, 'list' );
+    taskQuery = [
       {
         $match: {
           planoId: { $in: idList },
