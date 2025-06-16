@@ -419,7 +419,7 @@ export async function uploadImage( req, res ) {
       Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
       Key: `${req.body.taskId}/${req.body.qno}/${Date.now()}/`,
       fileName: req.files.file.name,
-      ContentType: req.files.file.mimeType?req.files.file.mimeType:req.files.file.mimetypes,
+      ContentType: req.files.file.mimeType?req.files.file.mimeType:req.files.file.mimetype,
       body: req.files.file.data,
     };
     let fileRes = await fileUpload( params );
