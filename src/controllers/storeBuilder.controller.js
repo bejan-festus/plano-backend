@@ -3124,7 +3124,7 @@ export async function storeFixturesTaskv2( req, res ) {
                       const vmDetails = await Promise.all( fixture.toObject()?.vmConfig?.map( async ( vm ) => {
                         totalVmCount += 1;
                         const vmInfo = await planoVmService.findOne( { _id: vm.vmId } );
-                        console.log(vmInfo?.toObject())
+                        console.log( vmInfo?.toObject() );
                         return {
                           ...vm,
                           ...vmInfo?.toObject(),
