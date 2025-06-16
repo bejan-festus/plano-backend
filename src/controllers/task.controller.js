@@ -743,7 +743,7 @@ export async function generatetaskDetails( req, res ) {
           planoId: { $last: '$planoId' },
           taskId: { $push: '$_id' },
           checklistStatus: { $last: '$checklistStatus' },
-          date_string: { $push: '$date_string' },
+          date_string: { $last: '$date_string' },
         },
       },
       {
@@ -759,7 +759,6 @@ export async function generatetaskDetails( req, res ) {
       },
     ];
     let taskDetails = await processedService.aggregate( query );
-    console.log( taskDetails.flatMap( ( ele ) => ele.taskId ) );
     // ...( req.body.store.length ) ? { storeName: { $in: req.body.store } } : {}, taskId: { $in: taskDetails.flatMap( ( ele ) => ele.taskId ) } },
     let processedTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.fromDate, $lte: req.body.toDate }, type: 'layout' }, { status: 1, planoId: 1, date_string: 1, _id: 0, taskId: 1 } );
     console.log( processedTaskDetails.length );
@@ -777,8 +776,7 @@ export async function generatetaskDetails( req, res ) {
     } ) );
 
     processedTaskDetails.forEach( ( item ) => {
-      let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus =='submit' && taskItem.date_string.includes( item.date_string ) && item.planoId.toString() == taskItem.planoId.toString() );
-      console.log( taskIndex, 'index' );
+      let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus =='submit' && taskItem.date_string == item.date_string && item.planoId.toString() == taskItem.planoId.toString() );
       if ( taskIndex != -1 ) {
         taskDetails[taskIndex].storeStatus = item.status == 'complete' ? 'yes' : 'No';
       }
@@ -789,13 +787,14 @@ export async function generatetaskDetails( req, res ) {
     } );
 
 
-    let completeStore = taskDetails.filter( ( ele ) => ele.checklistStatus.includes( 'submit' ) );
+    let completeStore = taskDetails.filter( ( ele ) => ele.checklistStatus == 'submit' );
     completeStore = completeStore.reduce( ( acc, ele ) => {
       if ( !acc[ele.storeName] ) {
         acc[ele.storeName] = {
           storeName: ele.storeName,
           status: 'submit',
           storeStatus: ele.storeStatus,
+          date: ele.date_string,
         };
       }
       return acc;
@@ -804,15 +803,17 @@ export async function generatetaskDetails( req, res ) {
     completeStore = Object.values( completeStore );
 
     let completeStoreList =completeStore.map( ( item ) => item.storeName );
+    console.log( taskDetails );
 
-    let incompleteStore = taskDetails.filter( ( ele ) => !ele.checklistStatus.includes( 'submit' ) );
+    let incompleteStore = taskDetails.filter( ( ele ) => ele.checklistStatus != 'submit' );
 
     incompleteStore = incompleteStore.reduce( ( acc, ele ) => {
       if ( !acc[ele.storeName] ) {
         acc[ele.storeName] = {
           storeName: ele.storeName,
-          status: ele.checklistStatus[ele.checklistStatus.length - 1],
+          status: ele.checklistStatus,
           storeStatus: ele.storeStatus,
+          date: ele.date_string,
         };
       }
       return acc;
