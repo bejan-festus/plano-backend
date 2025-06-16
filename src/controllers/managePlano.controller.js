@@ -532,13 +532,12 @@ export async function updateStoreFixture(req, res) {
 });
     
 
-
     if (currentFixtureDoc.fixtureConfigId.toString() !== data.fixtureConfigId) {
-      const newTemplate = await fixtureConfigService.findOne({_id: data.fixtureConfigId})
+      const newTemplate = await fixtureConfigService.findOne({_id: new mongoose.Types.ObjectId(data.fixtureConfigId) })
       currentFixtureDoc = {
         ...currentFixtureDoc,
         ...newTemplate.toObject(),
-        fixtureConfigDoc:newTemplate.toObject()._id,
+        fixtureConfigId:newTemplate.toObject()._id,
         productBrandName:[...productBrandName],
         productCategory:[...productCategory],
         productSubCategory:[...productSubCategory]
