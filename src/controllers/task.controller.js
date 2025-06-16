@@ -415,11 +415,12 @@ export async function uploadImage( req, res ) {
       return res.sendError( 'Please upload a file', 400 );
     }
     console.log( req.files );
+    console.log( req.files.file );
     let params = {
       Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
       Key: `${req.body.taskId}/${req.body.qno}/${Date.now()}/`,
       fileName: req.files.file.name,
-      ContentType: req.files.file.mimeType?req.files.file.mimeType:req.files.file.mimetype,
+      ContentType: req.files.file.mimeType&&req.files.file.mimeType!=undefined?req.files.file.mimeType:req.files.file.mimetype,
       body: req.files.file.data,
     };
     let fileRes = await fileUpload( params );
