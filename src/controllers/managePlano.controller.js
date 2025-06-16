@@ -458,7 +458,7 @@ export async function updateFixtureStatus( req, res ) {
       comment: req.body.comments,
     };
     console.log( comments );
-    // return;
+
     let updateResponse = await planoTaskService.updateOnefilters(
         { _id: new mongoose.Types.ObjectId( req.body._id ) },
         {
@@ -470,8 +470,29 @@ export async function updateFixtureStatus( req, res ) {
           { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
 
         ] );
+    if ( updateResponse&&updateResponse.answers.length>0 ) {
+      console.log( updateResponse.answers[0] );
+      let findissuse= updateResponse.answers[0].issues.filter( ( data ) => data._id==req.body.issueId );
+      console.log( findissuse );
+      let findDetails = findissuse[0].Details.filter( ( det ) => det.status==='pending' );
+      console.log( '======', findDetails.length );
+      if ( findDetails.length==0 ) {
+        await planoTaskService.updateOnefilters(
+            { _id: new mongoose.Types.ObjectId( req.body._id ) },
+            {
+              $set: { 'answers.$[ans].issues.$[iss].status': 'completed' },
+            },
+            [
+              { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+              { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+
+
+            ] );
+      }
+    }
+
     if ( req.body.taskType==='layout' ) {
-      let updatecomment = await planoTaskService.updateOnefilters(
+      await planoTaskService.updateOnefilters(
           { _id: new mongoose.Types.ObjectId( req.body._id ) },
           {
             $push: { 'answers.$[ans].issues.$[iss].Details.$[det].comments': comments },
@@ -482,9 +503,8 @@ export async function updateFixtureStatus( req, res ) {
             { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
 
           ] );
-      console.log( updatecomment );
     } else {
-      let updatecomment = await planoTaskService.updateOnefilters(
+      await planoTaskService.updateOnefilters(
           { _id: new mongoose.Types.ObjectId( req.body._id ) },
           {
             $push: { 'answers.$[ans].issues.$[iss].comments': comments },
@@ -493,9 +513,8 @@ export async function updateFixtureStatus( req, res ) {
             { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
             { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
           ] );
-      console.log( updatecomment );
     }
-    console.log( updateResponse );
+
 
     res.sendSuccess( 'updated successfully' );
   } catch ( e ) {
