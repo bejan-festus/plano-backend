@@ -3592,6 +3592,7 @@ export async function planoList( req, res ) {
       },
       {
         $project: {
+          storeId: 1,
           storeName: 1,
           layoutName: 1,
           layoutDetails: '$layout.layoutDetails',
