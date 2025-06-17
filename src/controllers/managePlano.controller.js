@@ -474,9 +474,9 @@ export async function updateFixtureStatus( req, res ) {
       console.log( updateResponse.answers[0] );
       let findissuse= updateResponse.answers[0].issues.filter( ( data ) => data._id==req.body.issueId );
       console.log( findissuse );
-      let findDetails = findissuse[0].Details.filter( ( det ) => det.status==='pending' );
+      let findDetails = findissuse[0].Details.filter( ( det ) => det.status==='agree' );
       console.log( '======', findDetails.length );
-      if ( findDetails.length==0 ) {
+      if ( findissuse[0].Details.length=== findDetails.length ) {
         await planoTaskService.updateOnefilters(
             { _id: new mongoose.Types.ObjectId( req.body._id ) },
             {
