@@ -602,3 +602,39 @@ export async function updateStoreFixture( req, res ) {
   }
 }
 
+export async function updateredostatus( req, res ) {
+  try {
+    if ( req.body.type==='layout' ) {
+      await planoTaskService.updateOne(
+          {
+            planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+            floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+            type: req.body.type,
+          },
+          {
+            'answers.$[].issues.$[].status': 'completed',
+            'answers.$[].issues.$[].Details.$[].status': 'agree',
+            'status': 'complete',
+          },
+      );
+    } else {
+      await planoTaskService.updateOne(
+          {
+            planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+            floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+            fixtureId: new mongoose.Types.ObjectId( req.body.fixtureId ),
+            type: req.body.type,
+          },
+          {
+            'answers.$[].issues.$[].status': 'completed',
+            'answers.$[].issues.$[].Details.$[].status': 'agree',
+            'status': 'complete',
+          },
+      );
+    }
+    res.sendSuccess( 'updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateredostatus', error: e } );
+    return res.sendError( e, 500 );
+  }
+}

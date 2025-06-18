@@ -595,11 +595,16 @@ export async function updateAnswersv2( req, res ) {
       type: req.body.type,
       date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
       taskId: req.body.taskId,
+      taskType: req.body.taskType,
       storeName: req.body?.storeName,
       storeId: req.body?.storeId,
     };
-    console.log( data );
-    await planoTaskService.updateOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
+    console.log( '111111', data );
+    if ( req.body.type==='layout' ) {
+      await planoTaskService.updateOne( { planoId: req.body.planoId, taskType: req.body.taskType, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
+    } else {
+      await planoTaskService.updateOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
+    }
 
     return res.sendSuccess( 'Fixture details updated successfully' );
   } catch ( e ) {
