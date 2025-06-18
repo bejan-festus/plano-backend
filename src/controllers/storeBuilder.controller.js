@@ -2983,6 +2983,7 @@ export async function storeFixturesTaskv2( req, res ) {
                 let productCapacity = 0;
                 let fixtureCount = 0;
                 let totalVmCount = 0;
+                let redoCount = 0;
                 const layoutPolygonWithFixtures = await Promise.all(
                     floor.layoutPolygon.map( async ( element ) => {
                       const fixtures = await storeFixtureService.findAndSort( {
@@ -3045,6 +3046,7 @@ export async function storeFixturesTaskv2( req, res ) {
                             if ( compliance?.status && compliance.status == 'incomplete' ) {
                               let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
                               if ( issueDetails ) {
+                                redoCount ++;
                                 disabled = false;
                               }
                             }
@@ -3135,6 +3137,7 @@ export async function storeFixturesTaskv2( req, res ) {
                       if ( compliance?.status && compliance.status == 'incomplete' ) {
                         let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
                         if ( issueDetails ) {
+                          redoCount++;
                           disabled = false;
                         }
                       }
@@ -3164,6 +3167,7 @@ export async function storeFixturesTaskv2( req, res ) {
                 return {
                   ...floor.toObject(),
                   fixtureCount: fixtureCount,
+                  redoCount: redoCount,
                   vmCount: totalVmCount,
                   layoutPolygon: layoutPolygonWithFixtures,
                   centerFixture: centerFixturesWithStatus,
@@ -3588,6 +3592,7 @@ export async function planoList( req, res ) {
       },
       {
         $project: {
+          storeId: 1,
           storeName: 1,
           layoutName: 1,
           layoutDetails: '$layout.layoutDetails',
