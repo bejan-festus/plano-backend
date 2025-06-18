@@ -1,6 +1,6 @@
 {
     "name": "tango-app-api-store-builder",
-    "version": "1.0.0-beta-124",
+    "version": "1.0.0-beta-125",
     "description": "storeBuilder",
     "main": "index.js",
     "type": "module",
@@ -32,7 +32,7 @@
         "path": "^0.12.7",
         "selenium-webdriver": "^4.31.0",
         "sharp": "^0.34.1",
-        "tango-api-schema": "2.2.160",
+        "tango-api-schema": "2.2.162",
         "tango-app-api-middleware": "3.1.48",
         "url": "^0.11.4",
         "winston": "^3.17.0",
