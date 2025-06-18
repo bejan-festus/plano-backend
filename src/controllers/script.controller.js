@@ -8619,3 +8619,38 @@ export async function migrateCrestv1( req, res ) {
 // exportFixtureJsonToExcel( fixtures, 'output.xlsx' );
 
 
+// import { readFile, writeFile } from 'fs/promises';
+
+
+// try {
+//   const raw = await readFile('response.json', 'utf-8');
+//   const json = JSON.parse(raw);
+
+//   const resultArray = json;
+//   const uniqueTypes = new Set();
+
+//   for (const obj of resultArray) {
+//     for (const item of obj.data?.result) {
+//       if (Array.isArray(item.fixtures)) {
+//         for (const fixture of item.fixtures) {
+//           console.log(fixture)
+//           const { fixtureName } = fixture;
+//           if (fixtureName) {
+//             const parts = fixtureName.split(' - ');
+//             if (parts.length >= 3) {
+//               const type = parts.slice(2).join(' - ');
+//               uniqueTypes.add(type);
+//             }
+//           }
+//         }
+//       }
+//     }
+
+
+//   }
+
+//   await writeFile('unique.json', JSON.stringify([...uniqueTypes], null, 2), 'utf-8');
+
+// } catch (err) {
+//   console.error('Error processing file:', err);
+// }
