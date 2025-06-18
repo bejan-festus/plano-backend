@@ -53,6 +53,7 @@ export async function getplanoFeedback( req, res ) {
       },
 
     }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
+    { $sort: { _id: -1 } },
     );
 
 
@@ -485,9 +486,21 @@ export async function updateFixtureStatus( req, res ) {
             [
               { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
               { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
-
-
             ] );
+      }
+      let findoneplanoData = await planoTaskService.findOne( { _id: new mongoose.Types.ObjectId( req.body._id ) } );
+      console.log( '************', findoneplanoData.answers[0].issues );
+      let totalApproved= findoneplanoData.answers[0].issues.filter( ( data ) => data.status==='pending' );
+      console.log( '---------->', totalApproved.length );
+      if ( totalApproved.length===0 ) {
+        await planoTaskService.updateOne(
+            {
+              _id: new mongoose.Types.ObjectId( req.body._id ),
+            },
+            {
+              'status': 'complete',
+            },
+        );
       }
     }
 
@@ -556,7 +569,7 @@ export async function updateStoreFixture( req, res ) {
       currentFixtureDoc = {
         ...currentFixtureDoc,
         ...newTemplate.toObject(),
-        fixtureConfigDoc: newTemplate.toObject()._id,
+        fixtureConfigId: newTemplate.toObject()._id,
         productBrandName: [ ...productBrandName ],
         productCategory: [ ...productCategory ],
         productSubCategory: [ ...productSubCategory ],
@@ -602,3 +615,40 @@ export async function updateStoreFixture( req, res ) {
   }
 }
 
+export async function updateredostatus( req, res ) {
+  try {
+    console.log( '------->', req.body );
+    if ( req.body.type==='layout' ) {
+      await planoTaskService.updateOne(
+          {
+            planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+            floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+            type: req.body.type,
+          },
+          {
+            'answers.$[].issues.$[].status': 'completed',
+            'answers.$[].issues.$[].Details.$[].status': 'agree',
+            'status': 'complete',
+          },
+      );
+    } else {
+      await planoTaskService.updateOne(
+          {
+            planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+            floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+            fixtureId: new mongoose.Types.ObjectId( req.body.fixtureId ),
+            type: req.body.type,
+          },
+          {
+            'answers.$[].issues.$[].status': 'completed',
+            'answers.$[].issues.$[].Details.$[].status': 'agree',
+            'status': 'complete',
+          },
+      );
+    }
+    res.sendSuccess( 'updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateredostatus', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
