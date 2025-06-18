@@ -14,6 +14,8 @@ import mongoose from 'mongoose';
 // const ObjectId = mongoose.Types.ObjectId;
 import * as floorService from '../service/storeBuilder.service.js';
 import * as planoStaticService from '../service/planoStaticData.service.js';
+import * as assignService from '../service/assignService.service.js';
+
 
 dayjs.extend( timeZone );
 
@@ -110,157 +112,196 @@ async function createUser( data ) {
 
 export async function createTask( req, res ) {
   try {
-    let taskDetails = await taskService.find( { isPlano: true, client_id: req.body.clientId, ...( req.body.checkListName )? { checkListName: req.body.checkListName } : {} } );
-    let storeList = req.body.stores.map( ( ele ) => ele.store.toLowerCase() );
-    let userDetails;
-    if ( !taskDetails.length ) {
-      return res.sendError( 'No data found', 204 );
-    }
-    let endDate;
     let scheduleEndTime = '11:59 PM';
-    let taskConfig = await planoStaticService.findOne( { clientId: req.body.clientId, type: 'task' } );
-    if ( taskConfig && !req.body?.endTime ) {
-      scheduleEndTime = taskConfig?.dueTime || '11:59 PM';
-      req.body.days = taskConfig?.dueDay || 1;
-      req.body.geoFencing = taskConfig?.allowedStoreLocation || false;
-    }
-    if ( req.body?.endTime ) {
-      scheduleEndTime = req.body.endTime;
-    }
-    endDate = dayjs().add( req.body.days, 'day' ).format( 'YYYY-MM-DD' );
-    let userEmailList = [ ...new Set( req.body.stores.map( ( ele ) => ele.email ) ) ];
-    for ( let mail of userEmailList ) {
-      let query = [
-        {
-          $addFields: {
-            emailLower: { $toLower: '$email' },
-          },
-        },
-        {
-          $match: {
-            clientId: req.body.clientId,
-            emailLower: mail.toLowerCase(),
-          },
-        },
-      ];
-      userDetails = await userService.aggregate( query );
-      if ( !userDetails.length ) {
-        let userData = {
-          clientId: req.body.clientId,
-          mobileNumber: '',
-          email: mail,
-          userName: mail.split( '@' )[0],
-        };
-        await createUser( userData );
+    if ( req.body?.redo ) {
+      if ( !req.body.taskId ) {
+        return res.sendError( 'Task id is required', 400 );
       }
-    }
-    endDate = `${endDate} ${scheduleEndTime}`;
-    await Promise.all( taskDetails.map( async ( task ) => {
-      let splitName = task?.checkListName.split( ' ' );
-      splitName.pop();
-      let data = {
-        client_id: req.body.clientId,
-        date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
-        date_string: dayjs().format( 'YYYY-MM-DD' ),
-        sourceCheckList_id: task._id,
-        checkListName: task.checkListName,
-        checkListId: task._id,
-        scheduleStartTime: '12:00 AM',
-        scheduleEndTime: scheduleEndTime,
-        scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(),
-        scheduleEndTime_iso: dayjs.utc( endDate, 'YYYY-MM-DD hh:mm A' ).format(),
-        allowedOverTime: false,
-        allowedStoreLocation: req.body?.geoFencing || false,
-        createdBy: task.createdBy,
-        createdByName: task.createdByName,
-        questionAnswers: [],
-        isdeleted: false,
-        questionCount: 0,
-        storeCount: 0,
-        locationCount: 0,
-        checkListType: 'task',
-        country: '',
-        store_id: '',
-        storeName: '',
-        userId: '',
-        userName: '',
-        userEmail: '',
-        checklistStatus: 'open',
-        timeFlagStatus: true,
-        timeFlag: 0,
-        questionFlag: 0,
-        mobileDetectionFlag: 0,
-        storeOpenCloseFlag: 0,
-        reinitiateStatus: false,
-        markasread: false,
-        uniformDetectionFlag: 0,
-        scheduleRepeatedType: 'daily',
-        approvalStatus: false,
-        approvalEnable: false,
-        redoStatus: false,
-        isPlano: true,
-        planoType: splitName.length == 1 ? splitName[0].toLowerCase() : splitName[0].toLowerCase() + splitName[2],
-      };
-      let query = [
-        {
-          $addFields: {
-            store: { $toLower: '$storeName' },
+      let taskInfo = await processedService.findOne( { _id: req.body.taskId } );
+      if ( !taskInfo ) {
+        return res.sendError( 'No data found', 204 );
+      }
+      await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: 'open', redoStatus: true, date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(), scheduleEndTime_iso: dayjs.utc( scheduleEndTime, 'hh:mm A' ).format(), date_string: dayjs().format( 'YYYY-MM-DD' ) } );
+      return res.sendSuccess( 'Task redo triggered successfully' );
+    } else {
+      let taskDetails = await taskService.find( { isPlano: true, client_id: req.body.clientId, ...( req.body.checkListName )? { checkListName: req.body.checkListName } : {} } );
+      if ( !taskDetails.length ) {
+        return res.sendError( 'No data found', 204 );
+      }
+      let userDetails;
+      let storeList;
+      let endDate;
+      let taskConfig = await planoStaticService.findOne( { clientId: req.body.clientId, type: 'task' } );
+      req.body.days = req.body?.days || 7;
+      if ( taskConfig && !req.body?.endTime ) {
+        scheduleEndTime = taskConfig?.dueTime || '11:59 PM';
+        req.body.days = taskConfig?.dueDay || 1;
+        req.body.geoFencing = taskConfig?.allowedStoreLocation || false;
+      }
+      if ( req.body?.endTime ) {
+        scheduleEndTime = req.body.endTime;
+      }
+      endDate = dayjs().add( req.body.days, 'day' ).format( 'YYYY-MM-DD' );
+      endDate = `${endDate} ${scheduleEndTime}`;
+      if ( !req.body?.stores?.length ) {
+        let assignQuery = [
+          {
+            $addFields: {
+              store: { $toLower: '$storeName' },
+            },
           },
-        },
-        {
-          $match: {
+          {
+            $match: {
+              client_id: req.body.clientId,
+              store: req.body.store.toLowerCase(),
+            },
+          },
+        ];
+        let getUserDetails = await assignService.aggregate( assignQuery );
+        if ( !getUserDetails.length ) {
+          return res.sendError( 'Email is required' );
+        }
+        req.body.stores = [
+          {
+            store: getUserDetails[0].storeName,
+            email: req.body?.email ? req.body.email : getUserDetails[0].userEmail,
+          },
+        ];
+      }
+      storeList = req.body.stores.map( ( ele ) => ele.store.toLowerCase() );
+      let userEmailList = [ ...new Set( req.body.stores.map( ( ele ) => ele.email ) ) ];
+      for ( let mail of userEmailList ) {
+        let query = [
+          {
+            $addFields: {
+              emailLower: { $toLower: '$email' },
+            },
+          },
+          {
+            $match: {
+              clientId: req.body.clientId,
+              emailLower: mail.toLowerCase(),
+            },
+          },
+        ];
+        userDetails = await userService.aggregate( query );
+        if ( !userDetails.length ) {
+          let userData = {
             clientId: req.body.clientId,
-            store: { $in: storeList },
+            mobileNumber: '',
+            email: mail,
+            userName: mail.split( '@' )[0],
+          };
+          await createUser( userData );
+        }
+      }
+      await Promise.all( taskDetails.map( async ( task ) => {
+        let splitName = task?.checkListName.split( ' ' );
+        splitName.pop();
+        let data = {
+          client_id: req.body.clientId,
+          date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ),
+          date_string: dayjs().format( 'YYYY-MM-DD' ),
+          sourceCheckList_id: task._id,
+          checkListName: task.checkListName,
+          checkListId: task._id,
+          scheduleStartTime: '12:00 AM',
+          scheduleEndTime: scheduleEndTime,
+          scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(),
+          scheduleEndTime_iso: dayjs.utc( endDate, 'YYYY-MM-DD hh:mm A' ).format(),
+          allowedOverTime: false,
+          allowedStoreLocation: req.body?.geoFencing || false,
+          createdBy: task.createdBy,
+          createdByName: task.createdByName,
+          questionAnswers: [],
+          isdeleted: false,
+          questionCount: 0,
+          storeCount: 0,
+          locationCount: 0,
+          checkListType: 'task',
+          country: '',
+          store_id: '',
+          storeName: '',
+          userId: '',
+          userName: '',
+          userEmail: '',
+          checklistStatus: 'open',
+          timeFlagStatus: true,
+          timeFlag: 0,
+          questionFlag: 0,
+          mobileDetectionFlag: 0,
+          storeOpenCloseFlag: 0,
+          reinitiateStatus: false,
+          markasread: false,
+          uniformDetectionFlag: 0,
+          scheduleRepeatedType: 'daily',
+          approvalStatus: false,
+          approvalEnable: false,
+          redoStatus: false,
+          isPlano: true,
+          planoType: splitName.length == 1 ? splitName[0].toLowerCase() : splitName[0].toLowerCase() + splitName[2],
+        };
+        let query = [
+          {
+            $addFields: {
+              store: { $toLower: '$storeName' },
+            },
           },
-        },
-      ];
+          {
+            $match: {
+              clientId: req.body.clientId,
+              store: { $in: storeList },
+            },
+          },
+        ];
 
-      let storeDetails = await storeService.aggregate( query );
-      await Promise.all( storeDetails.map( async ( store ) => {
-        let getUserEmail = req.body.stores.find( ( ele ) => ele.store.toLowerCase() == store.storeName.toLowerCase() );
-        let planoDetails = await planoService.findOne( { storeName: store.storeName } );
-        if ( planoDetails ) {
-          let floorDetails = await floorService.find( { planoId: planoDetails._id }, { _id: 1, floorName: 1 } );
-          for ( let i=0; i<floorDetails.length; i++ ) {
-            if ( getUserEmail ) {
-              let query = [
-                {
-                  $addFields: {
-                    emailLower: { $toLower: '$email' },
+        let storeDetails = await storeService.aggregate( query );
+        await Promise.all( storeDetails.map( async ( store ) => {
+          let getUserEmail = req.body.stores.find( ( ele ) => ele.store.toLowerCase() == store.storeName.toLowerCase() );
+          let planoDetails = await planoService.findOne( { storeName: store.storeName } );
+          if ( planoDetails ) {
+            let floorDetails = await floorService.find( { planoId: planoDetails._id }, { _id: 1, floorName: 1 } );
+            for ( let i=0; i<floorDetails.length; i++ ) {
+              if ( getUserEmail ) {
+                let query = [
+                  {
+                    $addFields: {
+                      emailLower: { $toLower: '$email' },
+                    },
                   },
-                },
-                {
-                  $match: {
-                    clientId: req.body.clientId,
-                    emailLower: getUserEmail.email.toLowerCase(),
+                  {
+                    $match: {
+                      clientId: req.body.clientId,
+                      emailLower: getUserEmail.email.toLowerCase(),
+                    },
                   },
-                },
-              ];
-              userDetails = await userService.aggregate( query );
-              userDetails = userDetails[0];
-            }
-            let taskData = { ...data };
-            if ( floorDetails.length > 1 ) {
-              taskData.checkListName = taskData.checkListName +' - '+ floorDetails[i].floorName;
-            }
-            taskData.floorId = floorDetails[i]._id;
-            taskData.store_id = store.storeId;
-            taskData.storeName = store.storeName;
-            taskData.userId = userDetails._id;
-            taskData.userName = userDetails.userName;
-            taskData.userEmail = userDetails.email;
-            taskData.planoId = planoDetails?._id;
-            for ( let i=0; i<req.body.days; i++ ) {
-              let currDate = dayjs().add( i, 'day' );
-              let insertData = { ...taskData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 12:00 AM`, 'YYYY-MM-DD hh:mm A' ).format() };
-              await processedService.updateOne( { date_string: currDate.format( 'YYYY-MM-DD' ), store_id: insertData.store_id, userEmail: insertData.userEmail, planoId: insertData.planoId, sourceCheckList_id: task._id, ...( taskData?.floorId ) ? { floorId: taskData.floorId }:{} }, insertData );
+                ];
+                userDetails = await userService.aggregate( query );
+                userDetails = userDetails[0];
+              }
+              let taskData = { ...data };
+              if ( floorDetails.length > 1 ) {
+                taskData.checkListName = taskData.checkListName +' - '+ floorDetails[i].floorName;
+              }
+              taskData.floorId = floorDetails[i]._id;
+              taskData.store_id = store.storeId;
+              taskData.storeName = store.storeName;
+              taskData.userId = userDetails._id;
+              taskData.userName = userDetails.userName;
+              taskData.userEmail = userDetails.email;
+              taskData.planoId = planoDetails?._id;
+              for ( let i=0; i<req.body.days; i++ ) {
+                let currDate = dayjs().add( i, 'day' );
+                let insertData = { ...taskData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 12:00 AM`, 'YYYY-MM-DD hh:mm A' ).format() };
+                let response = await processedService.updateOne( { date_string: currDate.format( 'YYYY-MM-DD' ), store_id: insertData.store_id, userEmail: insertData.userEmail, planoId: insertData.planoId, sourceCheckList_id: task._id, ...( taskData?.floorId ) ? { floorId: taskData.floorId }:{} }, insertData );
+                console.log( response );
+              }
             }
           }
-        }
+        } ) );
       } ) );
-    } ) );
-
-    return res.sendSuccess( 'Task created successfully' );
+      return res.sendSuccess( 'Task created successfully' );
+    }
   } catch ( e ) {
     console.log( e );
     logger.error( { functionName: 'createTask', error: e } );
@@ -414,12 +455,13 @@ export async function uploadImage( req, res ) {
     if ( !req.files.file ) {
       return res.sendError( 'Please upload a file', 400 );
     }
-
+    console.log( req.files );
+    console.log( req.files.file );
     let params = {
       Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
       Key: `${req.body.taskId}/${req.body.qno}/${Date.now()}/`,
       fileName: req.files.file.name,
-      ContentType: req.files.file.mimeType,
+      ContentType: req.files.file.mimeType&&req.files.file.mimeType!=undefined?req.files.file.mimeType:req.files.file.mimetype,
       body: req.files.file.data,
     };
     let fileRes = await fileUpload( params );
@@ -743,7 +785,7 @@ export async function generatetaskDetails( req, res ) {
           planoId: { $last: '$planoId' },
           taskId: { $push: '$_id' },
           checklistStatus: { $last: '$checklistStatus' },
-          date_string: { $push: '$date_string' },
+          date_string: { $last: '$date_string' },
         },
       },
       {
@@ -759,7 +801,6 @@ export async function generatetaskDetails( req, res ) {
       },
     ];
     let taskDetails = await processedService.aggregate( query );
-    console.log( taskDetails.flatMap( ( ele ) => ele.taskId ) );
     // ...( req.body.store.length ) ? { storeName: { $in: req.body.store } } : {}, taskId: { $in: taskDetails.flatMap( ( ele ) => ele.taskId ) } },
     let processedTaskDetails = await planoTaskService.find( { date_string: { $gte: req.body.fromDate, $lte: req.body.toDate }, type: 'layout' }, { status: 1, planoId: 1, date_string: 1, _id: 0, taskId: 1 } );
     console.log( processedTaskDetails.length );
@@ -777,8 +818,7 @@ export async function generatetaskDetails( req, res ) {
     } ) );
 
     processedTaskDetails.forEach( ( item ) => {
-      let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus =='submit' && taskItem.date_string.includes( item.date_string ) && item.planoId.toString() == taskItem.planoId.toString() );
-      console.log( taskIndex, 'index' );
+      let taskIndex = taskDetails.findIndex( ( taskItem ) => taskItem.checklistStatus =='submit' && taskItem.date_string == item.date_string && item.planoId.toString() == taskItem.planoId.toString() );
       if ( taskIndex != -1 ) {
         taskDetails[taskIndex].storeStatus = item.status == 'complete' ? 'yes' : 'No';
       }
@@ -789,13 +829,14 @@ export async function generatetaskDetails( req, res ) {
     } );
 
 
-    let completeStore = taskDetails.filter( ( ele ) => ele.checklistStatus.includes( 'submit' ) );
+    let completeStore = taskDetails.filter( ( ele ) => ele.checklistStatus == 'submit' );
     completeStore = completeStore.reduce( ( acc, ele ) => {
       if ( !acc[ele.storeName] ) {
         acc[ele.storeName] = {
           storeName: ele.storeName,
           status: 'submit',
           storeStatus: ele.storeStatus,
+          date: ele.date_string,
         };
       }
       return acc;
@@ -804,15 +845,17 @@ export async function generatetaskDetails( req, res ) {
     completeStore = Object.values( completeStore );
 
     let completeStoreList =completeStore.map( ( item ) => item.storeName );
+    console.log( taskDetails );
 
-    let incompleteStore = taskDetails.filter( ( ele ) => !ele.checklistStatus.includes( 'submit' ) );
+    let incompleteStore = taskDetails.filter( ( ele ) => ele.checklistStatus != 'submit' );
 
     incompleteStore = incompleteStore.reduce( ( acc, ele ) => {
       if ( !acc[ele.storeName] ) {
         acc[ele.storeName] = {
           storeName: ele.storeName,
-          status: ele.checklistStatus[ele.checklistStatus.length - 1],
+          status: ele.checklistStatus,
           storeStatus: ele.storeStatus,
+          date: ele.date_string,
         };
       }
       return acc;

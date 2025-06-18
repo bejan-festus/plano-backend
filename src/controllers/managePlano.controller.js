@@ -454,15 +454,15 @@ export async function updateFixtureStatus( req, res ) {
       userId: req.user._id,
       userName: req.user.userName,
       role: req.user.role,
-      responsetype: req.user.type,
+      responsetype: req.body.type,
       comment: req.body.comments,
     };
     console.log( comments );
-    // return;
+
     let updateResponse = await planoTaskService.updateOnefilters(
         { _id: new mongoose.Types.ObjectId( req.body._id ) },
         {
-          $set: { 'answers.$[ans].issues.$[iss].Details.$[det].status': 'completed' },
+          $set: { 'answers.$[ans].issues.$[iss].Details.$[det].status': req.body.type },
         },
         [
           { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
@@ -470,18 +470,52 @@ export async function updateFixtureStatus( req, res ) {
           { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
 
         ] );
-    let updatecomment = await planoTaskService.updateOnefilters(
-        { _id: new mongoose.Types.ObjectId( req.body._id ) },
-        {
-          $push: { 'answers.$[ans].issues.$[iss].Details.$[det].comments': comments },
-        },
-        [
-          { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
-          { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
-          { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
+    if ( updateResponse&&updateResponse.answers.length>0 ) {
+      console.log( updateResponse.answers[0] );
+      let findissuse= updateResponse.answers[0].issues.filter( ( data ) => data._id==req.body.issueId );
+      console.log( findissuse );
+      let findDetails = findissuse[0].Details.filter( ( det ) => det.status==='agree' );
+      console.log( '======', findDetails.length );
+      if ( findissuse[0].Details.length=== findDetails.length ) {
+        await planoTaskService.updateOnefilters(
+            { _id: new mongoose.Types.ObjectId( req.body._id ) },
+            {
+              $set: { 'answers.$[ans].issues.$[iss].status': 'completed' },
+            },
+            [
+              { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+              { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
 
-        ] );
-    console.log( updateResponse, updatecomment );
+
+            ] );
+      }
+    }
+
+    if ( req.body.taskType==='layout' ) {
+      await planoTaskService.updateOnefilters(
+          { _id: new mongoose.Types.ObjectId( req.body._id ) },
+          {
+            $push: { 'answers.$[ans].issues.$[iss].Details.$[det].comments': comments },
+          },
+          [
+            { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+            { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+            { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
+
+          ] );
+    } else {
+      await planoTaskService.updateOnefilters(
+          { _id: new mongoose.Types.ObjectId( req.body._id ) },
+          {
+            $push: { 'answers.$[ans].issues.$[iss].comments': comments },
+          },
+          [
+            { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
+            { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
+          ] );
+    }
+
+
     res.sendSuccess( 'updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateFixtureStatus', error: e } );
@@ -489,84 +523,82 @@ export async function updateFixtureStatus( req, res ) {
   }
 }
 
-export async function updateStoreFixture(req, res) {
+export async function updateStoreFixture( req, res ) {
   try {
     const { fixtureId, data } = req.body;
 
-    const currentFixture = await storeFixtureService.findOne({ _id: new mongoose.Types.ObjectId(fixtureId) });
-    let currentFixtureDoc = currentFixture.toObject()
+    const currentFixture = await storeFixtureService.findOne( { _id: new mongoose.Types.ObjectId( fixtureId ) } );
+    let currentFixtureDoc = currentFixture.toObject();
 
     const productBrandName = new Set();
     const productCategory = new Set();
     const productSubCategory = new Set();
 
-      data.shelfConfig.forEach((shelf) => {
-  const { productBrandName: brand, productCategory: category, productSubCategory: subCategory } = shelf;
+    data.shelfConfig.forEach( ( shelf ) => {
+      const { productBrandName: brand, productCategory: category, productSubCategory: subCategory } = shelf;
 
-  if (Array.isArray(brand)) {
-    brand.forEach((b) => productBrandName.add(b));
-  }
+      if ( Array.isArray( brand ) ) {
+        brand.forEach( ( b ) => productBrandName.add( b ) );
+      }
 
-  if (Array.isArray(category)) {
-    category.forEach((c) => productCategory.add(c));
-  }
+      if ( Array.isArray( category ) ) {
+        category.forEach( ( c ) => productCategory.add( c ) );
+      }
 
-  if (Array.isArray(subCategory)) {
-    subCategory.forEach((s) => productSubCategory.add(s));
-  }
-});
-    
+      if ( Array.isArray( subCategory ) ) {
+        subCategory.forEach( ( s ) => productSubCategory.add( s ) );
+      }
+    } );
 
 
-    if (currentFixtureDoc.fixtureConfigId.toString() !== data.fixtureConfigId) {
-      const newTemplate = await fixtureConfigService.findOne({_id: data.fixtureConfigId})
+    if ( currentFixtureDoc.fixtureConfigId.toString() !== data.fixtureConfigId ) {
+      const newTemplate = await fixtureConfigService.findOne( { _id: data.fixtureConfigId } );
       currentFixtureDoc = {
         ...currentFixtureDoc,
         ...newTemplate.toObject(),
-        fixtureConfigDoc:newTemplate.toObject()._id,
-        productBrandName:[...productBrandName],
-        productCategory:[...productCategory],
-        productSubCategory:[...productSubCategory]
-      }
-    }else{
+        fixtureConfigDoc: newTemplate.toObject()._id,
+        productBrandName: [ ...productBrandName ],
+        productCategory: [ ...productCategory ],
+        productSubCategory: [ ...productSubCategory ],
+      };
+    } else {
       currentFixtureDoc = {
         ...currentFixtureDoc,
         ...data,
-        productBrandName:[...productBrandName],
-        productCategory:[...productCategory],
-        productSubCategory:[...productSubCategory]
-      }
+        productBrandName: [ ...productBrandName ],
+        productCategory: [ ...productCategory ],
+        productSubCategory: [ ...productSubCategory ],
+      };
     }
 
-    delete currentFixtureDoc._id
+    delete currentFixtureDoc._id;
 
 
-    await storeFixtureService.updateOne({ _id: new mongoose.Types.ObjectId(fixtureId) }, currentFixtureDoc);
+    await storeFixtureService.updateOne( { _id: new mongoose.Types.ObjectId( fixtureId ) }, currentFixtureDoc );
 
-        if (data?.shelfConfig?.length) {
-      await fixtureShelfService.deleteMany({ fixtureId: new mongoose.Types.ObjectId(fixtureId) })
+    if ( data?.shelfConfig?.length ) {
+      await fixtureShelfService.deleteMany( { fixtureId: new mongoose.Types.ObjectId( fixtureId ) } );
 
 
-      data.shelfConfig.forEach(async (shelf) => {
-        delete shelf?._id
+      data.shelfConfig.forEach( async ( shelf ) => {
+        delete shelf?._id;
         const additionalMeta = {
-        clientId: currentFixture.clientId,
-        storeId: currentFixture.storeId,
-        storeName: currentFixture.storeName,
-        planoId: currentFixture.planoId,
-        floorId: currentFixture.floorId,
-        fixtureId: currentFixture._id,
-      }
+          clientId: currentFixture.clientId,
+          storeId: currentFixture.storeId,
+          storeName: currentFixture.storeName,
+          planoId: currentFixture.planoId,
+          floorId: currentFixture.floorId,
+          fixtureId: currentFixture._id,
+        };
 
-      await fixtureShelfService.create({ ...additionalMeta, ...shelf });
-      });
-
+        await fixtureShelfService.create( { ...additionalMeta, ...shelf } );
+      } );
     }
 
-    res.sendSuccess('Updated Successfully');
-  } catch (e) {
-    logger.error({ functionName: 'updateStoreFixture', error: e });
-    return res.sendError(e, 500);
+    res.sendSuccess( 'Updated Successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateStoreFixture', error: e } );
+    return res.sendError( e, 500 );
   }
 }
 
