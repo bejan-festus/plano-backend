@@ -26,3 +26,7 @@ export async function count( data ) {
 export async function aggregate( query ) {
   return model.planoTaskCompliance.aggregate( query );
 }
+
+export async function deleteMany( query ) {
+  return model.planoTaskCompliance.deleteMany( query );
+}
