@@ -556,7 +556,7 @@ export async function updateStoreFixture( req, res ) {
       currentFixtureDoc = {
         ...currentFixtureDoc,
         ...newTemplate.toObject(),
-        fixtureConfigDoc: newTemplate.toObject()._id,
+        fixtureConfigId: newTemplate.toObject()._id,
         productBrandName: [ ...productBrandName ],
         productCategory: [ ...productCategory ],
         productSubCategory: [ ...productSubCategory ],

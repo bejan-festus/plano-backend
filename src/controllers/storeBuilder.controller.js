@@ -3013,7 +3013,6 @@ export async function storeFixturesTaskv2( req, res ) {
                             const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
                               type: req.body?.type ? req.body.type : 'fixture',
-                              date_string: req.body?.date,
                             }, { status: 1, answers: 1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
@@ -3044,9 +3043,14 @@ export async function storeFixturesTaskv2( req, res ) {
 
                             let disabled = true;
                             if ( compliance?.status && compliance.status == 'incomplete' ) {
-                              let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
-                              if ( issueDetails ) {
-                                redoCount ++;
+                              const hasDisagree = compliance?.answers?.some( ( answer ) =>
+                                answer?.issues?.some( ( issue ) =>
+                                  issue?.Details?.some( ( detail ) => detail.status === 'disagree' ),
+                                ),
+                              );
+
+                              if ( hasDisagree ) {
+                                redoCount++;
                                 disabled = false;
                               }
                             }
@@ -3104,7 +3108,6 @@ export async function storeFixturesTaskv2( req, res ) {
                       const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
                         type: req.body?.type ? req.body.type : 'fixture',
-                        date_string: req.body?.date,
                       }, { status: 1 } );
 
                       const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
@@ -3134,8 +3137,13 @@ export async function storeFixturesTaskv2( req, res ) {
 
                       let disabled = true;
                       if ( compliance?.status && compliance.status == 'incomplete' ) {
-                        let issueDetails = compliance?.answers?.[0]?.issues.find( ( ele ) => ele.status == 'disagree' );
-                        if ( issueDetails ) {
+                        const hasDisagree = compliance?.answers?.some( ( answer ) =>
+                          answer?.issues?.some( ( issue ) =>
+                            issue?.Details?.some( ( detail ) => detail.status === 'disagree' ),
+                          ),
+                        );
+
+                        if ( hasDisagree ) {
                           redoCount++;
                           disabled = false;
                         }
@@ -3261,7 +3269,10 @@ export async function planoList( req, res ) {
                 $expr: {
                   $and: [
                     { $eq: [ '$planoId', '$$plano' ] },
-                    { isPlano: true },
+                    { $eq: [ '$isPlano', true ] },
+                    {
+                      $lte: [ '$date_iso', new Date( dayjs().format( 'YYYY-MM-DD' ) ) ],
+                    },
                   ],
                 },
               },
@@ -3274,19 +3285,27 @@ export async function planoList( req, res ) {
                 taskId: { $last: '$_id' },
               },
             },
+            {
+              $group: {
+                _id: null,
+                taskStatus: {
+                  $push: {
+                    type: '$_id',
+                    status: '$checklistStatus',
+                    date: '$dateString',
+                  },
+                },
+                taskIds: { $push: '$taskId' },
+              },
+            },
           ],
           as: 'planoTask',
         },
       },
       {
         $addFields: {
-          taskIds: {
-            $map: {
-              input: '$planoTask',
-              as: 'task',
-              in: '$$task.taskId',
-            },
-          },
+          taskIds: { $ifNull: [ { $arrayElemAt: [ '$planoTask.taskIds', 0 ] }, [] ] },
+          taskStatus: { $ifNull: [ { $arrayElemAt: [ '$planoTask.taskStatus', 0 ] }, [] ] },
         },
       },
       {
@@ -3618,12 +3637,34 @@ export async function planoList( req, res ) {
         },
       } );
     }
-    if ( inputData?.filter?.taskPending?.length ) {
+    if ( inputData?.filter?.taskPending?.length && inputData?.filter?.taskPending != 'all' ) {
+      let andQuery = [];
+
+      if ( inputData.filter.taskPending == 'layout' ) {
+        andQuery.push(
+            { 'planoTask.taskStatus.type': 'layout' },
+            { 'planoTask.taskStatus.status': 'submit' },
+            { 'taskDetails.layoutStatus': 'pending' },
+        );
+      }
+      if ( inputData.filter.taskPending == 'fixture' ) {
+        andQuery.push(
+            { 'planoTask.taskStatus.type': 'fixture' },
+            { 'planoTask.taskStatus.status': 'submit' },
+            { 'taskDetails.fixtureStatus': 'pending' },
+        );
+      }
+      if ( inputData.filter.taskPending == 'vm' ) {
+        andQuery.push(
+            { 'planoTask.taskStatus.type': 'vm' },
+            { 'taskDetails.vmStatus': 'pending' },
+            { 'planoTask.taskStatus.status': 'submit' },
+        );
+      }
+
       query.push( {
         $match: {
-          ...( inputData.filter.taskPending == 'layout' ) ? { 'taskDetails.layoutStatus': 'pending', 'planoTask._id': 'layout', 'planoTask.checklistStatus': 'submit' } :{},
-          ...( inputData.filter.taskPending == 'fixture' ) ? { 'taskDetails.fixtureStatus': 'pending', 'planoTask._id': 'fixture', 'planoTask.checklistStatus': 'submit' } :{},
-          ...( inputData.filter.taskPending == 'vm' ) ? { 'taskDetails.vmStatus': 'pending', 'planoTask._id': 'vm', 'planoTask.checklistStatus': 'submit' } :{},
+          $and: andQuery,
         },
       } );
     }
@@ -3668,6 +3709,8 @@ export async function planoList( req, res ) {
         ],
       },
     } );
+
+    console.log( JSON.stringify( query ) );
 
     let planoDetails = await planoService.aggregate( query );
 
