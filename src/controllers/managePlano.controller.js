@@ -53,6 +53,7 @@ export async function getplanoFeedback( req, res ) {
       },
 
     }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
+    { $sort: { _id: -1 } },
     );
 
 
@@ -485,9 +486,21 @@ export async function updateFixtureStatus( req, res ) {
             [
               { 'ans._id': new mongoose.Types.ObjectId( req.body.answerId ) },
               { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
-
-
             ] );
+      }
+      let findoneplanoData = await planoTaskService.findOne( { _id: new mongoose.Types.ObjectId( req.body._id ) } );
+      console.log( '************', findoneplanoData.answers[0].issues );
+      let totalApproved= findoneplanoData.answers[0].issues.filter( ( data ) => data.status==='pending' );
+      console.log( '---------->', totalApproved.length );
+      if ( totalApproved.length===0 ) {
+        await planoTaskService.updateOne(
+            {
+              _id: new mongoose.Types.ObjectId( req.body._id ),
+            },
+            {
+              'status': 'complete',
+            },
+        );
       }
     }
 
@@ -604,6 +617,7 @@ export async function updateStoreFixture( req, res ) {
 
 export async function updateredostatus( req, res ) {
   try {
+    console.log( '------->', req.body );
     if ( req.body.type==='layout' ) {
       await planoTaskService.updateOne(
           {
