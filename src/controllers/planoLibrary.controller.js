@@ -217,10 +217,10 @@ export async function getFixture( req, res ) {
     if ( fixtureDetails ) {
       let planoStatus = await planoService.findOne( { planoId: fixtureDetails.planoId }, { status: 1 } );
       if ( planoStatus ) {
-        fixtureLibDetails.status = planoStatus.status == 'complete' ? 'Active' :'Inactive';
+        fixtureLibDetails.status = planoStatus.status == 'complete' ? 'active' :'inactive';
       }
     } else {
-      fixtureLibDetails.status = fixtureLibDetails.status == 'draft' ? 'Draft' : 'Inactive';
+      fixtureLibDetails.status = fixtureLibDetails.status == 'draft' ? 'draft' : 'inactive';
     }
     fixtureLibDetails = {
       ...fixtureLibDetails.toObject(),

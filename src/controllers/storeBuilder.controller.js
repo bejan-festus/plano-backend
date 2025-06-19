@@ -3205,6 +3205,42 @@ export async function planoList( req, res ) {
     let limit = inputData?.limit || 10;
     let page = inputData?.offset - 1 || 0;
     let skip = limit * page;
+    let planoList = await planoService.find( { clientId: req.body.clientId }, { _id: 1 } );
+    let idList = planoList?.map( ( ele ) => new mongoose.Types.ObjectId( ele._id ) );
+    let taskQuery = [
+      {
+        $match: {
+          planoId: { $in: idList },
+          isPlano: true,
+          date_iso: { $lte: new Date( dayjs().format( 'YYYY-MM-DD' ) ) },
+        },
+      },
+      {
+        $group: {
+          _id: { store: '$storeName', type: '$planoType' },
+          planoId: { $last: '$planoId' },
+          checklistStatus: { $last: '$checklistStatus' },
+          taskId: { $last: '$_id' },
+        },
+      },
+      {
+        $match: {
+          checklistStatus: 'submit',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          type: '$_id.type',
+          planoId: 1,
+          checklistStatus: 1,
+          taskId: 1,
+        },
+      },
+    ];
+
+    let pendingDetails = await planotaskService.aggregate( taskQuery );
+    console.log( pendingDetails );
     let query = [
       {
         $match: {
@@ -3303,22 +3339,20 @@ export async function planoList( req, res ) {
         },
       },
       {
-        $addFields: {
-          taskIds: { $ifNull: [ { $arrayElemAt: [ '$planoTask.taskIds', 0 ] }, [] ] },
-          taskStatus: { $ifNull: [ { $arrayElemAt: [ '$planoTask.taskStatus', 0 ] }, [] ] },
-        },
-      },
-      {
         $lookup: {
           from: 'planotaskcompliances',
-          let: { plano: '$_id', taskId: '$taskIds' },
+          let: {
+            plano: '$_id',
+            task: { $ifNull: [ '$taskIds', [] ] },
+          },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
                     { $eq: [ '$planoId', '$$plano' ] },
-                    { $in: [ '$taskId', '$$taskId' ] },
+                    { $in: [ '$taskId', pendingDetails.map( ( ele ) => ele.taskId ) ] },
+                    { $eq: [ '$taskType', 'initial' ] },
                   ],
                 },
               },
@@ -3326,7 +3360,7 @@ export async function planoList( req, res ) {
             { $sort: { _id: -1 } },
             {
               $group: {
-                _id: { type: '$type', planoId: '$planoId' },
+                _id: '$planoId',
                 layoutCount: {
                   $sum: {
                     $cond: {
@@ -3673,12 +3707,12 @@ export async function planoList( req, res ) {
 
     if ( inputData.filter.status.length ) {
       if ( inputData.filter.status.includes( 'taskAssigned' ) ) {
-        orQuery.push( { 'planoTask.checklistStatus': { $in: [ 'open', 'inprogress' ] } } );
+        orQuery.push( { 'planoTask.taskStatus.status': { $in: [ 'open', 'inprogress' ] } } );
       }
       if ( inputData.filter.status.includes( 'reviewPending' ) ) {
-        orQuery.push( { $and: [ { 'taskDetails.layoutStatus': 'pending' }, { 'planoTask._id': 'layout' }, { 'planoTask.checklistStatus': 'submit' } ] } );
-        orQuery.push( { $and: [ { 'taskDetails.fixtureStatus': 'pending' }, { 'planoTask._id': 'fixture' }, { 'planoTask.checklistStatus': 'submit' } ] } );
-        orQuery.push( { $and: [ { 'taskDetails.vmStatus': 'pending' }, { 'planoTask._id': 'vm' }, { 'planoTask.checklistStatus': 'submit' } ] } );
+        orQuery.push( { $and: [ { 'taskDetails.layoutStatus': 'pending' }, { 'planoTask.taskStatus.type': 'layout' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
+        orQuery.push( { $and: [ { 'taskDetails.fixtureStatus': 'pending' }, { 'planoTask.taskStatus.type': 'fixture' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
+        orQuery.push( { $and: [ { 'taskDetails.vmStatus': 'pending' }, { 'planoTask.taskStatus.type': 'vm' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
       }
       if ( inputData.filter.status.includes( 'complete' ) ) {
         orQuery.push( { 'taskDetails.layoutStatus': 'complete' } );
@@ -3710,53 +3744,17 @@ export async function planoList( req, res ) {
       },
     } );
 
-    console.log( JSON.stringify( query ) );
-
     let planoDetails = await planoService.aggregate( query );
 
     if ( !planoDetails[0].data.length ) {
       return res.sendError( 'No data found', 204 );
     }
 
-    let planoList = await planoService.find( { clientId: req.body.clientId }, { _id: 1 } );
-    let idList = planoList?.map( ( ele ) => new mongoose.Types.ObjectId( ele._id ) );
-    let taskQuery = [
-      {
-        $match: {
-          planoId: { $in: idList },
-          isPlano: true,
-          date_iso: { $lte: new Date( dayjs().format( 'YYYY-MM-DD' ) ) },
-        },
-      },
-      {
-        $group: {
-          _id: { store: '$storeName', type: '$planoType' },
-          planoId: { $last: '$planoId' },
-          checklistStatus: { $last: '$checklistStatus' },
-          taskId: { $last: '$_id' },
-        },
-      },
-      {
-        $match: {
-          checklistStatus: 'submit',
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          type: '$_id.type',
-          planoId: 1,
-          checklistStatus: 1,
-          taskId: 1,
-        },
-      },
-    ];
-
-    let pendingDetails = await planotaskService.aggregate( taskQuery );
     query = [
       {
         $match: {
           taskId: { $in: pendingDetails.map( ( ele ) => ele.taskId ) },
+          taskType: 'initial',
         },
       },
       {
