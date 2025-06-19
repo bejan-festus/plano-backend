@@ -3217,7 +3217,7 @@ export async function planoList( req, res ) {
       },
       {
         $group: {
-          _id: { store: '$storeName', type: '$planoType' },
+          _id: { store: '$storeName', floorId: '$floorId', type: '$planoType' },
           planoId: { $last: '$planoId' },
           checklistStatus: { $last: '$checklistStatus' },
           taskId: { $last: '$_id' },
@@ -3235,6 +3235,7 @@ export async function planoList( req, res ) {
           planoId: 1,
           checklistStatus: 1,
           taskId: 1,
+          floorId: '$_id.floorId',
         },
       },
     ];
@@ -3315,7 +3316,7 @@ export async function planoList( req, res ) {
             },
             {
               $group: {
-                _id: '$planoType',
+                _id: { type: '$planoType', floorId: '$floorId' },
                 dateString: { $last: '$date_string' },
                 checklistStatus: { $last: '$checklistStatus' },
                 taskId: { $last: '$_id' },
@@ -3326,9 +3327,10 @@ export async function planoList( req, res ) {
                 _id: null,
                 taskStatus: {
                   $push: {
-                    type: '$_id',
+                    type: '$_id.type',
                     status: '$checklistStatus',
                     date: '$dateString',
+                    floorId: '$_id.floorId',
                   },
                 },
                 taskIds: { $push: '$taskId' },
@@ -3360,7 +3362,7 @@ export async function planoList( req, res ) {
             { $sort: { _id: -1 } },
             {
               $group: {
-                _id: '$planoId',
+                _id: '$floorId',
                 layoutCount: {
                   $sum: {
                     $cond: {
@@ -3540,6 +3542,35 @@ export async function planoList( req, res ) {
               },
             },
             {
+              $group: {
+                _id: null,
+                layoutCount: { $sum: '$layoutCount' },
+                fixtureCount: { $sum: '$fixtureCount' },
+                vmCount: { $sum: '$vmCount' },
+                completeLayout: {
+                  $sum: {
+                    $cond: {
+                      if: {
+                        $and: [
+                          { '$gt': [ '$layoutCount', 0 ] },
+                          { '$gt': [ '$layoutPending', 0 ] },
+                          { '$gt': [ '$fixtureCount', 0 ] },
+                          { '$gt': [ '$fixturePending', 0 ] },
+                          { '$gt': [ '$vmCount', 0 ] },
+                          { '$gt': [ '$fixturePending', 0 ] },
+                        ],
+                      },
+                      then: 1,
+                      else: 0,
+                    },
+                  },
+                },
+                layoutPending: { $sum: '$layoutPending' },
+                fixturePending: { $sum: '$fixturePending' },
+                vmPending: { $sum: '$vmPending' },
+              },
+            },
+            {
               $project: {
                 _id: 0,
                 layoutStatus: {
@@ -3636,6 +3667,7 @@ export async function planoList( req, res ) {
                 layoutCount: 1,
                 fixtureCount: 1,
                 vmCount: 1,
+                completeLayout: 1,
               },
             },
           ],
