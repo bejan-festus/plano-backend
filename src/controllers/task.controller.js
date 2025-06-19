@@ -290,17 +290,17 @@ export async function createTask( req, res ) {
               taskData.userName = userDetails.userName;
               taskData.userEmail = userDetails.email;
               taskData.planoId = planoDetails?._id;
-              for ( let i=0; i<req.body.days; i++ ) {
+              for ( let j=0; j<req.body.days; j++ ) {
                 let planoProgress = req.body.checkListName == 'Fixture Verification' ? 50 : req.body.checkListName == 'VM Verification' ? 75 : 25;
                 if ( req.body?.checkListName && req.body.checkListName == 'Layout Verification' ) {
-                  let taskIdList = await planoTaskService.find( { planoId: planoDetails?._id, floorId: floorDetails[i]._id } );
+                  let taskIdList = await planoTaskService.find( { planoId: planoDetails?._id, floorId: taskData.floorId } );
                   taskIdList = taskIdList.map( ( ele ) => ele.taskId );
-                  await planoTaskService.deleteMany( { planoId: planoDetails?._id, floorId: floorDetails[i]._id } );
+                  await planoTaskService.deleteMany( { planoId: planoDetails?._id, floorId: taskData.floorId } );
                   planoProgress = 25;
                   await processedService.deleteMany( { _id: taskIdList } );
                 }
                 await planoService.updateOne( { _id: planoDetails?._id }, { $set: { planoProgress } } );
-                let currDate = dayjs().add( i, 'day' );
+                let currDate = dayjs().add( j, 'day' );
                 let insertData = { ...taskData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 12:00 AM`, 'YYYY-MM-DD hh:mm A' ).format() };
                 await processedService.updateOne( { date_string: currDate.format( 'YYYY-MM-DD' ), store_id: insertData.store_id, userEmail: insertData.userEmail, planoId: insertData.planoId, sourceCheckList_id: task._id, ...( taskData?.floorId ) ? { floorId: taskData.floorId }:{} }, insertData );
               }
