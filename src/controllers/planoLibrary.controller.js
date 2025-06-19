@@ -1329,16 +1329,18 @@ export async function getVmDetails( req, res ) {
     getVmDetails = getVmDetails.toObject();
     getVmDetails.templateCount = 0;
     let templateDetails = await fixtureTemplateService.find( { 'vmConfig.vmId': { $in: req.query.vmId } } );
-    if ( templateDetails.length && getVmDetails.status != 'draft' ) {
-      getVmDetails.templateCount = templateDetails.length;
+    if ( getVmDetails.status != 'draft' ) {
       getVmDetails.status = 'inactive';
-      let fixtureDetails = await storeFixtureService.find( { 'vmConfig.vmId': { $in: req.query.vmId } }, { planoId: 1 } );
-      if ( fixtureDetails.length ) {
-        let planoList = fixtureDetails.map( ( ele ) => ele.planoId );
-        let planoDetails = await planoService.find( { _id: { $in: planoList } }, { status: 1 } );
-        planoDetails = planoDetails.map( ( ele ) => ele.status );
-        if ( planoDetails.includes( 'completed' ) ) {
-          getVmDetails.status = 'active';
+      if ( templateDetails.length ) {
+        getVmDetails.templateCount = templateDetails.length;
+        let fixtureDetails = await storeFixtureService.find( { 'vmConfig.vmId': { $in: req.query.vmId } }, { planoId: 1 } );
+        if ( fixtureDetails.length ) {
+          let planoList = fixtureDetails.map( ( ele ) => ele.planoId );
+          let planoDetails = await planoService.find( { _id: { $in: planoList } }, { status: 1 } );
+          planoDetails = planoDetails.map( ( ele ) => ele.status );
+          if ( planoDetails.includes( 'completed' ) ) {
+            getVmDetails.status = 'active';
+          }
         }
       }
     }
