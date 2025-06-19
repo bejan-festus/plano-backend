@@ -220,6 +220,142 @@ export async function getplanoFeedback( req, res ) {
     {
       $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true },
     },
+    {
+      $unwind: { path: '$FixtureData.vmConfig', preserveNullAndEmptyArrays: true },
+    },
+    {
+      $lookup: {
+        from: 'planovmdetails',
+        let: { 'vmId': '$FixtureData.vmConfig.vmId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$vmId' ] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              vmName: 1,
+            },
+          },
+        ],
+        as: 'vmDetails',
+      },
+    },
+    {
+      $unwind: { path: '$vmDetails', preserveNullAndEmptyArrays: true },
+    },
+    {
+      $project: {
+        '_id': 1,
+        'answers': 1,
+        'createdAt': 1,
+        'date_iso': 1,
+        'date_string': 1,
+        'fixtureId': 1,
+        'floorId': 1,
+        'planoId': 1,
+        'status': 1,
+        'taskType': 1,
+        'FixtureData': 1,
+        'FixtureData': {
+          _id: '$FixtureData._id',
+          clientId: '$FixtureData.clientId',
+          clientId: '$FixtureData.clientId',
+          fixtureCapacity: '$FixtureData.fixtureCapacity',
+          fixtureCategory: '$FixtureData.fixtureCategory',
+          fixtureLength: '$FixtureData.fixtureLength',
+          fixtureLibraryId: '$FixtureData.fixtureLibraryId',
+          fixtureName: '$FixtureData.fixtureName',
+          fixtureStaticLength: '$FixtureData.fixtureStaticLength',
+          fixtureStaticWidth: '$FixtureData.fixtureStaticWidth',
+          fixtureType: '$FixtureData.fixtureType',
+          fixtureWidth: '$FixtureData.fixtureWidth',
+          footer: '$FixtureData.footer',
+          header: '$FixtureData.header',
+          isBodyEnabled: '$FixtureData.isBodyEnabled',
+          productBrandName: '$FixtureData.productBrandName',
+          productCategory: '$FixtureData.productCategory',
+          productResolutionLevel: '$FixtureData.productResolutionLevel',
+          productSubCategory: '$FixtureData.productSubCategory',
+          shelfConfig: '$FixtureData.shelfConfig',
+          status: '$FixtureData.status',
+          templateIndex: '$FixtureData.templateIndex',
+          shelfConfig: '$FixtureData.shelfConfig',
+          vmConfig: {
+            vmName: '$vmDetails.vmName',
+            endYPosition: '$FixtureData.vmConfig.endYPosition',
+            startYPosition: '$FixtureData.vmConfig.startYPosition',
+            vmId: '$FixtureData.vmConfig.vmId',
+            xZone: '$FixtureData.vmConfig.xZone',
+            yZone: '$FixtureData.vmConfig.yZone',
+            position: '$FixtureData.vmConfig.position',
+          },
+        },
+      },
+    },
+
+    {
+      $group: {
+        _id: '$_id',
+        answers: { $first: '$answers' },
+        createdAt: { $first: '$createdAt' },
+        date_iso: { $first: '$date_iso' },
+        date_string: { $first: '$date_string' },
+        fixtureId: { $first: '$fixtureId' },
+        floorId: { $first: '$floorId' },
+        planoId: { $first: '$planoId' },
+        status: { $first: '$status' },
+        taskType: { $first: '$taskType' },
+        baseFixtureData: { $first: '$FixtureData' },
+        collectedVmConfigs: {
+          $push: '$FixtureData.vmConfig',
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        answers: 1,
+        createdAt: 1,
+        date_iso: 1,
+        date_string: 1,
+        fixtureId: 1,
+        floorId: 1,
+        planoId: 1,
+        status: 1,
+        taskType: 1,
+        FixtureData: {
+          $mergeObjects: [
+            '$baseFixtureData',
+            {
+              vmConfig: {
+                $reduce: {
+                  input: '$collectedVmConfigs',
+                  initialValue: [],
+                  in: {
+                    $cond: [
+                      { $isArray: '$$this' },
+                      { $concatArrays: [ '$$value', '$$this' ] },
+                      { $concatArrays: [ '$$value', [ '$$this' ] ] },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      $sort: { _id: -1 },
+    },
+
+
     );
 
 
