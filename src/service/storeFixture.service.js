@@ -20,6 +20,11 @@ export async function updateOne( query, record ) {
   return model.storeFixtureModel.updateOne( query, { $set: record } );
 }
 
+export async function updateMany( query, record ) {
+  console.log( record, 'record' );
+  return model.storeFixtureModel.updateMany( query, { $set: record } );
+}
+
 export async function findOneAndUpdate( query={}, field={} ) {
   return model.storeFixtureModel.findOneAndUpdate( query, field );
 }
