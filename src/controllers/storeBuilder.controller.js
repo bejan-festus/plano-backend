@@ -3013,7 +3013,7 @@ export async function storeFixturesTaskv2( req, res ) {
                             const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
                               type: req.body?.type ? req.body.type : 'fixture',
-                            }, { status: 1, answers: 1 } );
+                            }, { status: 1, answers: 1, taskType: 1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3048,8 +3048,7 @@ export async function storeFixturesTaskv2( req, res ) {
                                   issue?.Details?.some( ( detail ) => detail.status === 'disagree' ),
                                 ),
                               );
-
-                              if ( hasDisagree ) {
+                              if ( hasDisagree || compliance?.taskType == 'redo' ) {
                                 redoCount++;
                                 disabled = false;
                               }
@@ -3108,7 +3107,7 @@ export async function storeFixturesTaskv2( req, res ) {
                       const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
                         type: req.body?.type ? req.body.type : 'fixture',
-                      }, { status: 1 } );
+                      }, { status: 1, answers: 1, taskType: 1 } );
 
                       const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3143,7 +3142,7 @@ export async function storeFixturesTaskv2( req, res ) {
                           ),
                         );
 
-                        if ( hasDisagree ) {
+                        if ( hasDisagree || compliance.taskType == 'redo' ) {
                           redoCount++;
                           disabled = false;
                         }
