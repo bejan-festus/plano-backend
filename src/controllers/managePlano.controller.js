@@ -252,6 +252,10 @@ export async function getplanoFeedback( req, res ) {
     {
       $project: {
         '_id': 1,
+        'type': 1,
+        'type': 1,
+        'taskId': 1,
+        'taskData': 1,
         'answers': 1,
         'createdAt': 1,
         'date_iso': 1,
@@ -311,9 +315,18 @@ export async function getplanoFeedback( req, res ) {
         planoId: { $first: '$planoId' },
         status: { $first: '$status' },
         taskType: { $first: '$taskType' },
+        type: { $first: '$type' },
+        taskId: { $first: '$taskId' },
+        taskData: { $first: '$taskData' },
         baseFixtureData: { $first: '$FixtureData' },
         collectedVmConfigs: {
-          $push: '$FixtureData.vmConfig',
+          $push: {
+            $cond: [
+              { $ne: [ '$FixtureData.vmConfig', {} ] },
+              '$FixtureData.vmConfig',
+              '$$REMOVE',
+            ],
+          },
         },
       },
     },
@@ -329,6 +342,9 @@ export async function getplanoFeedback( req, res ) {
         planoId: 1,
         status: 1,
         taskType: 1,
+        type: 1,
+        taskId: 1,
+        taskData: 1,
         FixtureData: {
           $mergeObjects: [
             '$baseFixtureData',
@@ -607,13 +623,13 @@ export async function updateFixtureStatus( req, res ) {
           { 'det._id': new mongoose.Types.ObjectId( req.body.DetailsId ) },
 
         ] );
-    if ( updateResponse&&updateResponse.answers.length>0 ) {
+    if ( updateResponse && updateResponse.answers.length > 0 ) {
       console.log( updateResponse.answers[0] );
-      let findissuse= updateResponse.answers[0].issues.filter( ( data ) => data._id==req.body.issueId );
+      let findissuse = updateResponse.answers[0].issues.filter( ( data ) => data._id == req.body.issueId );
       console.log( findissuse );
-      let findDetails = findissuse[0].Details.filter( ( det ) => det.status==='agree' );
+      let findDetails = findissuse[0].Details.filter( ( det ) => det.status === 'agree' );
       console.log( '======', findDetails.length );
-      if ( findissuse[0].Details.length=== findDetails.length ) {
+      if ( findissuse[0].Details.length === findDetails.length ) {
         await planoTaskService.updateOnefilters(
             { _id: new mongoose.Types.ObjectId( req.body._id ) },
             {
@@ -626,9 +642,9 @@ export async function updateFixtureStatus( req, res ) {
       }
       let findoneplanoData = await planoTaskService.findOne( { _id: new mongoose.Types.ObjectId( req.body._id ) } );
       console.log( '************', findoneplanoData.answers[0].issues );
-      let totalApproved= findoneplanoData.answers[0].issues.filter( ( data ) => data.status==='pending' );
+      let totalApproved = findoneplanoData.answers[0].issues.filter( ( data ) => data.status === 'pending' );
       console.log( '---------->', totalApproved.length );
-      if ( totalApproved.length===0 ) {
+      if ( totalApproved.length === 0 ) {
         await planoTaskService.updateOne(
             {
               _id: new mongoose.Types.ObjectId( req.body._id ),
@@ -640,7 +656,7 @@ export async function updateFixtureStatus( req, res ) {
       }
     }
 
-    if ( req.body.taskType==='layout' ) {
+    if ( req.body.taskType === 'layout' ) {
       await planoTaskService.updateOnefilters(
           { _id: new mongoose.Types.ObjectId( req.body._id ) },
           {
@@ -754,7 +770,7 @@ export async function updateStoreFixture( req, res ) {
 export async function updateredostatus( req, res ) {
   try {
     console.log( '------->', req.body );
-    if ( req.body.type==='layout' ) {
+    if ( req.body.type === 'layout' ) {
       await planoTaskService.updateOne(
           {
             planoId: new mongoose.Types.ObjectId( req.body.planoId ),
