@@ -78,9 +78,8 @@ export async function updateTemplate( req, res ) {
     if ( !templateDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-    if ( inputData.status == 'active' ) {
+    if ( inputData.status == 'complete' ) {
       let newFixture;
-      let storeList = inputData.store;
       delete inputData.store;
       if ( req.body?.new ) {
         templateDetails = templateDetails.toObject();
@@ -88,44 +87,53 @@ export async function updateTemplate( req, res ) {
         let templateData = { ...templateDetails, ...inputData };
         newFixture = await fixtureConfigService.create( templateData );
       }
-      await Promise.all( storeList.map( async ( ele ) => {
-        let fixtureCapacity = inputData.shelfConfig.reduce(
-            ( acc, ele ) => acc + ele.productPerShelf,
-            0,
-        );
-        let storeFixtureDetails = await storeFixtureService.findOne( { storeId: ele.storeId, fixtureConfigId: req.params.templateId } );
+      let fixtureCapacity = inputData.shelfConfig.reduce( ( acc, ele ) => {
+        if ( ele.shelfType == 'tray' ) {
+          ele.productPerShelf = ele.trayRows * ele.productPerShelf;
+        }
+        acc = acc + ele.productPerShelf;
+        return acc;
+      },
+      0 );
+
+      let storeFixtureDetails = await storeFixtureService.find( { fixtureConfigId: req.params.templateId } );
+      if ( storeFixtureDetails.length ) {
+        let fixtureList = storeFixtureDetails.map( ( ele ) => ele._id );
         let fixtureData = {
           ...inputData,
-          storeName: ele.storeName,
-          storeId: ele.storeId,
           fixtureCapacity: fixtureCapacity,
-          fixtureConfigId: newFixture ? newFixture._id : storeFixtureDetails.fixtureConfigId,
+          fixtureConfigId: newFixture ? newFixture._id : req.params.templateId,
         };
-        await storeFixtureService.updateOne( { _id: storeFixtureDetails._id }, fixtureData );
-        await fixtureShelfService.deleteMany( { fixtureId: storeFixtureDetails._id } );
-        let shelfData = [];
-        inputData.shelfConfig.forEach( ( ele, index ) => {
-          shelfData.push( {
-            productCategory: inputData.productCategory,
-            productSubCategory: inputData.productCategory,
-            shelfType: ele.shelfType,
-            trayRows: ele.trayRows,
-            shelfNumber: index + 1,
-            fixtureId: storeFixtureDetails._id,
-            clientId: req.body.clientId,
-            planoId: storeFixtureDetails.planoId,
-            floorId: storeFixtureDetails.floorId,
-            productBrandName: ele.productBrandName,
-            shelfOrder: 'LTR',
-            shelfSplitup: 0,
-            storeId: storeFixtureDetails.storeId,
-            storeName: storeFixtureDetails.storeName,
-            productPerShelf: ele.productPerShelf,
-            sectionZone: ele.zone,
+        delete fixtureData._id;
+        delete fixtureData.status;
+        await storeFixtureService.updateMany( { _id: { $in: fixtureList } }, fixtureData );
+        await Promise.all( storeFixtureDetails.map( async ( fixture ) => {
+          await fixtureShelfService.deleteMany( { fixtureId: fixture } );
+          let shelfData = [];
+          inputData.shelfConfig.forEach( ( ele, index ) => {
+            shelfData.push( {
+              productCategory: inputData.productCategory,
+              productSubCategory: inputData.productCategory,
+              shelfType: ele.shelfType,
+              trayRows: ele.trayRows,
+              shelfNumber: index + 1,
+              fixtureId: fixture,
+              clientId: req.body.clientId,
+              planoId: fixture.planoId,
+              floorId: fixture.floorId,
+              productBrandName: ele.productBrandName,
+              shelfOrder: 'LTR',
+              shelfSplitup: 0,
+              storeId: fixture.storeId,
+              storeName: fixture.storeName,
+              productPerShelf: ele.productPerShelf,
+              sectionZone: ele.zone,
+              zone: ele.zone,
+            } );
           } );
-        } );
-        await fixtureShelfService.insertMany( shelfData );
-      } ) );
+          await fixtureShelfService.insertMany( shelfData );
+        } ) );
+      }
     }
     await fixtureConfigService.updateOne( { _id: req.params.templateId }, inputData );
     return res.sendSuccess( 'Fixture template details updated successfully' );

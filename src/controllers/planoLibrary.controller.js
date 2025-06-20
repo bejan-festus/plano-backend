@@ -92,7 +92,7 @@ export async function fixtureBulkUpload( req, res ) {
 
 async function getMaxFixtureLibCode() {
   try {
-    let getFixtureLibDetails = await planoLibraryService.find( {}, { fixtureLibCode: 1 } );
+    let getFixtureLibDetails = await planoLibraryService.find( { fixtureLibCode: { $exists: true } }, { fixtureLibCode: 1 } );
     if ( !getFixtureLibDetails.length ) {
       return 'FX01';
     } else {
@@ -1397,7 +1397,7 @@ export async function vmBulkUpload( req, res ) {
 
 async function getMaxVMLibCode() {
   try {
-    let getVMLibDetails = await vmService.find( {}, { vmLibCode: 1 } );
+    let getVMLibDetails = await vmService.find( { vmLibCode: { $exists: true } }, { vmLibCode: 1 } );
     if ( !getVMLibDetails.length ) {
       return 'VM01';
     } else {
