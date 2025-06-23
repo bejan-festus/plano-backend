@@ -3013,7 +3013,7 @@ export async function storeFixturesTaskv2( req, res ) {
                             const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
                               type: req.body?.type ? req.body.type : 'fixture',
-                            }, { status: 1, answers: 1 } );
+                            }, { status: 1, answers: 1, taskType: 1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3048,8 +3048,7 @@ export async function storeFixturesTaskv2( req, res ) {
                                   issue?.Details?.some( ( detail ) => detail.status === 'disagree' ),
                                 ),
                               );
-
-                              if ( hasDisagree ) {
+                              if ( hasDisagree || compliance?.taskType == 'redo' ) {
                                 redoCount++;
                                 disabled = false;
                               }
@@ -3108,7 +3107,7 @@ export async function storeFixturesTaskv2( req, res ) {
                       const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
                         type: req.body?.type ? req.body.type : 'fixture',
-                      }, { status: 1 } );
+                      }, { status: 1, answers: 1, taskType: 1 } );
 
                       const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3143,7 +3142,7 @@ export async function storeFixturesTaskv2( req, res ) {
                           ),
                         );
 
-                        if ( hasDisagree ) {
+                        if ( hasDisagree || compliance.taskType == 'redo' ) {
                           redoCount++;
                           disabled = false;
                         }
@@ -3206,47 +3205,15 @@ export async function planoList( req, res ) {
     let limit = inputData?.limit || 10;
     let page = inputData?.offset - 1 || 0;
     let skip = limit * page;
-    let planoList = await planoService.find( { clientId: req.body.clientId }, { _id: 1 } );
-    let idList = planoList?.map( ( ele ) => new mongoose.Types.ObjectId( ele._id ) );
-    let taskQuery = [
-      {
-        $match: {
-          planoId: { $in: idList },
-          isPlano: true,
-          date_iso: { $lte: new Date( dayjs().format( 'YYYY-MM-DD' ) ) },
-        },
-      },
-      {
-        $group: {
-          _id: { store: '$storeName', floorId: '$floorId', type: '$planoType' },
-          planoId: { $last: '$planoId' },
-          checklistStatus: { $last: '$checklistStatus' },
-          taskId: { $last: '$_id' },
-        },
-      },
-      {
-        $match: {
-          checklistStatus: 'submit',
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          type: '$_id.type',
-          planoId: 1,
-          checklistStatus: 1,
-          taskId: 1,
-          floorId: '$_id.floorId',
-        },
-      },
-    ];
 
-    let pendingDetails = await planotaskService.aggregate( taskQuery );
-    console.log( pendingDetails );
+    let storeDetails = await storeService.find( { clientId: inputData.clientId, status: 'active' }, { storeId: 1 } );
+    storeDetails = storeDetails.map( ( ele ) => ele.storeId );
+
     let query = [
       {
         $match: {
           clientId: inputData.clientId,
+          storeId: { $in: storeDetails },
         },
       },
       {
@@ -3354,7 +3321,7 @@ export async function planoList( req, res ) {
                 $expr: {
                   $and: [
                     { $eq: [ '$planoId', '$$plano' ] },
-                    { $in: [ '$taskId', pendingDetails.map( ( ele ) => ele.taskId ) ] },
+                    // { $in: [ '$taskId', pendingDetails.map( ( ele ) => ele.taskId ) ] },
                     { $eq: [ '$taskType', 'initial' ] },
                   ],
                 },
@@ -3362,182 +3329,66 @@ export async function planoList( req, res ) {
             },
             { $sort: { _id: -1 } },
             {
+              $set: {
+                hasPendingIssues: {
+                  $anyElementTrue: {
+                    $map: {
+                      input: {
+                        $reduce: {
+                          input: '$answers',
+                          initialValue: [],
+                          in: {
+                            $concatArrays: [
+                              '$$value',
+                              { $ifNull: [ '$$this.issues', [] ] },
+                            ],
+                          },
+                        },
+                      },
+                      as: 'issue',
+                      in: { $eq: [ '$$issue.status', 'pending' ] },
+                    },
+                  },
+                },
+              },
+            },
+            {
               $group: {
                 _id: '$floorId',
                 layoutCount: {
-                  $sum: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          { $eq: [ '$type', 'layout' ] },
-                        ],
-                      },
-                      then: 1,
-                      else: 0,
-                    },
-                  },
+                  $sum: { $cond: [ { $eq: [ '$type', 'layout' ] }, 1, 0 ] },
                 },
                 fixtureCount: {
-                  $sum: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          {
-                            $eq: [ '$type', 'fixture' ],
-                          },
-                        ],
-                      },
-                      then: 1,
-                      else: 0,
-                    },
-                  },
+                  $sum: { $cond: [ { $eq: [ '$type', 'fixture' ] }, 1, 0 ] },
                 },
                 vmCount: {
-                  $sum: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          { $eq: [ '$type', 'vm' ] },
-                        ],
-                      },
-                      then: 1,
-                      else: 0,
-                    },
-                  },
+                  $sum: { $cond: [ { $eq: [ '$type', 'vm' ] }, 1, 0 ] },
                 },
                 layoutPending: {
                   $sum: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          {
-                            $eq: [ '$type', 'layout' ],
-                          },
-                          {
-                            $anyElementTrue: {
-                              $map: {
-                                input: {
-                                  $reduce: {
-                                    input: '$answers',
-                                    initialValue: [],
-                                    in: {
-                                      $concatArrays: [
-                                        '$$value',
-                                        {
-                                          $ifNull: [
-                                            '$$this.issues',
-                                            [],
-                                          ],
-                                        },
-                                      ],
-                                    },
-                                  },
-                                },
-                                as: 'issue',
-                                in: {
-                                  $eq: [
-                                    '$$issue.status',
-                                    'pending',
-                                  ],
-                                },
-                              },
-                            },
-                          },
-                        ],
-                      },
-                      then: 1,
-                      else: 0,
-                    },
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'layout' ] }, '$hasPendingIssues' ] },
+                      1,
+                      0,
+                    ],
                   },
                 },
                 fixturePending: {
                   $sum: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          {
-                            $eq: [ '$type', 'fixture' ],
-                          },
-                          {
-                            $anyElementTrue: {
-                              $map: {
-                                input: {
-                                  $reduce: {
-                                    input: '$answers',
-                                    initialValue: [],
-                                    in: {
-                                      $concatArrays: [
-                                        '$$value',
-                                        {
-                                          $ifNull: [
-                                            '$$this.issues',
-                                            [],
-                                          ],
-                                        },
-                                      ],
-                                    },
-                                  },
-                                },
-                                as: 'issue',
-                                in: {
-                                  $eq: [
-                                    '$$issue.status',
-                                    'pending',
-                                  ],
-                                },
-                              },
-                            },
-                          },
-                        ],
-                      },
-                      then: 1,
-                      else: 0,
-                    },
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'fixture' ] }, '$hasPendingIssues' ] },
+                      1,
+                      0,
+                    ],
                   },
                 },
                 vmPending: {
                   $sum: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          {
-                            $eq: [ '$type', 'vm' ],
-                          },
-                          {
-                            $anyElementTrue: {
-                              $map: {
-                                input: {
-                                  $reduce: {
-                                    input: '$answers',
-                                    initialValue: [],
-                                    in: {
-                                      $concatArrays: [
-                                        '$$value',
-                                        {
-                                          $ifNull: [
-                                            '$$this.issues',
-                                            [],
-                                          ],
-                                        },
-                                      ],
-                                    },
-                                  },
-                                },
-                                as: 'issue',
-                                in: {
-                                  $eq: [
-                                    '$$issue.status',
-                                    'pending',
-                                  ],
-                                },
-                              },
-                            },
-                          },
-                        ],
-                      },
-                      then: 1,
-                      else: 0,
-                    },
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'vm' ] }, '$hasPendingIssues' ] },
+                      1,
+                      0,
+                    ],
                   },
                 },
               },
@@ -3765,6 +3616,7 @@ export async function planoList( req, res ) {
       } );
     }
 
+
     query.push( {
       $facet: {
         data: [
@@ -3773,6 +3625,20 @@ export async function planoList( req, res ) {
         ],
         count: [
           { $count: 'total' },
+        ],
+        planoList: [
+          {
+            $group: {
+              _id: '',
+              idList: { $addToSet: '$_id' },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              idList: 1,
+            },
+          },
         ],
       },
     } );
@@ -3783,7 +3649,42 @@ export async function planoList( req, res ) {
       return res.sendError( 'No data found', 204 );
     }
 
-    query = [
+    let taskQuery = [
+      {
+        $match: {
+          planoId: { $in: planoDetails?.[0]?.planoList?.[0]?.idList },
+          isPlano: true,
+          date_iso: { $lte: new Date( dayjs().format( 'YYYY-MM-DD' ) ) },
+        },
+      },
+      {
+        $group: {
+          _id: { store: '$storeName', floorId: '$floorId', type: '$planoType' },
+          planoId: { $last: '$planoId' },
+          checklistStatus: { $last: '$checklistStatus' },
+          taskId: { $last: '$_id' },
+        },
+      },
+      {
+        $match: {
+          checklistStatus: 'submit',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          type: '$_id.type',
+          planoId: 1,
+          checklistStatus: 1,
+          taskId: 1,
+          floorId: '$_id.floorId',
+        },
+      },
+    ];
+
+    let pendingDetails = await planotaskService.aggregate( taskQuery );
+
+    taskQuery = [
       {
         $match: {
           taskId: { $in: pendingDetails.map( ( ele ) => ele.taskId ) },
@@ -3791,141 +3692,57 @@ export async function planoList( req, res ) {
         },
       },
       {
+        $set: {
+          hasPendingIssues: {
+            $anyElementTrue: {
+              $map: {
+                input: {
+                  $reduce: {
+                    input: '$answers',
+                    initialValue: [],
+                    in: {
+                      $concatArrays: [
+                        '$$value',
+                        { $ifNull: [ '$$this.issues', [] ] },
+                      ],
+                    },
+                  },
+                },
+                as: 'issue',
+                in: { $eq: [ '$$issue.status', 'pending' ] },
+              },
+            },
+          },
+        },
+      },
+      {
         $group: {
           _id: { type: '$type', planoId: '$planoId' },
           layoutPending: {
             $sum: {
-              $cond: {
-                if: {
-                  $and: [
-                    {
-                      $eq: [ '$type', 'layout' ],
-                    },
-                    {
-                      $anyElementTrue: {
-                        $map: {
-                          input: {
-                            $reduce: {
-                              input: '$answers',
-                              initialValue: [],
-                              in: {
-                                $concatArrays: [
-                                  '$$value',
-                                  {
-                                    $ifNull: [
-                                      '$$this.issues',
-                                      [],
-                                    ],
-                                  },
-                                ],
-                              },
-                            },
-                          },
-                          as: 'issue',
-                          in: {
-                            $eq: [
-                              '$$issue.status',
-                              'pending',
-                            ],
-                          },
-                        },
-                      },
-                    },
-                  ],
-                },
-                then: 1,
-                else: 0,
-              },
+              $cond: [
+                { $and: [ { $eq: [ '$type', 'layout' ] }, '$hasPendingIssues' ] },
+                1,
+                0,
+              ],
             },
           },
           fixturePending: {
             $sum: {
-              $cond: {
-                if: {
-                  $and: [
-                    {
-                      $eq: [ '$type', 'fixture' ],
-                    },
-                    {
-                      $anyElementTrue: {
-                        $map: {
-                          input: {
-                            $reduce: {
-                              input: '$answers',
-                              initialValue: [],
-                              in: {
-                                $concatArrays: [
-                                  '$$value',
-                                  {
-                                    $ifNull: [
-                                      '$$this.issues',
-                                      [],
-                                    ],
-                                  },
-                                ],
-                              },
-                            },
-                          },
-                          as: 'issue',
-                          in: {
-                            $eq: [
-                              '$$issue.status',
-                              'pending',
-                            ],
-                          },
-                        },
-                      },
-                    },
-                  ],
-                },
-                then: 1,
-                else: 0,
-              },
+              $cond: [
+                { $and: [ { $eq: [ '$type', 'fixture' ] }, '$hasPendingIssues' ] },
+                1,
+                0,
+              ],
             },
           },
           vmPending: {
             $sum: {
-              $cond: {
-                if: {
-                  $and: [
-                    {
-                      $eq: [ '$type', 'vm' ],
-                    },
-                    {
-                      $anyElementTrue: {
-                        $map: {
-                          input: {
-                            $reduce: {
-                              input: '$answers',
-                              initialValue: [],
-                              in: {
-                                $concatArrays: [
-                                  '$$value',
-                                  {
-                                    $ifNull: [
-                                      '$$this.issues',
-                                      [],
-                                    ],
-                                  },
-                                ],
-                              },
-                            },
-                          },
-                          as: 'issue',
-                          in: {
-                            $eq: [
-                              '$$issue.status',
-                              'pending',
-                            ],
-                          },
-                        },
-                      },
-                    },
-                  ],
-                },
-                then: 1,
-                else: 0,
-              },
+              $cond: [
+                { $and: [ { $eq: [ '$type', 'vm' ] }, '$hasPendingIssues' ] },
+                1,
+                0,
+              ],
             },
           },
         },
@@ -3976,11 +3793,10 @@ export async function planoList( req, res ) {
     let result = {
       data: planoDetails[0].data,
       count: planoDetails?.[0]?.count?.[0]?.total || 0,
-      pendingDetails: [ { ...pendingDetails?.[0], allStores: planoList?.length || 0 } ],
+      pendingDetails: [ { ...pendingDetails?.[0], allStores: planoDetails?.[0]?.count?.[0]?.total || 0 } ],
     };
     return res.sendSuccess( result );
   } catch ( e ) {
-    console.log( e );
     logger.error( { functionName: 'planoList', error: e } );
     return res.sendError( e, 500 );
   }
