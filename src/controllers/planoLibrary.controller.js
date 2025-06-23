@@ -242,7 +242,7 @@ export async function FixtureLibraryList( req, res ) {
     const matchStage = {
       clientId: req.body.clientId,
       ...( req.body?.searchValue ?
-    { fixtureCategory: { $regex: req.body.searchValue, $options: 'i' } } :
+    { $or: [ { fixtureCategory: { $regex: req.body.searchValue, $options: 'i' } }, { fixtureCategorySize: { $regex: req.body.searchValue, $options: 'i' } } ] } :
     {} ),
       ...( req.body?.filter?.type?.length ?
     { fixtureType: { $in: req.body.filter.type } } :
@@ -253,6 +253,13 @@ export async function FixtureLibraryList( req, res ) {
     };
 
     const query = [
+      {
+        $addFields: {
+          fixtureCategorySize: {
+            $concat: [ '$fixtureCategory', ' - ', { $toString: '$fixtureWidth.value' }, { $toString: '$fixtureWidth.unit' } ],
+          },
+        },
+      },
       { $match: matchStage },
       {
         $lookup: {
@@ -284,6 +291,7 @@ export async function FixtureLibraryList( req, res ) {
       },
       {
         $project: {
+          fixtureCategorySize: 1,
           fixtureWidth: 1,
           fixtureHeight: 1,
           fixtureLength: 1,
