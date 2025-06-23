@@ -830,6 +830,7 @@ export async function updateGlobalComment( req, res ) {
       userId: req.user._id,
       userName: req.user.userName,
       comment: req.body.comment,
+      responsetype: req.body.responsetype,
       planoId: new mongoose.Types.ObjectId( req.body.planoId ),
       floorId: new mongoose.Types.ObjectId( req.body.floorId ),
       taskType: req.body.taskType,
