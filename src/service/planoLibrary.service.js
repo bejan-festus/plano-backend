@@ -35,3 +35,11 @@ export const create = async ( data = {} ) => {
 export const aggregate = async ( query=[] ) => {
   return await model.fixtureLibraryModel.aggregate( query );
 };
+
+export async function upsertOne( query, record ) {
+  return model.fixtureLibraryModel.findOneAndUpdate(
+      query,
+      record,
+      { upsert: true, new: true },
+  );
+}

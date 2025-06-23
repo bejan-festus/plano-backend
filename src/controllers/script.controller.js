@@ -2323,9 +2323,9 @@ export async function updateVmData( req, res ) {
 
 // import https from 'https';
 // async function scrapeCrest() {
-//   const storeIds = [ 'LKST3020' ];
+//   const storeIds = [ 'LKST506' ];
 //   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwMDU1OTMxLCJpYXQiOjE3NTAwNTIzMzEsImp0aSI6IjY5MGM1YTVhYjc3NDRlMmQ5YjlhMmZkYThhODM2MGYxIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.juirYxGNCsCe75vwgL2AR9_LeFsr8r4cJmEdygRZGO0';
+//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwNjA1NDA1LCJpYXQiOjE3NTA2MDE4MDUsImp0aSI6IjAxZWJmNzRkYzNkODQ2MjliNTA4YzI0MjM3MDRiYjdlIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.OnXe5ws08FwY1h0u3bLl8-dxQyrCL2mxr6c_b1lyf-Q';
 //   const filePath = 'response.json';
 //   let allResults = [];
 
@@ -7223,6 +7223,174 @@ export async function migrateCrestv1( req, res ) {
       }
     };
 
+    const getLibraryType = (fixtureName) => {
+      const parts = fixtureName
+        .split(' - ')
+        .map(str => str.trim())
+        .filter(Boolean);
+
+      let category = 'Unknown';
+      let value = 3;
+
+      const last = parts[parts.length - 1];
+      const secondLast = parts[parts.length - 2];
+
+      const match = last?.match(/^([\d.]+)ft$/);
+
+      if (match && secondLast) {
+        value = parseFloat(match[1]);
+        value = Math.round(value * 10) / 10;
+        if (value % 1 === 0) value = Math.round(value);
+
+        category = secondLast;
+      } else {
+        if (last?.toLowerCase() === 'ft' || last?.toLowerCase().endsWith('ft')) {
+          category = secondLast || last;
+        } else {
+          category = last;
+        }
+
+        value = 3; 
+      }
+
+      return {
+        fixtureCategory: category,
+        fixtureWidth: { value, unit: 'ft' }
+      };
+    };
+
+
+    const sampleLibrary = {
+                            "clientId": "11",
+                            "fixtureType": "wall",
+                            "fixtureHeight": {
+                              "value": 0,
+                              "unit": "ft"
+                            },
+                            "fixtureLength": {
+                              "value": 4,
+                              "unit": "ft"
+                            },
+                            "header": {
+                              "height": {
+                                "value": 0,
+                                "unit": ""
+                              }
+                            },
+                            "footer": {
+                              "height": {
+                                "value": 0,
+                                "unit": ""
+                              }
+                            },
+                            "fixtureCapacity": 90,
+                            "status": "complete",
+                            "shelfConfig": [
+                              {
+                                "shelfNumber": 1,
+                                "shelfType": "shelf",
+                                "shelfZone": "Top",
+                                "productPerShelf": 6,
+                                "trayRows": 0,
+                                "label": ""
+                              },
+                              {
+                                "shelfNumber": 2,
+                                "shelfType": "shelf",
+                                "shelfZone": "Top",
+                                "productPerShelf": 6,
+                                "trayRows": 0,
+                                "label": ""
+                              },
+                              {
+                                "shelfNumber": 3,
+                                "shelfType": "shelf",
+                                "shelfZone": "Top",
+                                "productPerShelf": 6,
+                                "trayRows": 0,
+                                "label": ""
+                              },
+                              {
+                                "shelfNumber": 4,
+                                "shelfType": "tray",
+                                "shelfZone": "Mid",
+                                "productPerShelf": 6,
+                                "trayRows": 3,
+                                "label": ""
+                              },
+                              {
+                                "shelfNumber": 5,
+                                "shelfType": "tray",
+                                "shelfZone": "Mid",
+                                "productPerShelf": 6,
+                                "trayRows": 3,
+                                "label": ""
+                              },
+                              {
+                                "shelfNumber": 6,
+                                "shelfType": "tray",
+                                "shelfZone": "Bottom",
+                                "productPerShelf": 6,
+                                "trayRows": 3,
+                                "label": ""
+                              },
+                              {
+                                "shelfNumber": 7,
+                                "shelfType": "tray",
+                                "shelfZone": "Bottom",
+                                "productPerShelf": 6,
+                                "trayRows": 3,
+                                "label": ""
+                              }
+                            ],
+                            "vmConfig": [
+                              {
+                                "vmNumber": 1,
+                                "vmHeightmm": 100,
+                                "vmWidthmm": 905,
+                                "startShelf": 1,
+                                "endShelf": 2,
+                                "zone": "left",
+                                "position": "Top"
+                              },
+                              {
+                                "vmNumber": 2,
+                                "vmHeightmm": 100,
+                                "vmWidthmm": 230,
+                                "startShelf": 5,
+                                "endShelf": 5,
+                                "zone": "left",
+                                "position": "Mid"
+                              },
+                              {
+                                "vmNumber": 3,
+                                "vmHeightmm": 100,
+                                "vmWidthmm": 905,
+                                "startShelf": 5,
+                                "endShelf": 5,
+                                "zone": "left",
+                                "position": "Mid"
+                              },
+                              {
+                                "vmNumber": 4,
+                                "vmHeightmm": 100,
+                                "vmWidthmm": 230,
+                                "startShelf": 6,
+                                "endShelf": 6,
+                                "zone": "right",
+                                "position": "Bottom"
+                              }
+                            ],
+                            "fixtureStaticLength": {
+                              "value": 1524,
+                              "unit": "mm"
+                            },
+                            "fixtureStaticWidth": {
+                              "value": 1220,
+                              "unit": "mm"
+                            }
+                          }
+
 
     if ( !req?.body?.storeName ) {
       return res.sendError( 'No store supplied', 200 );
@@ -7232,19 +7400,7 @@ export async function migrateCrestv1( req, res ) {
       clientId: '11',
       $and: [
         { storeName: req.body.storeName },
-        // { storeName: { $in: [
-        //   'LKST81',
-        //   'LKST682',
-        //   'LKST351',
-        //   'LKST1193',
-        //   'LKST98',
-        //   'LKST01',
-        //   'LKST266',
-        //   'LKST495',
-        //   'LKST2280',
-        //   'LKST599',
-        //   'LKST267',
-        // ] } },
+        // { storeName: { $in: ['LKST98', 'LKST682', 'ST185', 'ST36', 'LKST1193'] } },
         // { storeName: { $nin: [ 'LKST98', 'LKST1193' ] } },
       ],
     };
@@ -7478,8 +7634,32 @@ export async function migrateCrestv1( req, res ) {
         for ( let index = 0; index < leftFixtures.length; index++ ) {
           const fixture = leftFixtures[index];
 
-          const fixtureConfig = await fixtureLibraryService.findOne( { fixtureCategory: fixture.fixtureType } );
-          if ( !fixtureConfig ) continue;
+          if(!fixture.fixtureName ){
+            return
+          }
+
+        const libraryType = getLibraryType(fixture.fixtureName)
+
+        if(libraryType.fixtureCategory === 'Space'){
+          continue;
+        }
+
+         let fixtureConfig = await fixtureLibraryService.findOne(libraryType);
+
+          if (!fixtureConfig) {
+
+            const existingLibrary = await fixtureLibraryService.findOne({ fixtureCategory: libraryType.fixtureCategory });
+
+            const insertData = {
+              ...sampleLibrary,
+              ...(existingLibrary ? existingLibrary.toObject() : {}),
+              ...libraryType
+            };
+
+            delete insertData._id;
+
+            fixtureConfig = await fixtureLibraryService.upsertOne(libraryType, insertData);
+          }
           const fixtureConfigDoc = fixtureConfig.toObject();
 
           let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.header}`;
@@ -7495,7 +7675,7 @@ export async function migrateCrestv1( req, res ) {
 
             mapKey += ','+shelfIdentifier;
 
-            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+            const productSubBrandName = shelfSection?.productName?.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
 
             productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
 
@@ -7749,8 +7929,32 @@ export async function migrateCrestv1( req, res ) {
         for ( let index = 0; index < backFixtures.length; index++ ) {
           const fixture = backFixtures[index];
 
-          const fixtureConfig = await fixtureLibraryService.findOne( { fixtureCategory: fixture.fixtureType } );
-          if ( !fixtureConfig ) continue;
+          if(!fixture.fixtureName ){
+            return
+          }
+
+        const libraryType = getLibraryType(fixture.fixtureName)
+
+        if(libraryType.fixtureCategory === 'Space'){
+          continue;
+        }
+
+         let fixtureConfig = await fixtureLibraryService.findOne(libraryType);
+
+          if (!fixtureConfig) {
+
+            const existingLibrary = await fixtureLibraryService.findOne({ fixtureCategory: libraryType.fixtureCategory });
+
+            const insertData = {
+              ...sampleLibrary,
+              ...(existingLibrary ? existingLibrary.toObject() : {}),
+              ...libraryType
+            };
+
+            delete insertData._id;
+
+            fixtureConfig = await fixtureLibraryService.upsertOne(libraryType, insertData);
+          }
           const fixtureConfigDoc = fixtureConfig.toObject();
 
           let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.header}`;
@@ -7766,7 +7970,7 @@ export async function migrateCrestv1( req, res ) {
 
             mapKey += ','+shelfIdentifier;
 
-            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+            const productSubBrandName = shelfSection?.productName?.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
 
             productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
 
@@ -8019,8 +8223,32 @@ export async function migrateCrestv1( req, res ) {
         for ( let index = 0; index < rightFixtures.length; index++ ) {
           const fixture = rightFixtures[index];
 
-          const fixtureConfig = await fixtureLibraryService.findOne( { fixtureCategory: fixture.fixtureType } );
-          if ( !fixtureConfig ) continue;
+          if(!fixture.fixtureName ){
+            return
+          }
+
+        const libraryType = getLibraryType(fixture.fixtureName)
+
+        if(libraryType.fixtureCategory === 'Space'){
+          continue;
+        }
+
+         let fixtureConfig = await fixtureLibraryService.findOne(libraryType);
+
+          if (!fixtureConfig) {
+
+            const existingLibrary = await fixtureLibraryService.findOne({ fixtureCategory: libraryType.fixtureCategory });
+
+            const insertData = {
+              ...sampleLibrary,
+              ...(existingLibrary ? existingLibrary.toObject() : {}),
+              ...libraryType
+            };
+
+            delete insertData._id;
+
+            fixtureConfig = await fixtureLibraryService.upsertOne(libraryType, insertData);
+          }
           const fixtureConfigDoc = fixtureConfig.toObject();
 
           let mapKey = `${fixtureConfigDoc.fixtureCategory}${fixtureConfigDoc.fixtureWidth.value}${fixtureConfigDoc.fixtureWidth.unit},${fixture.header}`;
@@ -8036,7 +8264,7 @@ export async function migrateCrestv1( req, res ) {
 
             mapKey += ','+shelfIdentifier;
 
-            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+            const productSubBrandName = shelfSection?.productName?.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
 
             productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
 
@@ -8323,10 +8551,10 @@ export async function migrateCrestv1( req, res ) {
             mapKey += ','+shelfIdentifier;
 
 
-            let productSubBrandName = fixture.centerSubMain.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+            let productSubBrandName = fixture.centerSubMain.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
 
             if ( shelfSection ) {
-              productSubBrandName = shelfSection.name.replace( /\s*PIDs\b/g, '' )?.split( /\s*\+\s*/ ) || [];
+              productSubBrandName = shelfSection.name.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
             }
 
             productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );

@@ -15,4 +15,7 @@ managePlanoRouter
     .get( '/fixtureVMList', managePlanoController.fixtureVMList )
     .post( '/updateFixtureStatus', isAllowedSessionHandler, managePlanoController.updateFixtureStatus )
     .post( '/updateStoreFixture', managePlanoController.updateStoreFixture )
-    .post( '/updateredostatus', managePlanoController.updateredostatus );
+    .post( '/updateredostatus', managePlanoController.updateredostatus )
+    .post( '/createRevision', managePlanoController.createPlanoRevision )
+    .post( '/getRevisions', managePlanoController.getAllPlanoRevisions )
+    .post( '/getRevisionData', managePlanoController.getPlanoRevisionById );
