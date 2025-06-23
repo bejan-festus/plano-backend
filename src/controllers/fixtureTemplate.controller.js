@@ -484,13 +484,13 @@ export async function updateFixtureTask( req, res ) {
 
 export async function getAllTemplates( req, res ) {
   try {
-    if(!req.body.clientId){
+    if ( !req.body.clientId ) {
       return res.sendError( 'Client Id is required', 400 );
     }
-   
-    const fixtureTemplates = await fixtureConfigService.find({clientId:req.body.clientId}, {fixtureName:1, fixtureWidth:1, productBrandName:1})
 
-    res.sendSuccess(fixtureTemplates);
+    const fixtureTemplates = await fixtureConfigService.find( { clientId: req.body.clientId }, { fixtureName: 1, fixtureWidth: 1, productBrandName: 1 } );
+
+    res.sendSuccess( fixtureTemplates );
   } catch ( e ) {
     logger.error( { functionName: 'getAllTemplates', error: e } );
   }
