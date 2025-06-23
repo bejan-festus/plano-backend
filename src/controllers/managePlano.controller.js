@@ -14,6 +14,7 @@ import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import * as fixtureLibraryService from '../service/planoLibrary.service.js';
 import * as planoTaskService from '../service/planoTask.service.js';
 import mongoose from 'mongoose';
+import * as planoRevisionService from '../service/planoRevision.service.js'; 
 export async function getplanoFeedback( req, res ) {
   try {
     let query = [];
@@ -804,3 +805,72 @@ export async function updateredostatus( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+
+export async function getAllPlanoRevisions(req, res) {
+  try {
+    const { clientId } = req.body;
+
+    if (!clientId) {
+      return res.sendError('Client Id is required', 400);
+    }
+
+    const revisions = await planoRevisionService.find(
+      { clientId },
+      { storeName: 1, storeId: 1, planoId: 1, floorId: 1, createdAt: 1 }
+    );
+
+    res.sendSuccess(revisions);
+  } catch (e) {
+    logger.error({ functionName: 'getAllPlanoRevisions', error: e });
+    res.sendError('Failed to fetch plano revisions', 500);
+  }
+}
+
+export async function createPlanoRevision(req, res) {
+  try {
+    const { storeName, storeId, clientId, planoId, floorId, floorData } = req.body;
+
+    if (!storeName || !storeId || !clientId || !planoId || !floorId || !floorData) {
+      return res.sendError('Missing required fields', 400);
+    }
+
+    const newRevision = await planoRevisionService.create({
+      storeName,
+      storeId,
+      clientId,
+      planoId,
+      floorId,
+      floorData,
+    });
+
+    res.sendSuccess(newRevision);
+  } catch (e) {
+    logger.error({ functionName: 'createPlanoRevision', error: e });
+    res.sendError('Failed to create plano revision', 500);
+  }
+}
+
+export async function getPlanoRevisionById(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.sendError('Revision ID is required', 400);
+    }
+
+    const revision = await planoRevisionService.findOne(
+      { _id: id }
+    );
+
+    if (!revision) {
+      return res.sendError('Plano revision not found', 404);
+    }
+
+    res.sendSuccess(revision);
+  } catch (e) {
+    logger.error({ functionName: 'getPlanoRevisionById', error: e });
+    res.sendError('Failed to fetch plano revision', 500);
+  }
+}
+
+
