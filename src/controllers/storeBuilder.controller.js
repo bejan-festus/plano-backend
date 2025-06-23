@@ -3191,6 +3191,7 @@ export async function storeFixturesTaskv2( req, res ) {
         } ),
     );
 
+
     return res.sendSuccess( storeLayout );
   } catch ( e ) {
     logger.error( { functionName: 'storeFixturesTask', error: e, message: req.body } );

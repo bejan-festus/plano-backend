@@ -13,5 +13,6 @@ fixtureTemplateRouter
     .post( '/duplicateTemplate', validate( validateDtos.templateId ), fixtureTemplateController.duplicateTemplate )
     .post( '/getTemplateList', validate( validateDtos.fixtureVMListSchema ), fixtureTemplateController.getTemplateList )
     .get( '/getTemplateDetails', validate( validateDtos.queryTemplateId ), fixtureTemplateController.getTemplateDetails )
-    .post( '/updateFixtureTask', validate( validateDtos.updateFixtureTask ), fixtureTemplateController.updateFixtureTask );
+    .post( '/updateFixtureTask', validate( validateDtos.updateFixtureTask ), fixtureTemplateController.updateFixtureTask )
+    .post( '/getAllTemplates', fixtureTemplateController.getAllTemplates );
 
