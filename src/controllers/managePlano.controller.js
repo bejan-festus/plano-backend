@@ -13,11 +13,11 @@ import * as planoproductCategoryService from '../service/planoproductCategory.se
 import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import * as fixtureLibraryService from '../service/planoLibrary.service.js';
 import * as planoTaskService from '../service/planoTask.service.js';
+import * as planoGlobalCommentService from '../service/planoGlobalComment.service.js';
 import mongoose from 'mongoose';
 export async function getplanoFeedback( req, res ) {
   try {
     let query = [];
-
 
     query.push( {
       $match: {
@@ -376,8 +376,25 @@ export async function getplanoFeedback( req, res ) {
 
 
     let findvmCompliance = await planoTaskService.aggregate( queryVm );
-    console.log( findvmCompliance );
-    res.sendSuccess( { count: findfixtureCompliance.length, layoutData: findPlanoCompliance, fixtureData: findfixtureCompliance, VmData: findvmCompliance } );
+
+
+    let layoutComment = await planoGlobalCommentService.find( {
+      planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+      floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+      taskType: 'layout',
+    } );
+    let fixtureComment = await planoGlobalCommentService.find( {
+      planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+      floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+      taskType: 'fixture',
+    } );
+    let vmComment = await planoGlobalCommentService.find( {
+      planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+      floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+      taskType: 'vm',
+    } );
+
+    res.sendSuccess( { layoutData: findPlanoCompliance, layoutComment: layoutComment, fixtureComment: fixtureComment, vmComment: vmComment, fixtureData: findfixtureCompliance, VmData: findvmCompliance } );
   } catch ( e ) {
     logger.error( { functionName: 'getplanoFeedback', error: e, message: req.body } );
     return res.sendError( e, 500 );
@@ -804,3 +821,37 @@ export async function updateredostatus( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+
+
+export async function updateGlobalComment( req, res ) {
+  try {
+    await planoGlobalCommentService.create( {
+      userId: req.user._id,
+      userName: req.user.userName,
+      comment: req.body.comment,
+      planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+      floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+      taskType: req.body.taskType,
+      clientId: req.body.clientId,
+    } );
+
+    res.sendSuccess( 'updated successfully' );
+  } catch ( e ) {
+    logger.error( { functionName: 'updateGlobalComment', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+export async function getGlobalComment( req, res ) {
+  try {
+    let layoutComment = await planoGlobalCommentService.find( {
+      planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+      floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+      taskType: req.body.taskType,
+    } );
+    res.sendSuccess( layoutComment );
+  } catch ( e ) {
+    logger.error( { functionName: 'getGlobalComment', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
