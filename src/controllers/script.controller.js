@@ -7223,11 +7223,11 @@ export async function migrateCrestv1( req, res ) {
       }
     };
 
-    const getLibraryType = (fixtureName) => {
+    const getLibraryType = ( fixtureName ) => {
       const parts = fixtureName
-        .split(' - ')
-        .map(str => str.trim())
-        .filter(Boolean);
+          .split( ' - ' )
+          .map( ( str ) => str.trim() )
+          .filter( Boolean );
 
       let category = 'Unknown';
       let value = 3;
@@ -7235,161 +7235,161 @@ export async function migrateCrestv1( req, res ) {
       const last = parts[parts.length - 1];
       const secondLast = parts[parts.length - 2];
 
-      const match = last?.match(/^([\d.]+)ft$/);
+      const match = last?.match( /^([\d.]+)ft$/ );
 
-      if (match && secondLast) {
-        value = parseFloat(match[1]);
-        value = Math.round(value * 10) / 10;
-        if (value % 1 === 0) value = Math.round(value);
+      if ( match && secondLast ) {
+        value = parseFloat( match[1] );
+        value = Math.round( value * 10 ) / 10;
+        if ( value % 1 === 0 ) value = Math.round( value );
 
         category = secondLast;
       } else {
-        if (last?.toLowerCase() === 'ft' || last?.toLowerCase().endsWith('ft')) {
+        if ( last?.toLowerCase() === 'ft' || last?.toLowerCase().endsWith( 'ft' ) ) {
           category = secondLast || last;
         } else {
           category = last;
         }
 
-        value = 3; 
+        value = 3;
       }
 
       return {
         fixtureCategory: category,
-        fixtureWidth: { value, unit: 'ft' }
+        fixtureWidth: { value, unit: 'ft' },
       };
     };
 
 
     const sampleLibrary = {
-                            "clientId": "11",
-                            "fixtureType": "wall",
-                            "fixtureHeight": {
-                              "value": 0,
-                              "unit": "ft"
-                            },
-                            "fixtureLength": {
-                              "value": 4,
-                              "unit": "ft"
-                            },
-                            "header": {
-                              "height": {
-                                "value": 0,
-                                "unit": ""
-                              }
-                            },
-                            "footer": {
-                              "height": {
-                                "value": 0,
-                                "unit": ""
-                              }
-                            },
-                            "fixtureCapacity": 90,
-                            "status": "complete",
-                            "shelfConfig": [
-                              {
-                                "shelfNumber": 1,
-                                "shelfType": "shelf",
-                                "shelfZone": "Top",
-                                "productPerShelf": 6,
-                                "trayRows": 0,
-                                "label": ""
-                              },
-                              {
-                                "shelfNumber": 2,
-                                "shelfType": "shelf",
-                                "shelfZone": "Top",
-                                "productPerShelf": 6,
-                                "trayRows": 0,
-                                "label": ""
-                              },
-                              {
-                                "shelfNumber": 3,
-                                "shelfType": "shelf",
-                                "shelfZone": "Top",
-                                "productPerShelf": 6,
-                                "trayRows": 0,
-                                "label": ""
-                              },
-                              {
-                                "shelfNumber": 4,
-                                "shelfType": "tray",
-                                "shelfZone": "Mid",
-                                "productPerShelf": 6,
-                                "trayRows": 3,
-                                "label": ""
-                              },
-                              {
-                                "shelfNumber": 5,
-                                "shelfType": "tray",
-                                "shelfZone": "Mid",
-                                "productPerShelf": 6,
-                                "trayRows": 3,
-                                "label": ""
-                              },
-                              {
-                                "shelfNumber": 6,
-                                "shelfType": "tray",
-                                "shelfZone": "Bottom",
-                                "productPerShelf": 6,
-                                "trayRows": 3,
-                                "label": ""
-                              },
-                              {
-                                "shelfNumber": 7,
-                                "shelfType": "tray",
-                                "shelfZone": "Bottom",
-                                "productPerShelf": 6,
-                                "trayRows": 3,
-                                "label": ""
-                              }
-                            ],
-                            "vmConfig": [
-                              {
-                                "vmNumber": 1,
-                                "vmHeightmm": 100,
-                                "vmWidthmm": 905,
-                                "startShelf": 1,
-                                "endShelf": 2,
-                                "zone": "left",
-                                "position": "Top"
-                              },
-                              {
-                                "vmNumber": 2,
-                                "vmHeightmm": 100,
-                                "vmWidthmm": 230,
-                                "startShelf": 5,
-                                "endShelf": 5,
-                                "zone": "left",
-                                "position": "Mid"
-                              },
-                              {
-                                "vmNumber": 3,
-                                "vmHeightmm": 100,
-                                "vmWidthmm": 905,
-                                "startShelf": 5,
-                                "endShelf": 5,
-                                "zone": "left",
-                                "position": "Mid"
-                              },
-                              {
-                                "vmNumber": 4,
-                                "vmHeightmm": 100,
-                                "vmWidthmm": 230,
-                                "startShelf": 6,
-                                "endShelf": 6,
-                                "zone": "right",
-                                "position": "Bottom"
-                              }
-                            ],
-                            "fixtureStaticLength": {
-                              "value": 1524,
-                              "unit": "mm"
-                            },
-                            "fixtureStaticWidth": {
-                              "value": 1220,
-                              "unit": "mm"
-                            }
-                          }
+      'clientId': '11',
+      'fixtureType': 'wall',
+      'fixtureHeight': {
+        'value': 0,
+        'unit': 'ft',
+      },
+      'fixtureLength': {
+        'value': 4,
+        'unit': 'ft',
+      },
+      'header': {
+        'height': {
+          'value': 0,
+          'unit': '',
+        },
+      },
+      'footer': {
+        'height': {
+          'value': 0,
+          'unit': '',
+        },
+      },
+      'fixtureCapacity': 90,
+      'status': 'complete',
+      'shelfConfig': [
+        {
+          'shelfNumber': 1,
+          'shelfType': 'shelf',
+          'shelfZone': 'Top',
+          'productPerShelf': 6,
+          'trayRows': 0,
+          'label': '',
+        },
+        {
+          'shelfNumber': 2,
+          'shelfType': 'shelf',
+          'shelfZone': 'Top',
+          'productPerShelf': 6,
+          'trayRows': 0,
+          'label': '',
+        },
+        {
+          'shelfNumber': 3,
+          'shelfType': 'shelf',
+          'shelfZone': 'Top',
+          'productPerShelf': 6,
+          'trayRows': 0,
+          'label': '',
+        },
+        {
+          'shelfNumber': 4,
+          'shelfType': 'tray',
+          'shelfZone': 'Mid',
+          'productPerShelf': 6,
+          'trayRows': 3,
+          'label': '',
+        },
+        {
+          'shelfNumber': 5,
+          'shelfType': 'tray',
+          'shelfZone': 'Mid',
+          'productPerShelf': 6,
+          'trayRows': 3,
+          'label': '',
+        },
+        {
+          'shelfNumber': 6,
+          'shelfType': 'tray',
+          'shelfZone': 'Bottom',
+          'productPerShelf': 6,
+          'trayRows': 3,
+          'label': '',
+        },
+        {
+          'shelfNumber': 7,
+          'shelfType': 'tray',
+          'shelfZone': 'Bottom',
+          'productPerShelf': 6,
+          'trayRows': 3,
+          'label': '',
+        },
+      ],
+      'vmConfig': [
+        {
+          'vmNumber': 1,
+          'vmHeightmm': 100,
+          'vmWidthmm': 905,
+          'startShelf': 1,
+          'endShelf': 2,
+          'zone': 'left',
+          'position': 'Top',
+        },
+        {
+          'vmNumber': 2,
+          'vmHeightmm': 100,
+          'vmWidthmm': 230,
+          'startShelf': 5,
+          'endShelf': 5,
+          'zone': 'left',
+          'position': 'Mid',
+        },
+        {
+          'vmNumber': 3,
+          'vmHeightmm': 100,
+          'vmWidthmm': 905,
+          'startShelf': 5,
+          'endShelf': 5,
+          'zone': 'left',
+          'position': 'Mid',
+        },
+        {
+          'vmNumber': 4,
+          'vmHeightmm': 100,
+          'vmWidthmm': 230,
+          'startShelf': 6,
+          'endShelf': 6,
+          'zone': 'right',
+          'position': 'Bottom',
+        },
+      ],
+      'fixtureStaticLength': {
+        'value': 1524,
+        'unit': 'mm',
+      },
+      'fixtureStaticWidth': {
+        'value': 1220,
+        'unit': 'mm',
+      },
+    };
 
 
     if ( !req?.body?.storeName ) {
@@ -7634,31 +7634,30 @@ export async function migrateCrestv1( req, res ) {
         for ( let index = 0; index < leftFixtures.length; index++ ) {
           const fixture = leftFixtures[index];
 
-          if(!fixture.fixtureName ){
-            return
+          if ( !fixture.fixtureName ) {
+            return;
           }
 
-        const libraryType = getLibraryType(fixture.fixtureName)
+          const libraryType = getLibraryType( fixture.fixtureName );
 
-        if(libraryType.fixtureCategory === 'Space'){
-          continue;
-        }
+          if ( libraryType.fixtureCategory === 'Space' ) {
+            continue;
+          }
 
-         let fixtureConfig = await fixtureLibraryService.findOne(libraryType);
+          let fixtureConfig = await fixtureLibraryService.findOne( libraryType );
 
-          if (!fixtureConfig) {
-
-            const existingLibrary = await fixtureLibraryService.findOne({ fixtureCategory: libraryType.fixtureCategory });
+          if ( !fixtureConfig ) {
+            const existingLibrary = await fixtureLibraryService.findOne( { fixtureCategory: libraryType.fixtureCategory } );
 
             const insertData = {
               ...sampleLibrary,
-              ...(existingLibrary ? existingLibrary.toObject() : {}),
-              ...libraryType
+              ...( existingLibrary ? existingLibrary.toObject() : {} ),
+              ...libraryType,
             };
 
             delete insertData._id;
 
-            fixtureConfig = await fixtureLibraryService.upsertOne(libraryType, insertData);
+            fixtureConfig = await fixtureLibraryService.upsertOne( libraryType, insertData );
           }
           const fixtureConfigDoc = fixtureConfig.toObject();
 
@@ -7675,7 +7674,7 @@ export async function migrateCrestv1( req, res ) {
 
             mapKey += ','+shelfIdentifier;
 
-            const productSubBrandName = shelfSection?.productName?.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
+            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs?\b/g, '' )?.split( /\s*\+\s*/ ) || [];
 
             productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
 
@@ -7929,31 +7928,30 @@ export async function migrateCrestv1( req, res ) {
         for ( let index = 0; index < backFixtures.length; index++ ) {
           const fixture = backFixtures[index];
 
-          if(!fixture.fixtureName ){
-            return
+          if ( !fixture.fixtureName ) {
+            return;
           }
 
-        const libraryType = getLibraryType(fixture.fixtureName)
+          const libraryType = getLibraryType( fixture.fixtureName );
 
-        if(libraryType.fixtureCategory === 'Space'){
-          continue;
-        }
+          if ( libraryType.fixtureCategory === 'Space' ) {
+            continue;
+          }
 
-         let fixtureConfig = await fixtureLibraryService.findOne(libraryType);
+          let fixtureConfig = await fixtureLibraryService.findOne( libraryType );
 
-          if (!fixtureConfig) {
-
-            const existingLibrary = await fixtureLibraryService.findOne({ fixtureCategory: libraryType.fixtureCategory });
+          if ( !fixtureConfig ) {
+            const existingLibrary = await fixtureLibraryService.findOne( { fixtureCategory: libraryType.fixtureCategory } );
 
             const insertData = {
               ...sampleLibrary,
-              ...(existingLibrary ? existingLibrary.toObject() : {}),
-              ...libraryType
+              ...( existingLibrary ? existingLibrary.toObject() : {} ),
+              ...libraryType,
             };
 
             delete insertData._id;
 
-            fixtureConfig = await fixtureLibraryService.upsertOne(libraryType, insertData);
+            fixtureConfig = await fixtureLibraryService.upsertOne( libraryType, insertData );
           }
           const fixtureConfigDoc = fixtureConfig.toObject();
 
@@ -7970,7 +7968,7 @@ export async function migrateCrestv1( req, res ) {
 
             mapKey += ','+shelfIdentifier;
 
-            const productSubBrandName = shelfSection?.productName?.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
+            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs?\b/g, '' )?.split( /\s*\+\s*/ ) || [];
 
             productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
 
@@ -8223,31 +8221,30 @@ export async function migrateCrestv1( req, res ) {
         for ( let index = 0; index < rightFixtures.length; index++ ) {
           const fixture = rightFixtures[index];
 
-          if(!fixture.fixtureName ){
-            return
+          if ( !fixture.fixtureName ) {
+            return;
           }
 
-        const libraryType = getLibraryType(fixture.fixtureName)
+          const libraryType = getLibraryType( fixture.fixtureName );
 
-        if(libraryType.fixtureCategory === 'Space'){
-          continue;
-        }
+          if ( libraryType.fixtureCategory === 'Space' ) {
+            continue;
+          }
 
-         let fixtureConfig = await fixtureLibraryService.findOne(libraryType);
+          let fixtureConfig = await fixtureLibraryService.findOne( libraryType );
 
-          if (!fixtureConfig) {
-
-            const existingLibrary = await fixtureLibraryService.findOne({ fixtureCategory: libraryType.fixtureCategory });
+          if ( !fixtureConfig ) {
+            const existingLibrary = await fixtureLibraryService.findOne( { fixtureCategory: libraryType.fixtureCategory } );
 
             const insertData = {
               ...sampleLibrary,
-              ...(existingLibrary ? existingLibrary.toObject() : {}),
-              ...libraryType
+              ...( existingLibrary ? existingLibrary.toObject() : {} ),
+              ...libraryType,
             };
 
             delete insertData._id;
 
-            fixtureConfig = await fixtureLibraryService.upsertOne(libraryType, insertData);
+            fixtureConfig = await fixtureLibraryService.upsertOne( libraryType, insertData );
           }
           const fixtureConfigDoc = fixtureConfig.toObject();
 
@@ -8264,7 +8261,7 @@ export async function migrateCrestv1( req, res ) {
 
             mapKey += ','+shelfIdentifier;
 
-            const productSubBrandName = shelfSection?.productName?.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
+            const productSubBrandName = shelfSection?.productName?.replace( /\s*PIDs?\b/g, '' )?.split( /\s*\+\s*/ ) || [];
 
             productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );
 
@@ -8551,10 +8548,10 @@ export async function migrateCrestv1( req, res ) {
             mapKey += ','+shelfIdentifier;
 
 
-            let productSubBrandName = fixture.centerSubMain.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
+            let productSubBrandName = fixture.centerSubMain.replace( /\s*PIDs?\b/g, '' )?.split( /\s*\+\s*/ ) || [];
 
             if ( shelfSection ) {
-              productSubBrandName = shelfSection.name.replace(/\s*PIDs?\b/g, '')?.split( /\s*\+\s*/ ) || [];
+              productSubBrandName = shelfSection.name.replace( /\s*PIDs?\b/g, '' )?.split( /\s*\+\s*/ ) || [];
             }
 
             productSubBrandName.forEach( ( item ) => fixtureProductSubBrandName.add( item ) );

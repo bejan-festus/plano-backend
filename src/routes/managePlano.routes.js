@@ -16,6 +16,8 @@ managePlanoRouter
     .post( '/updateFixtureStatus', isAllowedSessionHandler, managePlanoController.updateFixtureStatus )
     .post( '/updateStoreFixture', managePlanoController.updateStoreFixture )
     .post( '/updateredostatus', managePlanoController.updateredostatus )
+    .post( '/updateGlobalComment', isAllowedSessionHandler, managePlanoController.updateGlobalComment )
+    .post( '/getGlobalComment', isAllowedSessionHandler, managePlanoController.getGlobalComment )
     .post( '/createRevision', managePlanoController.createPlanoRevision )
     .post( '/getRevisions', managePlanoController.getAllPlanoRevisions )
     .post( '/getRevisionData', managePlanoController.getPlanoRevisionById );
