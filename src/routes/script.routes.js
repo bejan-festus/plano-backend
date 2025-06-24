@@ -31,4 +31,5 @@ scriptRouter
     .post( '/updateExcelPlanogram', scriptController.updateExcelPlanogram )
     .post( '/recorrectTaskData', scriptController.recorrectTaskData )
     .post( '/migrateCrest', scriptController.migrateCrestv1 )
+    .post( '/updatePlanoMappings', scriptController.updatePlanoMappings )
 ;

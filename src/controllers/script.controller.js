@@ -2323,9 +2323,9 @@ export async function updateVmData( req, res ) {
 
 // import https from 'https';
 // async function scrapeCrest() {
-//   const storeIds = [ 'LKST506' ];
+//   const storeIds = [ 'LKST682' ];
 //   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwNjA1NDA1LCJpYXQiOjE3NTA2MDE4MDUsImp0aSI6IjAxZWJmNzRkYzNkODQ2MjliNTA4YzI0MjM3MDRiYjdlIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.OnXe5ws08FwY1h0u3bLl8-dxQyrCL2mxr6c_b1lyf-Q';
+//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwNjc1MTQwLCJpYXQiOjE3NTA2NzE1NDAsImp0aSI6ImQ0YjhkNjc3ZjJkMDRhYjQ5ZmEwN2QwMTFlOTIwZDQ5IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.DjflJ6K-huxn2T2Ll92bb8P3Vzdsy_O-PzCsf2nOg5k';
 //   const filePath = 'response.json';
 //   let allResults = [];
 
@@ -8882,3 +8882,105 @@ export async function migrateCrestv1( req, res ) {
 // } catch (err) {
 //   console.error('Error processing file:', err);
 // }
+
+
+export async function updatePlanoMappings( req, res ) {
+  if ( req?.headers?.authorization?.split( ' ' )[1] !== 'hwjXfCD6TgMvc82cuSGZ9bNv9MuXsaiQ6uvx' ) {
+    return res.sendError( 'Unauthorized', 401 );
+  }
+  try {
+  const floor = await storeBuilderService.findOne({storeName:req.body.storeName}) 
+
+   for (let i = 0; i < req.body?.walls?.length; i++) {
+    const wall = req.body.walls[i];
+
+    let associatedElementNumber = undefined
+    let associatedElementType = undefined
+
+    if(wall.wallName === 'LEFT'){
+      associatedElementNumber = 1;
+      associatedElementType = 'wall';
+    }
+
+    if(wall.wallName === 'BACK'){
+      associatedElementNumber = 2
+      associatedElementType = 'wall';
+    }
+
+    if(wall.wallName === 'RIGHT'){
+      associatedElementNumber = 3
+      associatedElementType = 'wall';
+    }
+
+    for (let j = 0; j < wall?.fixtures?.length; j++) {
+      const fixture = wall.fixtures[j];
+
+      const associatedElementFixtureNumber = fixture.fixtureNumber
+
+      let storeFixture = null;
+
+      if(wall.wallName === 'CENTRE'){
+        storeFixture = await storeFixtureService.findOne({floorId:floor.toObject()._id, $and: [
+                  { associatedElementType: { $exists: false } },
+                  { associatedElementNumber: { $exists: false } }
+                ], associatedElementFixtureNumber:associatedElementFixtureNumber})
+      }else{
+         storeFixture = await storeFixtureService.findOne({floorId:floor.toObject()._id, 
+          associatedElementType: associatedElementType,
+          associatedElementNumber: associatedElementNumber,
+          associatedElementFixtureNumber:associatedElementFixtureNumber
+         })
+      }
+
+      await planoMappingService.deleteMany({fixtureId:storeFixture.toObject()._id})
+
+
+      for (let k = 0; k < fixture?.sections?.length; k++) {
+        const section = fixture.sections[k];
+
+        const shelves = await fixtureShelfService.find({
+          floorId: floor.toObject()._id,
+          fixtureId: storeFixture.toObject()._id,
+          zone: { $regex: `^${section.zone}$`, $options: "i" },
+        });
+
+        const totalShelves = shelves.length;
+
+        if (!totalShelves) continue;
+
+        const shelvesToUpdate = shelves.map((shelf)=> shelf.toObject()._id)
+
+        await fixtureShelfService.updateMany({_id:{$in:shelvesToUpdate}}, {sectionName:section.sectionName})
+
+        for (let l = 0; l < section?.products?.length; l++) {
+          const product = section.products[l];
+
+          const shelf = shelves[l % totalShelves];
+
+          const productMapping = {
+            clientId: storeFixture.toObject().clientId,
+            storeName: storeFixture.toObject().storeName,
+            storeId: storeFixture.toObject().storeId,
+            planoId: storeFixture.toObject().planoId,
+            floorId: storeFixture.toObject().floorId,
+            fixtureId: storeFixture.toObject()._id,
+            shelfId: shelf._id,
+            rfId: product.qr,
+            pid: product.pid,
+            type:'product'
+          };
+
+          await planoMappingService.create(productMapping)
+          
+        }
+      }
+    }
+   }
+
+    res.sendSuccess('success')
+
+  } catch ( e ) {
+    console.log( e );
+    return res.sendError( e, 500 );
+  }
+}
