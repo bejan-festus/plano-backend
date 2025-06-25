@@ -164,7 +164,7 @@ export async function deleteTemplate( req, res ) {
 
 export async function duplicateTemplate( req, res ) {
   try {
-    let templateDetails = await fixtureConfigService.findOne( { _id: req.body.templateId } );
+    let templateDetails = await fixtureConfigService.findOne( { _id: req.body.templateId }, { createdAt: 0, updatedAt: 0 } );
     if ( !templateDetails ) {
       return res.sendError( 'No data found', 204 );
     }
@@ -282,12 +282,14 @@ export async function getTemplateList( req, res ) {
               $group: {
                 _id: null,
                 planoId: { $addToSet: '$planoId' },
+                storeList: { $addToSet: '$storeName' },
               },
             },
             {
               $project: {
                 _id: 0,
                 planoId: 1,
+                storeList: 1,
               },
             },
           ],
@@ -301,6 +303,42 @@ export async function getTemplateList( req, res ) {
           fixtureWidth: 1,
           productBrandName: 1,
           productCategory: 1,
+          shelfProduct: {
+            $reduce: {
+              input: '$shelfConfig',
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  '$$value',
+                  { $ifNull: [ '$$this.productBrandName', [] ] },
+                ],
+              },
+            },
+          },
+          shelfProductCategory: {
+            $reduce: {
+              input: '$shelfConfig',
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  '$$value',
+                  { $ifNull: [ '$$this.productCategory', [] ] },
+                ],
+              },
+            },
+          },
+          shelfProductSubCategory: {
+            $reduce: {
+              input: '$shelfConfig',
+              initialValue: [],
+              in: {
+                $concatArrays: [
+                  '$$value',
+                  { $ifNull: [ '$$this.productSubCategory', [] ] },
+                ],
+              },
+            },
+          },
           clientId: 1,
           productSubCategory: 1,
           status: 1,
@@ -316,6 +354,7 @@ export async function getTemplateList( req, res ) {
             },
           },
           planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
+          storeList: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.storeList', 0 ] }, [] ] },
         },
       },
       {
@@ -345,16 +384,18 @@ export async function getTemplateList( req, res ) {
           fixtureCategory: 1,
           fixtureName: 1,
           fixtureWidth: 1,
-          productBrandName: 1,
-          productCategory: 1,
+          productBrandName: { $concatArrays: [ '$productBrandName', '$shelfProduct' ] },
+          productCategory: { $concatArrays: [ '$productCategory', '$shelfProductCategory' ] },
           clientId: 1,
           fixtureType: 1,
-          productSubCategory: 1,
+          productSubCategory: { $concatArrays: [ '$productSubCategory', '$shelfProductSubCategory' ] },
           status: 1,
           templateId: 1,
           planoId: 1,
           vmCapacity: 1,
           productCapacity: 1,
+          storeList: 1,
+          storeCount: { $size: '$storeList' },
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
             $cond: {

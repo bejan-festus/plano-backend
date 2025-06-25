@@ -589,7 +589,6 @@ export async function updateAnswers( req, res ) {
 export async function updateAnswersv2( req, res ) {
   try {
     let taskDetails = await processedService.findOne( { _id: new mongoose.Types.ObjectId( req.body.taskId ) } );
-    console.log( taskDetails );
     if ( !taskDetails ) {
       return res.sendError( 'No data found', 204 );
     }
