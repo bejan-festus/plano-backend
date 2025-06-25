@@ -3012,8 +3012,8 @@ export async function storeFixturesTaskv2( req, res ) {
 
                             const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
-                              type: req.body?.type ? req.body.type : 'fixture',
-                            }, { status: 1, answers: 1, taskType: 1 } );
+                              type: req.body?.type ? req.body.type : 'fixture', date_string: req.body.date,
+                            }, { status: 1, answers: 1, taskType: 1 }, { _id: -1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3048,7 +3048,7 @@ export async function storeFixturesTaskv2( req, res ) {
                                   issue?.Details?.some( ( detail ) => detail.status === 'disagree' ),
                                 ),
                               );
-                              if ( hasDisagree || compliance?.taskType == 'redo' ) {
+                              if ( hasDisagree ) {
                                 redoCount++;
                                 disabled = false;
                               }
@@ -3106,8 +3106,8 @@ export async function storeFixturesTaskv2( req, res ) {
 
                       const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
-                        type: req.body?.type ? req.body.type : 'fixture',
-                      }, { status: 1, answers: 1, taskType: 1 } );
+                        type: req.body?.type ? req.body.type : 'fixture', date_string: req.body.date,
+                      }, { status: 1, answers: 1, taskType: 1 }, { _id: -1 } );
 
                       const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3142,7 +3142,7 @@ export async function storeFixturesTaskv2( req, res ) {
                           ),
                         );
 
-                        if ( hasDisagree || compliance.taskType == 'redo' ) {
+                        if ( hasDisagree ) {
                           redoCount++;
                           disabled = false;
                         }
@@ -3557,7 +3557,7 @@ export async function planoList( req, res ) {
     }
     if ( inputData?.filter?.taskPending?.length && inputData?.filter?.taskPending != 'all' ) {
       let andQuery = [];
-
+      console.log( inputData.filter.taskPending );
       if ( inputData.filter.taskPending == 'layout' ) {
         andQuery.push(
             { 'planoTask.taskStatus.type': 'layout' },
