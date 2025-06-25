@@ -7,6 +7,9 @@ export async function create( data ) {
 export async function updateOne( query={}, record={} ) {
   return model.planoTaskCompliance.updateOne( query, { $set: record }, { upsert: true } );
 }
+export async function updateMany( query={}, record={} ) {
+  return model.planoTaskCompliance.updateMany( query, { $set: record } );
+}
 export async function updateOnefilters( query={}, record={}, arrayfilter=[] ) {
   return model.planoTaskCompliance.findOneAndUpdate( query, record, { arrayFilters: arrayfilter, returnDocument: 'after' } );
 }
