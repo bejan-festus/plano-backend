@@ -3288,6 +3288,7 @@ export async function planoList( req, res ) {
                 dateString: { $last: '$date_string' },
                 checklistStatus: { $last: '$checklistStatus' },
                 taskId: { $last: '$_id' },
+                scheduleEndTime_iso: { $last: '$scheduleEndTime_iso' },
               },
             },
             {
@@ -3299,6 +3300,7 @@ export async function planoList( req, res ) {
                     status: '$checklistStatus',
                     date: '$dateString',
                     floorId: '$_id.floorId',
+                    endTime: '$scheduleEndTime_iso',
                   },
                 },
                 taskIds: { $push: '$taskId' },
@@ -3575,8 +3577,8 @@ export async function planoList( req, res ) {
       if ( inputData.filter.taskPending == 'vm' ) {
         andQuery.push(
             { 'planoTask.taskStatus.type': 'vm' },
-            { 'taskDetails.vmStatus': 'pending' },
             { 'planoTask.taskStatus.status': 'submit' },
+            { 'taskDetails.vmStatus': 'pending' },
         );
       }
 
@@ -3829,6 +3831,7 @@ export async function getTaskDetails( req, res ) {
           checklistStatus: { $last: '$checklistStatus' },
           taskId: { $last: '$_id' },
           redoStatus: { $last: '$redoStatus' },
+          scheduleEndTime_iso: { $last: '$scheduleEndTime_iso' },
         },
       },
       {
@@ -3841,6 +3844,7 @@ export async function getTaskDetails( req, res ) {
               date: '$dateString',
               floorId: '$_id.floorId',
               redoStatus: '$redoStatus',
+              endTime: '$scheduleEndTime_iso',
             },
           },
           taskIds: { $push: '$taskId' },
@@ -4091,6 +4095,7 @@ export async function getTaskDetails( req, res ) {
                 date: '$$task.date',
                 floorId: '$$task.floorId',
                 redoStatus: '$$task.redoStatus',
+                endTime: '$$task.endTime',
                 feedbackStatus: {
                   $switch: {
                     branches: [
@@ -4119,7 +4124,7 @@ export async function getTaskDetails( req, res ) {
     ];
 
     let taskInfo = await planotaskService.aggregate( query );
-    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ele.feedbackStatus && ele.feedbackStatus != 'complete' ) || ele.status != 'submit' );
+    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ele.feedbackStatus != 'complete' ) || ele.status != 'submit' ) && dayjs( ele.endTime ).format( 'YYYY-MM-DD' ) >= dayjs().format( 'YYYY-MM-DD' ) );
     return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false } );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );

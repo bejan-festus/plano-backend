@@ -301,7 +301,11 @@ export async function createTask( req, res ) {
                 }
                 await planoService.updateOne( { _id: planoDetails?._id }, { $set: { planoProgress } } );
                 let currDate = dayjs().add( j, 'day' );
-                let insertData = { ...taskData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} 12:00 AM`, 'YYYY-MM-DD hh:mm A' ).format() };
+                let time = '12:00 AM';
+                if ( currDate.format( 'YYYY-MM-DD' ) == dayjs().format( 'YYYY-MM-DD' ) ) {
+                  time = dayjs().format( 'hh:mm A' );
+                }
+                let insertData = { ...taskData, date_string: currDate.format( 'YYYY-MM-DD' ), date_iso: new Date( currDate.format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( `${currDate.format( 'YYYY-MM-DD' )} ${time}`, 'YYYY-MM-DD hh:mm A' ).format() };
                 await processedService.updateOne( { date_string: currDate.format( 'YYYY-MM-DD' ), store_id: insertData.store_id, userEmail: insertData.userEmail, planoId: insertData.planoId, sourceCheckList_id: task._id, ...( taskData?.floorId ) ? { floorId: taskData.floorId }:{} }, insertData );
               }
             }
