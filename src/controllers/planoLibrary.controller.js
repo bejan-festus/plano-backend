@@ -53,8 +53,10 @@ export async function fixtureBulkUpload( req, res ) {
             },
           ],
           ...( typeof ele?.isEdit == undefined ) ? { 'status': ele?.fixLibCode ? inputData.updateFixtureStatus : inputData.newFixtureStatus } :{},
+          fixtureCapacity: ele.shelfType =='shelf' ? ele.productPerShelf : ele.trayRows * ele.productPerShelf,
         };
       } else {
+        acc[ele.fixtureName].fixtureCapacity = acc[ele.fixtureName].fixtureCapacity + ( ele.shelfType =='shelf' ? ele.productPerShelf : ele.trayRows * ele.productPerShelf );
         acc[ele.fixtureName].shelfConfig.push(
             {
               shelfNumber: ele.shelfNumber,
@@ -67,21 +69,22 @@ export async function fixtureBulkUpload( req, res ) {
       }
       return acc;
     }, {} );
-    let fixtureData = [];
-    await Promise.all( Object.keys( groupedData ).map( async ( ele ) => {
-      if ( groupedData[ele]?.fixtureLibCode && !groupedData[ele]?.status ) {
-        await planoLibraryService.updateOne( { fixtureLibCode: groupedData[ele]?.fixtureLibCode }, groupedData[ele] );
-      } else {
-        let FixLibCode = await getMaxFixtureLibCode();
-        groupedData[ele].fixtureLibCode = FixLibCode;
-        fixtureData.push( groupedData[ele] );
-      }
-    } ) );
-    let deleteList = inputData.deleteFixtureList.map( ( ele ) => new ObjectId( ele ) );
-    if ( deleteList.length ) {
-      await planoLibraryService.deleteMany( { _id: { $in: deleteList } } );
+    // let fixtureData = [];
+    for ( let ele of Object.keys( groupedData ) ) {
+      // if ( groupedData[ele]?.fixtureLibCode && !groupedData[ele]?.status ) {
+      //   await planoLibraryService.updateOne( { fixtureLibCode: groupedData[ele]?.fixtureLibCode }, groupedData[ele] );
+      // } else {
+      let FixLibCode = await getMaxFixtureLibCode();
+      groupedData[ele].fixtureLibCode = FixLibCode;
+      // fixtureData.push( groupedData[ele] );
+      await planoLibraryService.findOneAndUpdate( { 'fixtureCategory': groupedData[ele].fixtureCategory, 'fixtureWidth.value': groupedData[ele].fixtureWidth.value, 'fixtureWidth.unit': groupedData[ele].fixtureWidth.unit }, groupedData[ele] );
+      // }
     }
-    await planoLibraryService.insertMany( fixtureData );
+    // let deleteList = inputData.deleteFixtureList.map( ( ele ) => new ObjectId( ele ) );
+    // if ( deleteList.length ) {
+    //   await planoLibraryService.deleteMany( { _id: { $in: deleteList } } );
+    // }
+    // await planoLibraryService.insertMany( fixtureData );
     return res.sendSuccess( 'Fixture library created successfully' );
   } catch ( e ) {
     console.log( e );
@@ -351,6 +354,7 @@ export async function FixtureLibraryList( req, res ) {
           footer: 1,
           fixtureLibCode: 1,
           planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
+          templateCount: { $size: '$templateId' },
         },
       },
       {
@@ -389,6 +393,7 @@ export async function FixtureLibraryList( req, res ) {
           templateId: 1,
           header: 1,
           footer: 1,
+          templateCount: 1,
           fixtureLibCode: 1,
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
@@ -457,7 +462,7 @@ export async function FixtureLibraryList( req, res ) {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet( 'Fixture Library' );
 
-      sheet.getRow( 1 ).values = [ 'Fixture Code', 'Fixture Name', 'Fixture Type', 'Fixture Height(ft)', 'Fixture Width(ft)', 'Fixture Header Height(ft)', 'Fixture Footer Height(ft)', 'Shelf Number', 'Shelf Type', 'Tray Rows', 'Product Per Shelf/Tray', 'Panel Name' ];
+      sheet.getRow( 1 ).values = [ 'Fixture Name', 'Fixture Type', 'Fixture Height(ft)', 'Fixture Width(ft)', 'Fixture Header Height(ft)', 'Fixture Footer Height(ft)', 'Shelf Number', 'Shelf Type', 'Tray Rows', 'Product Per Shelf/Tray', 'Panel Name' ];
 
       let rowStart = 2;
       let lockedRowNumber = [];
@@ -483,7 +488,8 @@ export async function FixtureLibraryList( req, res ) {
           footerHeight = result.data[i].footer.height.value;
         }
         if ( !result.data[i].shelfConfig.length ) {
-          sheet.getRow( rowStart ).values = [ result.data[i]?.fixtureLibCode || '', result.data[i]?.fixtureCategory || '', result.data[i]?.fixtureType || 'Wall', height, width, headerHeight, footerHeight, 0, '', 0, 0, '' ];
+          // result.data[i]?.fixtureLibCode || '',
+          sheet.getRow( rowStart ).values = [ result.data[i]?.fixtureCategory || '', result.data[i]?.fixtureType || 'Wall', height, width, headerHeight, footerHeight, 0, '', 0, 0, '' ];
           if ( result.data[i].status == 'active' || result.data[i].templateId.length ) {
             lockedRowNumber.push( rowStart );
           }
@@ -491,7 +497,7 @@ export async function FixtureLibraryList( req, res ) {
         }
 
         result.data[i].shelfConfig.forEach( ( shelf ) => {
-          sheet.getRow( rowStart ).values = [ result.data[i]?.fixtureLibCode || '', result.data[i]?.fixtureCategory || '', result.data[i]?.fixtureType || 'Wall', height, width, headerHeight, footerHeight, shelf?.shelfNumber || 0, shelf?.shelfType || '', shelf?.trayRows || 0, shelf?.productPerShelf || 0, shelf?.label || '' ];
+          sheet.getRow( rowStart ).values = [ result.data[i]?.fixtureCategory || '', result.data[i]?.fixtureType || 'Wall', height, width, headerHeight, footerHeight, shelf?.shelfNumber || 0, shelf?.shelfType || '', shelf?.trayRows || 0, shelf?.productPerShelf || 0, shelf?.label || '' ];
           if ( result.data[i].status == 'active' || result.data[i].templateId.length ) {
             lockedRowNumber.push( rowStart );
           }
@@ -502,32 +508,32 @@ export async function FixtureLibraryList( req, res ) {
 
       const maxRows = 1048576;
 
-      let unlockCellValues = 20000;
-      let splitLoop = [];
+      // let unlockCellValues = 20000;
+      // let splitLoop = [];
 
-      for ( let i=1; i<=unlockCellValues; i+=2000 ) {
-        splitLoop.push( { start: i, end: i + 1999 } );
-      }
+      // for ( let i=1; i<=unlockCellValues; i+=2000 ) {
+      //   splitLoop.push( { start: i, end: i + 1999 } );
+      // }
 
-      await Promise.all( splitLoop.map( ( item ) => {
-        for ( let i=item.start; i<=item.end; i++ ) {
-          const row = sheet.getRow( i );
-          if ( i > rowStart - 1 ) {
-            row.values = [ '', '', '', '', '', '', '', '', '', '', '', '' ];
-          }
-          if ( !lockedRowNumber.includes( i ) && i != 1 ) {
-            row.eachCell( ( cell ) => {
-              const columnLetter = cell.address.replace( /[0-9]/g, '' );
-              if ( columnLetter != 'A' ) {
-                cell.protection = { locked: false };
-              }
-            } );
-          }
-        }
-      } ) );
+      // await Promise.all( splitLoop.map( ( item ) => {
+      //   for ( let i=item.start; i<=item.end; i++ ) {
+      //     const row = sheet.getRow( i );
+      //     if ( i > rowStart - 1 ) {
+      //       row.values = [ '', '', '', '', '', '', '', '', '', '', '', '' ];
+      //     }
+      //     if ( !lockedRowNumber.includes( i ) && i != 1 ) {
+      //       row.eachCell( ( cell ) => {
+      //         const columnLetter = cell.address.replace( /[0-9]/g, '' );
+      //         if ( columnLetter != 'A' ) {
+      //           cell.protection = { locked: false };
+      //         }
+      //       } );
+      //     }
+      //   }
+      // } ) );
 
 
-      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ '"wall,floor"' ] }, { key: `I2:I${maxRows}`, optionList: [ '"shelf,tray"' ] } ];
+      let dropDownRange = [ { key: `B2:B${maxRows}`, optionList: [ '"wall,floor"' ] }, { key: `H2:H${maxRows}`, optionList: [ '"shelf,tray"' ] } ];
 
       dropDownRange.forEach( ( ele ) => {
         sheet.dataValidations.add( ele.key, {
@@ -541,10 +547,10 @@ export async function FixtureLibraryList( req, res ) {
       } );
 
 
-      await sheet.protect( 'password123', {
-        selectLockedCells: false,
-        selectUnlockedCells: true,
-      } );
+      // await sheet.protect( 'password123', {
+      //   selectLockedCells: false,
+      //   selectUnlockedCells: true,
+      // } );
 
       sheet.columns.forEach( ( column ) => {
         let maxLength = 10;
@@ -573,7 +579,7 @@ export async function duplicateFixture( req, res ) {
     if ( !req.body?.fixtureId ) {
       return res.sendError( 'FixtureId is required', 400 );
     }
-    let fixtureLibDetails = await planoLibraryService.findOne( { _id: req.body?.fixtureId } );
+    let fixtureLibDetails = await planoLibraryService.findOne( { _id: req.body?.fixtureId }, { createdAt: 0, updatedAt: 0 } );
     if ( !fixtureLibDetails ) {
       return res.sendError( 'No data found', 204 );
     }
@@ -1168,8 +1174,12 @@ export async function getVmLibList( req, res ) {
     } else {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet( 'Fixture Library' );
+      const hiddenSheet = workbook.addWorksheet( 'Hidden' );
+      hiddenSheet.state = 'veryHidden';
 
-      sheet.getRow( 1 ).values = [ 'VM Lib Code', 'VM Name', 'VM Type', 'VM Brand', 'VM Category', 'VM SubCategory', 'Unit', 'VM Height', 'VM Width', 'VM ImageUrl' ];
+      // 'VM Lib Code',
+
+      sheet.getRow( 1 ).values = [ 'VM Name', 'VM Type', 'VM Brand', 'VM Category', 'VM SubCategory', 'Unit', 'VM Height', 'VM Width', 'VM ImageUrl' ];
 
       let rowStart = 2;
       let lockedRowNumber = [];
@@ -1191,7 +1201,8 @@ export async function getVmLibList( req, res ) {
         if ( result.data[i]?.vmImageUrl ) {
           result.data[i].vmImageUrl = process.env.PLANOCDNURL +'/'+result.data[i].vmImageUrl;
         }
-        sheet.getRow( rowStart ).values = [ result.data[i]?.vmLibCode || '', result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', unit, height, width, result.data[i]?.vmImageUrl || '' ];
+        // result.data[i]?.vmLibCode || '',
+        sheet.getRow( rowStart ).values = [ result.data[i]?.vmName || '', result.data[i]?.vmType || '', result.data[i]?.vmBrand || '', result.data[i]?.vmCategory || '', result.data[i]?.vmSubCategory ||'', unit, height, width, result.data[i]?.vmImageUrl || '' ];
         if ( result.data[i].templateId.length || result.data[i].status == 'active' ) {
           lockedRowNumber.push( rowStart );
         }
@@ -1201,15 +1212,27 @@ export async function getVmLibList( req, res ) {
       let productBrandDetails = await planoProductService.find( { clientId: req.body.clientId } );
       let vmTypeList = await vmTypeService.find( { clientId: req.body.clientId } );
       vmTypeList = vmTypeList.map( ( ele ) => ele.vmType );
-      let brand = productBrandDetails.map( ( ele ) => ele.brandName );
+      let brandList = productBrandDetails.map( ( ele ) => ele.brandName );
+      brandList.forEach( ( brand, index ) => {
+        hiddenSheet.getCell( `A${index + 1}` ).value = brand;
+      } );
       let brandCategories = productBrandDetails.flatMap( ( ele ) => [ ...ele.category ] );
       let brandSubCategories = productBrandDetails.flatMap( ( ele ) => [ ...ele.subCategory ] );
       brandCategories = [ ...new Set( brandCategories.map( ( ele ) => ele ) ) ];
+      brandCategories = brandCategories.length ? brandCategories : [ '' ];
+      brandSubCategories = brandSubCategories.length ? brandSubCategories : [ '' ];
+      brandCategories.forEach( ( brand, index ) => {
+        hiddenSheet.getCell( `B${index + 1}` ).value = brand;
+      } );
       brandSubCategories = [ ...new Set( brandSubCategories.map( ( ele ) => ele ) ) ];
+      brandSubCategories.forEach( ( brand, index ) => {
+        hiddenSheet.getCell( `C${index + 1}` ).value = brand;
+      } );
 
       const maxRows = 1048576;
 
-      let dropDownRange = [ { key: `C2:C${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `D2:D${maxRows}`, optionList: [ `"${brand.toString()}"` ] }, { key: `E2:E${maxRows}`, optionList: [ `"${brandCategories.toString()}"` ] }, { key: `F2:F${maxRows}`, optionList: [ `"${brandSubCategories.toString()}"` ] }, { key: `G2:G${maxRows}`, optionList: [ '"mm,cm,inches,feet"' ] } ];
+      let dropDownRange = [ { key: `B2:B${maxRows}`, optionList: [ `"${vmTypeList.toString()}"` ] }, { key: `C2:C${maxRows}`, optionList: [ `=Hidden!$A$1:$A$${brandList.length}` ] }, { key: `D2:D${maxRows}`, optionList: [ `=Hidden!$B$1:$B$${brandCategories.length}` ] }, { key: `E2:E${maxRows}`, optionList: [ `=Hidden!$C$1:$C$${brandSubCategories.length}` ] }, { key: `F2:F${maxRows}`, optionList: [ '"mm,cm,inches,feet"' ] } ];
+
 
       dropDownRange.forEach( ( ele ) => {
         sheet.dataValidations.add( ele.key, {
@@ -1222,34 +1245,34 @@ export async function getVmLibList( req, res ) {
         } );
       } );
 
-      let unlockCellValues = 20000;
-      let splitLoop = [];
+      // let unlockCellValues = 20000;
+      // let splitLoop = [];
 
-      for ( let i=1; i<=unlockCellValues; i+=2000 ) {
-        splitLoop.push( { start: i, end: i + 1999 } );
-      }
+      // for ( let i=1; i<=unlockCellValues; i+=2000 ) {
+      //   splitLoop.push( { start: i, end: i + 1999 } );
+      // }
 
-      await Promise.all( splitLoop.map( ( item ) => {
-        for ( let i=item.start; i<=item.end; i++ ) {
-          const row = sheet.getRow( i );
-          if ( i > rowStart - 1 ) {
-            row.values = [ '', '', '', '', '', '', '', '', '', '' ];
-          }
-          if ( !lockedRowNumber.includes( i ) && i != 1 ) {
-            row.eachCell( ( cell ) => {
-              const columnLetter = cell.address.replace( /[0-9]/g, '' );
-              if ( columnLetter != 'A' ) {
-                cell.protection = { locked: false };
-              }
-            } );
-          }
-        }
-      } ) );
+      // await Promise.all( splitLoop.map( ( item ) => {
+      //   for ( let i=item.start; i<=item.end; i++ ) {
+      //     const row = sheet.getRow( i );
+      //     if ( i > rowStart - 1 ) {
+      //       row.values = [ '', '', '', '', '', '', '', '', '', '' ];
+      //     }
+      //     if ( !lockedRowNumber.includes( i ) && i != 1 ) {
+      //       row.eachCell( ( cell ) => {
+      //         const columnLetter = cell.address.replace( /[0-9]/g, '' );
+      //         if ( columnLetter != 'A' ) {
+      //           cell.protection = { locked: false };
+      //         }
+      //       } );
+      //     }
+      //   }
+      // } ) );
 
-      await sheet.protect( 'password123', {
-        selectLockedCells: false,
-        selectUnlockedCells: true,
-      } );
+      // await sheet.protect( 'password123', {
+      //   selectLockedCells: false,
+      //   selectUnlockedCells: true,
+      // } );
 
       sheet.columns.forEach( ( column ) => {
         let maxLength = 10;
@@ -1278,7 +1301,7 @@ export async function duplicateVmLib( req, res ) {
     if ( !req.body?.vmId ) {
       return res.sendError( 'VmId is required', 400 );
     }
-    let vmDetails = await vmService.findOne( { _id: req.body?.vmId } );
+    let vmDetails = await vmService.findOne( { _id: req.body?.vmId }, { createdAt: 0, updatedAt: 0 } );
     if ( !vmDetails ) {
       return res.sendError( 'No data found', 204 );
     }
@@ -1362,20 +1385,11 @@ export async function getVmDetails( req, res ) {
 export async function vmBulkUpload( req, res ) {
   try {
     let inputData = req.body;
-    await Promise.all( inputData.vmData.map( async ( ele ) => {
+
+    for ( let ele of inputData.vmData ) {
       ele = { ...ele, clientId: req.body.clientId, vmWidth: { value: ele.vmWidth, unit: ele.unit }, vmHeight: { value: ele.vmHeight, unit: ele.unit } };
-      let vmLibData;
-      if ( !ele?.vmLibCode ) {
-        ele.vmLibCode = await getMaxVMLibCode();
-        ele.status = inputData.newVmStatus;
-        vmLibData = await vmService.create( ele );
-      } else {
-        if ( typeof ele?.isEdit == undefined ) {
-          ele.status = inputData.updateVmStatus;
-          await vmService.updateOne( { vmLibCode: ele.vmLibCode }, ele );
-          vmLibData = await vmService.findOne( { vmLibCode: ele.vmLibCode } );
-        }
-      }
+      ele.vmLibCode = await getMaxVMLibCode();
+      ele.status = inputData.newVmStatus;
       if ( vmLibData && !ele?.vmImageUrl.includes( '/vmType/' ) && ele?.vmImageUrl ) {
         let response = await fetch( ele?.vmImageUrl );
         let arrayBuffer = await response.arrayBuffer();
@@ -1388,13 +1402,42 @@ export async function vmBulkUpload( req, res ) {
         };
         let fileRes = await fileUpload( params );
         ele.vmImageUrl = fileRes?.Key;
-        await vmService.updateOne( { _id: vmLibData._id }, { vmImageUrl: ele.vmImageUrl } );
       }
-    } ) );
-    let deleteList = inputData.deleteVmList.map( ( ele ) => new ObjectId( ele ) );
-    if ( deleteList.length ) {
-      await vmService.deleteMany( { _id: { $in: deleteList } } );
+      vmLibData = await vmService.updateOne( { vmName: ele?.vmName, clientId: inputData.clientId }, ele );
     }
+    // await Promise.all( inputData.vmData.map( async ( ele ) => {
+    //   ele = { ...ele, clientId: req.body.clientId, vmWidth: { value: ele.vmWidth, unit: ele.unit }, vmHeight: { value: ele.vmHeight, unit: ele.unit } };
+    //   let vmLibData;
+    //   if ( !ele?.vmLibCode ) {
+    //     ele.vmLibCode = await getMaxVMLibCode();
+    //     ele.status = inputData.newVmStatus;
+    //     vmLibData = await vmService.create( ele );
+    //   } else {
+    //     if ( typeof ele?.isEdit == undefined ) {
+    //       ele.status = inputData.updateVmStatus;
+    //       await vmService.updateOne( { vmLibCode: ele.vmLibCode }, ele );
+    //       vmLibData = await vmService.findOne( { vmLibCode: ele.vmLibCode } );
+    //     }
+    //   }
+    //   if ( vmLibData && !ele?.vmImageUrl.includes( '/vmType/' ) && ele?.vmImageUrl ) {
+    //     let response = await fetch( ele?.vmImageUrl );
+    //     let arrayBuffer = await response.arrayBuffer();
+    //     let params = {
+    //       Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+    //       Key: `vmType/${vmLibData._id}/${Date.now()}/${path.basename( ele?.vmImageUrl )}`,
+    //       fileName: path.basename( ele?.vmImageUrl ),
+    //       ContentType: response.headers.get( 'content-type' ),
+    //       body: Buffer.from( arrayBuffer ),
+    //     };
+    //     let fileRes = await fileUpload( params );
+    //     ele.vmImageUrl = fileRes?.Key;
+    //     await vmService.updateOne( { _id: vmLibData._id }, { vmImageUrl: ele.vmImageUrl } );
+    //   }
+    // } ) );
+    // let deleteList = inputData.deleteVmList.map( ( ele ) => new ObjectId( ele ) );
+    // if ( deleteList.length ) {
+    //   await vmService.deleteMany( { _id: { $in: deleteList } } );
+    // }
     return res.sendSuccess( 'Vmlibrary details uploaded successfully' );
   } catch ( e ) {
     console.log( e );
