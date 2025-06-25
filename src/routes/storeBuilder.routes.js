@@ -49,4 +49,5 @@ storeBuilderRouter
     .post( '/storeFixturesTaskv2', storeBuilderController.storeFixturesTaskv2 );
 
 storeBuilderRouter
-    .post( '/planoList', isAllowedSessionHandler, storeBuilderController.planoList );
+    .post( '/planoList', isAllowedSessionHandler, storeBuilderController.planoList )
+    .get( '/taskDetails', isAllowedSessionHandler, storeBuilderController.getTaskDetails );
