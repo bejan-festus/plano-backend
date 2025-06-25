@@ -79,6 +79,7 @@ export async function getplanoFeedback( req, res ) {
               $expr: {
                 $and: [
                   { $eq: [ '$_id', '$$taskId' ] },
+                  { $eq: [ '$checklistStatus', 'submit' ] },
                 ],
               },
             },
@@ -95,7 +96,7 @@ export async function getplanoFeedback( req, res ) {
         as: 'taskData',
       },
 
-    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
+    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: false } },
     {
       $lookup: {
         from: 'storefixtures',
@@ -162,6 +163,7 @@ export async function getplanoFeedback( req, res ) {
               $expr: {
                 $and: [
                   { $eq: [ '$_id', '$$taskId' ] },
+                  { $eq: [ '$checklistStatus', 'submit' ] },
                 ],
               },
             },
@@ -178,7 +180,7 @@ export async function getplanoFeedback( req, res ) {
         as: 'taskData',
       },
 
-    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
+    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: false } },
     {
       $lookup: {
         from: 'storefixtures',
@@ -671,6 +673,18 @@ export async function updateFixtureStatus( req, res ) {
               'status': 'complete',
             },
         );
+        if ( req.body.taskType==='layout' ) {
+          await planoTaskService.updateMany(
+              {
+                planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+                floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+                type: 'layout',
+              },
+              {
+                'status': 'complete',
+              },
+          );
+        }
       }
     }
 
