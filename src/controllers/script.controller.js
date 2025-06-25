@@ -2323,9 +2323,9 @@ export async function updateVmData( req, res ) {
 
 // import https from 'https';
 // async function scrapeCrest() {
-//   const storeIds = [ 'LKST682' ];
+//   const storeIds = [ 'LKST435' ];
 //   const apiUrl = 'https://api.getcrest.ai/api/ms_shelfsensei/layout/';
-//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwNjc1MTQwLCJpYXQiOjE3NTA2NzE1NDAsImp0aSI6ImQ0YjhkNjc3ZjJkMDRhYjQ5ZmEwN2QwMTFlOTIwZDQ5IiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.DjflJ6K-huxn2T2Ll92bb8P3Vzdsy_O-PzCsf2nOg5k';
+//   const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwNzYwNzE0LCJpYXQiOjE3NTA3NTcxMTQsImp0aSI6IjA3NDMyOGJiMzEzODRkMTA5YzdjODY1ZDI3Mzg2MGFmIiwidXNlcl9pZCI6MTA4NSwiaWQiOjEwODUsImlzX21lZXNlZWtfYWNjb3VudCI6ZmFsc2UsImN1c3RvbWVyX2dyb3VwIjozOTgsImxpY2VuY2Vfc2NvcGVzIjpbeyJyZXNvdXJjZV9zZXQiOiJwcF9zZXQiLCJzY29wZV9yb2xlIjoiY29udHJpYnV0b3IifSx7InJlc291cmNlX3NldCI6ImRwX3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9LHsicmVzb3VyY2Vfc2V0IjoiZGZfc2V0Iiwic2NvcGVfcm9sZSI6ImNvbnRyaWJ1dG9yIn0seyJyZXNvdXJjZV9zZXQiOiJkZWZhdWx0X3NldCIsInNjb3BlX3JvbGUiOiJjb250cmlidXRvciJ9XX0.bAy1wmq9bhyD05WlyNMa5fbkKv5T4qYYP6ZowmydI5I';
 //   const filePath = 'response.json';
 //   let allResults = [];
 
@@ -8886,6 +8886,8 @@ export async function updatePlanoMappings( req, res ) {
     return res.sendError( 'Unauthorized', 401 );
   }
   try {
+
+  console.log(JSON.stringify(req.body))
   const floor = await storeBuilderService.findOne({storeName:req.body.storeName}) 
 
    for (let i = 0; i < req.body?.walls?.length; i++) {
@@ -8928,6 +8930,8 @@ export async function updatePlanoMappings( req, res ) {
           associatedElementFixtureNumber:associatedElementFixtureNumber
          })
       }
+
+      if(!storeFixture) continue;
 
       await planoMappingService.deleteMany({fixtureId:storeFixture.toObject()._id})
 
