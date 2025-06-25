@@ -2644,7 +2644,7 @@ export async function storeFixturesv2( req, res ) {
             { storeId: { $in: req.body.id } },
           ],
         },
-        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1, validateShelfSections: 1 },
+        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1, validateShelfSections: 1, planoProgress: 1 },
     );
 
     if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
@@ -3602,10 +3602,10 @@ export async function planoList( req, res ) {
         orQuery.push( { $and: [ { 'taskDetails.fixtureStatus': 'pending' }, { 'planoTask.taskStatus.type': 'fixture' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
         orQuery.push( { $and: [ { 'taskDetails.vmStatus': 'pending' }, { 'planoTask.taskStatus.type': 'vm' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
       }
-      if ( inputData.filter.status.includes( 'complete' ) ) {
-        orQuery.push( { 'taskDetails.layoutStatus': 'complete' } );
-        orQuery.push( { 'taskDetails.fixtureStatus': 'complete' } );
-        orQuery.push( { 'taskDetails.vmStatus': 'complete' } );
+      if ( inputData.filter.status.includes( 'completed' ) ) {
+        orQuery.push( { $and: [ { 'taskDetails.layoutStatus': 'complete' }, { 'planoTask.taskStatus.type': 'layout' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
+        orQuery.push( { $and: [ { 'taskDetails.fixtureStatus': 'complete' }, { 'planoTask.taskStatus.type': 'fixture' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
+        orQuery.push( { $and: [ { 'taskDetails.vmStatus': 'complete' }, { 'planoTask.taskStatus.type': 'vm' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
       }
       if ( inputData.filter.status.includes( 'yetToAssign' ) ) {
         orQuery.push( { $expr: { $eq: [ { $size: '$planoTask' }, 0 ] } } );
@@ -3647,16 +3647,23 @@ export async function planoList( req, res ) {
       },
     } );
 
-    let planoDetails = await planoService.aggregate( query );
+    const [ planoDetails, planoIdList ] = await Promise.all( [
+
+      await planoService.aggregate( query ),
+      await planoService.find( { clientId: inputData.clientId,
+        storeId: { $in: storeDetails } }, { _id: 1 } ),
+    ] );
+
 
     if ( !planoDetails[0].data.length ) {
       return res.sendError( 'No data found', 204 );
     }
 
+
     let taskQuery = [
       {
         $match: {
-          planoId: { $in: planoDetails?.[0]?.planoList?.[0]?.idList },
+          planoId: { $in: planoIdList.map( ( ele ) => ele._id ) },
           isPlano: true,
           date_iso: { $lte: new Date( dayjs().format( 'YYYY-MM-DD' ) ) },
         },
@@ -3793,15 +3800,333 @@ export async function planoList( req, res ) {
       },
     ];
 
-    pendingDetails = await planoTaskComplianceService.aggregate( query );
+    pendingDetails = await planoTaskComplianceService.aggregate( taskQuery );
     let result = {
       data: planoDetails[0].data,
       count: planoDetails?.[0]?.count?.[0]?.total || 0,
-      pendingDetails: [ { ...pendingDetails?.[0], allStores: planoDetails?.[0]?.count?.[0]?.total || 0 } ],
+      pendingDetails: [ { ...pendingDetails?.[0], allStores: planoIdList?.length || 0 } ],
     };
     return res.sendSuccess( result );
   } catch ( e ) {
     logger.error( { functionName: 'planoList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function getTaskDetails( req, res ) {
+  try {
+    if ( !req.query.planoId ) {
+      return res.sendError( 'PlanoId is required', 400 );
+    }
+    let query = [
+      {
+        $match: {
+          planoId: new mongoose.Types.ObjectId( req.query.planoId ),
+          isPlano: true,
+          date_iso: { $lte: new Date( dayjs().format( 'YYYY-MM-DD' ) ) },
+        },
+      },
+      {
+        $group: {
+          _id: { type: '$planoType', floorId: '$floorId' },
+          dateString: { $last: '$date_string' },
+          checklistStatus: { $last: '$checklistStatus' },
+          taskId: { $last: '$_id' },
+          redoStatus: { $last: '$redoStatus' },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          taskStatus: {
+            $push: {
+              type: '$_id.type',
+              status: '$checklistStatus',
+              date: '$dateString',
+              floorId: '$_id.floorId',
+              redoStatus: '$redoStatus',
+            },
+          },
+          taskIds: { $push: '$taskId' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'planotaskcompliances',
+          let: {
+            task: '$taskIds',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: [ '$planoId', new mongoose.Types.ObjectId( req.query.planoId ) ] },
+                    { $in: [ '$taskId', '$$task' ] },
+                    { $eq: [ '$status', 'incomplete' ] },
+                  ],
+                },
+              },
+            },
+            { $sort: { _id: -1 } },
+            {
+              $set: {
+                hasPendingIssues: {
+                  $anyElementTrue: {
+                    $map: {
+                      input: {
+                        $reduce: {
+                          input: '$answers',
+                          initialValue: [],
+                          in: {
+                            $concatArrays: [
+                              '$$value',
+                              {
+                                $reduce: {
+                                  input: { $ifNull: [ '$$this.issues', [] ] },
+                                  initialValue: [],
+                                  in: {
+                                    $concatArrays: [
+                                      '$$value',
+                                      { $ifNull: [ '$$this.Details', [] ] },
+                                    ],
+                                  },
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      },
+                      as: 'detail',
+                      in: {
+                        $or: [
+                          { $eq: [ '$$detail.status', 'pending' ] },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '$floorId',
+                layoutCount: {
+                  $sum: { $cond: [ { $eq: [ '$type', 'layout' ] }, 1, 0 ] },
+                },
+                fixtureCount: {
+                  $sum: { $cond: [ { $eq: [ '$type', 'fixture' ] }, 1, 0 ] },
+                },
+                vmCount: {
+                  $sum: { $cond: [ { $eq: [ '$type', 'vm' ] }, 1, 0 ] },
+                },
+                layoutPending: {
+                  $sum: {
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'layout' ] }, '$hasPendingIssues' ] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                fixturePending: {
+                  $sum: {
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'fixture' ] }, '$hasPendingIssues' ] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                vmPending: {
+                  $sum: {
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'vm' ] }, '$hasPendingIssues' ] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                layoutCount: { $sum: '$layoutCount' },
+                fixtureCount: { $sum: '$fixtureCount' },
+                vmCount: { $sum: '$vmCount' },
+                completeLayout: {
+                  $sum: {
+                    $cond: {
+                      if: {
+                        $and: [
+                          { '$gt': [ '$layoutCount', 0 ] },
+                          { '$gt': [ '$layoutPending', 0 ] },
+                          { '$gt': [ '$fixtureCount', 0 ] },
+                          { '$gt': [ '$fixturePending', 0 ] },
+                          { '$gt': [ '$vmCount', 0 ] },
+                          { '$gt': [ '$fixturePending', 0 ] },
+                        ],
+                      },
+                      then: 1,
+                      else: 0,
+                    },
+                  },
+                },
+                layoutPending: { $sum: '$layoutPending' },
+                fixturePending: { $sum: '$fixturePending' },
+                vmPending: { $sum: '$vmPending' },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                layoutStatus: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $gt: [ '$layoutCount', 0 ] },
+                        { $eq: [ '$layoutPending', 0 ] },
+                      ],
+                    },
+                    then: 'complete',
+                    else: {
+                      $cond: {
+                        if: {
+                          $and: [
+                            {
+                              $gt: [ '$layoutCount', 0 ],
+                            },
+                            {
+                              $gt: [
+                                '$layoutPending',
+                                0,
+                              ],
+                            },
+                          ],
+                        },
+                        then: 'pending',
+                        else: '',
+                      },
+                    },
+                  },
+                },
+                fixtureStatus: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $gt: [ '$fixtureCount', 0 ] },
+                        {
+                          $eq: [ '$fixturePending', 0 ],
+                        },
+                      ],
+                    },
+                    then: 'complete',
+                    else: {
+                      $cond: {
+                        if: {
+                          $and: [
+                            {
+                              $gt: [
+                                '$fixtureCount',
+                                0,
+                              ],
+                            },
+                            {
+                              $gt: [
+                                '$fixturePending',
+                                0,
+                              ],
+                            },
+                          ],
+                        },
+                        then: 'pending',
+                        else: '',
+                      },
+                    },
+                  },
+                },
+                vmStatus: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $gt: [ '$vmCount', 0 ] },
+                        { $eq: [ '$vmPending', 0 ] },
+                      ],
+                    },
+                    then: 'complete',
+                    else: {
+                      $cond: {
+                        if: {
+                          $and: [
+                            { $gt: [ '$vmCount', 0 ] },
+                            { $gt: [ '$vmPending', 0 ] },
+                          ],
+                        },
+                        then: 'pending',
+                        else: '',
+                      },
+                    },
+                  },
+                },
+                layoutPending: 1,
+                fixturePending: 1,
+                vmPending: 1,
+                layoutCount: 1,
+                fixtureCount: 1,
+                vmCount: 1,
+                completeLayout: 1,
+              },
+            },
+          ],
+          as: 'taskDetails',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          taskStatus: {
+            $map: {
+              input: '$taskStatus',
+              as: 'task',
+              in: {
+                type: '$$task.type',
+                status: '$$task.status',
+                date: '$$task.date',
+                floorId: '$$task.floorId',
+                redoStatus: '$$task.redoStatus',
+                feedbackStatus: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $eq: [ '$$task.type', 'layout' ] },
+                        then: { $arrayElemAt: [ '$taskDetails.layoutStatus', 0 ] },
+                      },
+                      {
+                        case: { $eq: [ '$$task.type', 'fixture' ] },
+                        then: { $arrayElemAt: [ '$taskDetails.fixtureStatus', 0 ] },
+                      },
+                      {
+                        case: { $eq: [ '$$task.type', 'vm' ] },
+                        then: { $arrayElemAt: [ '$taskDetails.vmStatus', 0 ] },
+                      },
+                    ],
+                    default: '',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+    ];
+
+    let taskInfo = await planotaskService.aggregate( query );
+    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ele.feedbackStatus && ele.feedbackStatus != 'complete' ) || ele.status != 'submit' );
+    return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false } );
+  } catch ( e ) {
+    logger.error( { functionName: 'getTaskDetails', error: e } );
     return res.sendError( e, 500 );
   }
 }
