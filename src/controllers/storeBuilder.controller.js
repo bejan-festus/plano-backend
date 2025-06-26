@@ -3014,7 +3014,7 @@ export async function storeFixturesTaskv2( req, res ) {
                             const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
                               type: req.body?.type ? req.body.type : 'fixture', date_string: req.body.date,
-                            }, { status: 1, answers: 1, taskType: 1 }, { _id: -1 } );
+                            }, { status: 1, answers: 1, taskType: 1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3051,6 +3051,9 @@ export async function storeFixturesTaskv2( req, res ) {
                               );
                               if ( hasDisagree ) {
                                 redoCount++;
+                                disabled = false;
+                              }
+                              if ( compliance?.taskType == 'redo' ) {
                                 disabled = false;
                               }
                             }
@@ -3111,7 +3114,7 @@ export async function storeFixturesTaskv2( req, res ) {
                       const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
                         type: req.body?.type ? req.body.type : 'fixture', date_string: req.body.date,
-                      }, { status: 1, answers: 1, taskType: 1 }, { _id: -1 } );
+                      }, { status: 1, answers: 1, taskType: 1 } );
 
                       const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3148,6 +3151,9 @@ export async function storeFixturesTaskv2( req, res ) {
 
                         if ( hasDisagree ) {
                           redoCount++;
+                          disabled = false;
+                        }
+                        if ( compliance.taskType == 'redo' ) {
                           disabled = false;
                         }
                       }
@@ -3292,6 +3298,7 @@ export async function planoList( req, res ) {
                 dateString: { $last: '$date_string' },
                 checklistStatus: { $last: '$checklistStatus' },
                 taskId: { $last: '$_id' },
+                scheduleEndTime_iso: { $last: '$scheduleEndTime_iso' },
               },
             },
             {
@@ -3303,6 +3310,7 @@ export async function planoList( req, res ) {
                     status: '$checklistStatus',
                     date: '$dateString',
                     floorId: '$_id.floorId',
+                    endTime: '$scheduleEndTime_iso',
                   },
                 },
                 taskIds: { $push: '$taskId' },
@@ -3559,28 +3567,48 @@ export async function planoList( req, res ) {
         },
       } );
     }
-    if ( inputData?.filter?.taskPending?.length && inputData?.filter?.taskPending != 'all' ) {
+    if ( inputData?.filter?.taskPending?.length && inputData?.filter?.taskPending !== 'all' ) {
       let andQuery = [];
-      console.log( inputData.filter.taskPending );
-      if ( inputData.filter.taskPending == 'layout' ) {
+
+      if ( inputData.filter.taskPending === 'layout' ) {
         andQuery.push(
-            { 'planoTask.taskStatus.type': 'layout' },
-            { 'planoTask.taskStatus.status': 'submit' },
+            {
+              'planoTask.taskStatus': {
+                $elemMatch: {
+                  type: 'layout',
+                  status: 'submit',
+                },
+              },
+            },
             { 'taskDetails.layoutStatus': 'pending' },
         );
       }
-      if ( inputData.filter.taskPending == 'fixture' ) {
+
+      if ( inputData.filter.taskPending === 'fixture' ) {
         andQuery.push(
-            { 'planoTask.taskStatus.type': 'fixture' },
-            { 'planoTask.taskStatus.status': 'submit' },
+            {
+              'planoTask.taskStatus': {
+                $elemMatch: {
+                  type: 'fixture',
+                  status: 'submit',
+                },
+              },
+            },
             { 'taskDetails.fixtureStatus': 'pending' },
         );
       }
-      if ( inputData.filter.taskPending == 'vm' ) {
+
+      if ( inputData.filter.taskPending === 'vm' ) {
         andQuery.push(
-            { 'planoTask.taskStatus.type': 'vm' },
+            {
+              'planoTask.taskStatus': {
+                $elemMatch: {
+                  type: 'vm',
+                  status: 'submit',
+                },
+              },
+            },
             { 'taskDetails.vmStatus': 'pending' },
-            { 'planoTask.taskStatus.status': 'submit' },
         );
       }
 
@@ -3833,6 +3861,7 @@ export async function getTaskDetails( req, res ) {
           checklistStatus: { $last: '$checklistStatus' },
           taskId: { $last: '$_id' },
           redoStatus: { $last: '$redoStatus' },
+          scheduleEndTime_iso: { $last: '$scheduleEndTime_iso' },
         },
       },
       {
@@ -3845,6 +3874,7 @@ export async function getTaskDetails( req, res ) {
               date: '$dateString',
               floorId: '$_id.floorId',
               redoStatus: '$redoStatus',
+              endTime: '$scheduleEndTime_iso',
             },
           },
           taskIds: { $push: '$taskId' },
@@ -4095,6 +4125,7 @@ export async function getTaskDetails( req, res ) {
                 date: '$$task.date',
                 floorId: '$$task.floorId',
                 redoStatus: '$$task.redoStatus',
+                endTime: '$$task.endTime',
                 feedbackStatus: {
                   $switch: {
                     branches: [
@@ -4123,7 +4154,7 @@ export async function getTaskDetails( req, res ) {
     ];
 
     let taskInfo = await planotaskService.aggregate( query );
-    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ele.feedbackStatus && ele.feedbackStatus != 'complete' ) || ele.status != 'submit' );
+    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ele.feedbackStatus != 'complete' ) || ele.status != 'submit' ) && dayjs( ele.endTime ).format( 'YYYY-MM-DD' ) >= dayjs().format( 'YYYY-MM-DD' ) );
     return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false } );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
