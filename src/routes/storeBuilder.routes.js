@@ -44,9 +44,9 @@ storeBuilderRouter
     .post( '/checkPlanoExist', isAllowedSessionHandler, storeBuilderController.checkPlanoExist )
     .post( '/storeLayoutElements', isAllowedSessionHandler, storeBuilderController.storeLayoutElements )
     .post( '/qrScan', storeBuilderController.qrScan )
-    .post( '/storeFixturesV2', validate( validateDtos.storeList ), storeBuilderController.storeFixturesv2 )
-    .post( '/fixtureShelfDetailsv2', validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv2 )
-    .post( '/storeFixturesTaskv2', storeBuilderController.storeFixturesTaskv2 );
+    .post( '/storeFixturesV2', isAllowedSessionHandler, validate( validateDtos.storeList ), storeBuilderController.storeFixturesv2 )
+    .post( '/fixtureShelfDetailsv2', isAllowedSessionHandler, validate( validateDtos.fixtureShelfProduct ), storeBuilderController.fixtureShelfProductv2 )
+    .post( '/storeFixturesTaskv2', isAllowedSessionHandler, storeBuilderController.storeFixturesTaskv2 );
 
 storeBuilderRouter
     .post( '/planoList', isAllowedSessionHandler, storeBuilderController.planoList )
