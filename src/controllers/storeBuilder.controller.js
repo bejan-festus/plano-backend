@@ -2669,7 +2669,6 @@ export async function storeFixturesv2( req, res ) {
                         floorId: floor._id,
                         associatedElementType: element.elementType,
                         associatedElementNumber: element.elementNumber,
-                        fixtureType: 'wall',
                       }, { shelfcount: 0 }, { fixtureNumber: 1 } );
 
                       const fixturesWithStatus = await Promise.all(
@@ -2763,10 +2762,13 @@ export async function storeFixturesv2( req, res ) {
                     } ),
                 );
 
-                const centerFixtures = await storeFixtureService.find( {
-                  floorId: floor._id,
-                  fixtureType: 'floor',
-                } );
+                const centerFixtures = await storeFixtureService.find({
+                floorId: floor._id,
+                $and: [
+                  { associatedElementType: { $exists: false } },
+                  { associatedElementNumber: { $exists: false } }
+                ]
+              });
 
                 const centerFixturesWithStatus = await Promise.all(
                     centerFixtures.map( async ( fixture ) => {
@@ -2990,7 +2992,6 @@ export async function storeFixturesTaskv2( req, res ) {
                         floorId: floor._id,
                         associatedElementType: element.elementType,
                         associatedElementNumber: element.elementNumber,
-                        fixtureType: 'wall',
                       }, { shelfcount: 0 }, { fixtureNumber: 1 } );
 
                       const fixturesWithStatus = await Promise.all(
@@ -3087,7 +3088,10 @@ export async function storeFixturesTaskv2( req, res ) {
 
                 const centerFixtures = await storeFixtureService.find( {
                   floorId: floor._id,
-                  fixtureType: 'floor',
+                  $and: [
+                  { associatedElementType: { $exists: false } },
+                  { associatedElementNumber: { $exists: false } }
+                ]
                 } );
 
                 const centerFixturesWithStatus = await Promise.all(

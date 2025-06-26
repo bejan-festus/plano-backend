@@ -47,3 +47,7 @@ export async function upsertOne( query, record ) {
       { upsert: true, new: true },
   );
 }
+
+export async function updateMany( query, record ) {
+  return model.fixtureShelfModel.updateMany( query, { $set: record } );
+}
