@@ -26,7 +26,7 @@ export async function createTemplate( req, res ) {
         ( acc, ele ) => ele.trayRows ? acc + ( ele.trayRows * ele.productPerShelf ) : ( acc + ele.productPerShelf ),
         0,
     );
-    let templateId = await getTemplateId();
+    let templateId = await getTemplateId( getLibDetails.fixtureCategory, getLibDetails.fixtureWidth );
     let templateData = {
       clientId: inputData.clientId,
       fixtureLibraryId: inputData.fixtureLibraryId,
@@ -49,6 +49,7 @@ export async function createTemplate( req, res ) {
         value: 1220,
         unit: 'mm',
       },
+      templateIndex: parseInt( templateId.split( '-' )[1] ),
     };
     let fixtureData = await fixtureConfigService.create( templateData );
     return res.sendSuccess( { message: 'Fixture template created successfully', fixtureData } );
@@ -58,15 +59,11 @@ export async function createTemplate( req, res ) {
   }
 }
 
-async function getTemplateId() {
-  let templateId = 'Template01';
-  let fixtureTemplateData = await fixtureConfigService.find( { fixtureName: { $exists: true } }, { fixtureName: 1 } );
-  let fixtureData = fixtureTemplateData.map( ( ele ) => ele.fixtureName.split( '-' )[0] );
-  let count = 1;
-  while ( fixtureData.includes( templateId ) ) {
-    count = count + 1;
-    let countId = String( count ).padStart( 2, '0' );
-    templateId =`Template${countId}`;
+async function getTemplateId( name, width ) {
+  let templateId = 'Template-1';
+  let fixtureTemplateData = await fixtureConfigService.sortAndFindOne( { 'fixtureCategory': name, 'fixtureWidth.unit': width.unit, 'fixtureWidth.value': width.value }, { templateIndex: 1 }, { _id: -1 } );
+  if ( fixtureTemplateData.length ) {
+    templateId= `Template-${fixtureTemplateData[0].templateIndex + 1}`;
   }
   return templateId;
 }
