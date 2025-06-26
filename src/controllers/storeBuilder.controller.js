@@ -3307,6 +3307,15 @@ export async function planoList( req, res ) {
                     date: '$dateString',
                     floorId: '$_id.floorId',
                     endTime: '$scheduleEndTime_iso',
+                    breach: {
+                      $cond: {
+                        if: {
+                          $gte: [ '$scheduleEndTime_iso', new Date() ],
+                        },
+                        then: false,
+                        else: true,
+                      },
+                    },
                   },
                 },
                 taskIds: { $push: '$taskId' },
@@ -3564,50 +3573,54 @@ export async function planoList( req, res ) {
       } );
     }
     if ( inputData?.filter?.taskPending?.length && inputData?.filter?.taskPending !== 'all' ) {
-      let andQuery = [];
+      let andQuery = [ {
+        'planoTask.taskStatus': {
+          $elemMatch: {
+            type: inputData.filter.taskPending,
+            status: 'submit',
+          },
+        },
+      } ];
 
       if ( inputData.filter.taskPending === 'layout' ) {
         andQuery.push(
-            {
-              'planoTask.taskStatus': {
-                $elemMatch: {
-                  type: 'layout',
-                  status: 'submit',
-                },
-              },
-            },
             { 'taskDetails.layoutStatus': 'pending' },
         );
       }
 
       if ( inputData.filter.taskPending === 'fixture' ) {
         andQuery.push(
-            {
-              'planoTask.taskStatus': {
-                $elemMatch: {
-                  type: 'fixture',
-                  status: 'submit',
-                },
-              },
-            },
             { 'taskDetails.fixtureStatus': 'pending' },
         );
       }
 
       if ( inputData.filter.taskPending === 'vm' ) {
         andQuery.push(
-            {
-              'planoTask.taskStatus': {
-                $elemMatch: {
-                  type: 'vm',
-                  status: 'submit',
-                },
-              },
-            },
             { 'taskDetails.vmStatus': 'pending' },
         );
       }
 
+      query.push( {
+        $match: {
+          $and: andQuery,
+        },
+      } );
+    }
+
+    if ( inputData?.filter?.flag?.length ) {
+      let andQuery = [];
+      andQuery.push(
+          {
+            'planoTask.taskStatus': {
+              $elemMatch: {
+                type: { $in: inputData.filter.flag },
+                status: { $ne: 'submit' },
+                breach: true,
+              },
+            },
+          },
+          { 'taskDetails.layoutStatus': 'pending' },
+      );
       query.push( {
         $match: {
           $and: andQuery,
@@ -3869,6 +3882,15 @@ export async function getTaskDetails( req, res ) {
               floorId: '$_id.floorId',
               redoStatus: '$redoStatus',
               endTime: '$scheduleEndTime_iso',
+              breach: {
+                $cond: {
+                  if: {
+                    $gte: [ '$scheduleEndTime_iso', new Date() ],
+                  },
+                  then: false,
+                  else: true,
+                },
+              },
             },
           },
           taskIds: { $push: '$taskId' },
@@ -4120,6 +4142,7 @@ export async function getTaskDetails( req, res ) {
                 floorId: '$$task.floorId',
                 redoStatus: '$$task.redoStatus',
                 endTime: '$$task.endTime',
+                breach: '$$task.breach',
                 feedbackStatus: {
                   $switch: {
                     branches: [
@@ -4148,7 +4171,8 @@ export async function getTaskDetails( req, res ) {
     ];
 
     let taskInfo = await planotaskService.aggregate( query );
-    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ele.feedbackStatus != 'complete' ) || ele.status != 'submit' ) && dayjs( ele.endTime ).format( 'YYYY-MM-DD' ) >= dayjs().format( 'YYYY-MM-DD' ) );
+    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ele.feedbackStatus != 'complete' ) || ele.status != 'submit' ) && !ele?.breach );
+    console.log( disabledInfo );
     return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false } );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
