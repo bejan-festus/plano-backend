@@ -18,98 +18,93 @@ import mongoose from 'mongoose';
 import * as planoRevisionService from '../service/planoRevision.service.js';
 export async function getplanoFeedback( req, res ) {
   try {
-    let query = [];
+    const taskTypes = req.body.filterByTask && req.body.filterByTask.length > 0 ? req.body.filterByTask : [ 'layout', 'fixture', 'vm' ];
+    const filterByStatus = req.body.filterByStatus || [];
+    const filterByApprovalStatus = req.body.filterByApprovalStatus || [];
+    const resultMap = {};
+    const commentMap = {};
+    console.log( taskTypes );
+    await Promise.all(
+        taskTypes.map( async ( type, index ) => {
+          const pipeline = buildPipelineByType( type, req.body.planoId, req.body.floorId, filterByStatus, filterByApprovalStatus );
 
-    query.push( {
-      $match: {
-        planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-        floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-        type: 'layout',
-      },
-    },
-    {
-      $lookup: {
-        from: 'processedtasks',
-        let: { 'taskId': '$taskId' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: [ '$_id', '$$taskId' ] },
-                ],
-              },
-            },
-          },
-          {
-            $project: {
-              'userName': 1,
-              'createdAt': 1,
-              'createdByName': 1,
-              'submitTime_string': 1,
-            },
-          },
-        ],
-        as: 'taskData',
-      },
+          const data = await planoTaskService.aggregate( pipeline );
+          console.log( '-------', data );
+          resultMap[type] = data;
 
-    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: true } },
-    { $sort: { _id: -1 } },
+          const comments = await planoGlobalCommentService.find( {
+            planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+            floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+            taskType: type,
+          } );
+          commentMap[type] = comments;
+        } ),
     );
 
+    const response = {
+      layoutData: resultMap['layout'] || [],
+      fixtureData: resultMap['fixture'] || [],
+      VmData: resultMap['vm'] || [],
+      layoutComment: commentMap['layout'] || [],
+      fixtureComment: commentMap['fixture'] || [],
+      vmComment: commentMap['vm'] || [],
+    };
 
-    let findPlanoCompliance = await planoTaskService.aggregate( query );
-    let queryfixture = [];
-
-
-    queryfixture.push( {
-      $match: {
-        planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-        floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-        type: 'fixture',
-      },
+    res.sendSuccess( response );
+  } catch ( e ) {
+    logger.error( { functionName: 'getplanoFeedback', error: e, message: req.body } );
+    return res.sendError( e, 500 );
+  }
+}
+function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByApprovalStatus ) {
+  console.log( type, planoId, floorId, filterByStatus );
+  const matchStage = {
+    $match: {
+      planoId: new mongoose.Types.ObjectId( planoId ),
+      floorId: new mongoose.Types.ObjectId( floorId ),
+      type: type,
+      ...( filterByStatus?.length ? { status: { $in: filterByStatus } } : {} ),
     },
-    {
-      $lookup: {
-        from: 'processedtasks',
-        let: { 'taskId': '$taskId' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: [ '$_id', '$$taskId' ] },
-                  { $eq: [ '$checklistStatus', 'submit' ] },
-                ],
-              },
-            },
-          },
-          {
-            $project: {
-              'userName': 1,
-              'createdAt': 1,
-              'createdByName': 1,
-              'submitTime_string': 1,
-            },
-          },
-        ],
-        as: 'taskData',
-      },
+  };
 
-    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: false } },
+  const taskLookup = {
+    $lookup: {
+      from: 'processedtasks',
+      let: { taskId: '$taskId' },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: [ '$_id', '$$taskId' ] },
+                { $eq: [ '$checklistStatus', 'submit' ] },
+              ],
+            },
+          },
+        },
+        {
+          $project: {
+            userName: 1,
+            createdAt: 1,
+            createdByName: 1,
+            submitTime_string: 1,
+          },
+        },
+      ],
+      as: 'taskData',
+    },
+  };
+
+  const unwindTask = { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: false } };
+
+  const commonLookups = type === 'layout' ? [] : [
     {
       $lookup: {
         from: 'storefixtures',
-        let: { 'fixtureId': '$fixtureId' },
+        let: { fixtureId: '$fixtureId' },
         pipeline: [
           {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: [ '$_id', '$$fixtureId' ] },
-                ],
-              },
-            },
+            $match: { $expr: { $eq: [ '$_id', '$$fixtureId' ] } },
           },
         ],
         as: 'storeFixtureData',
@@ -121,16 +116,10 @@ export async function getplanoFeedback( req, res ) {
     {
       $lookup: {
         from: 'fixtureconfigs',
-        let: { 'fixtureConfigId': '$storeFixtureData.fixtureConfigId' },
+        let: { fixtureConfigId: '$storeFixtureData.fixtureConfigId' },
         pipeline: [
           {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: [ '$_id', '$$fixtureConfigId' ] },
-                ],
-              },
-            },
+            $match: { $expr: { $eq: [ '$_id', '$$fixtureConfigId' ] } },
           },
         ],
         as: 'FixtureData',
@@ -139,111 +128,22 @@ export async function getplanoFeedback( req, res ) {
     {
       $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true },
     },
-    );
+  ];
 
-
-    let findfixtureCompliance = await planoTaskService.aggregate( queryfixture );
-    let queryVm = [];
-
-
-    queryVm.push( {
-      $match: {
-        planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-        floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-        type: 'vm',
-      },
-    },
-    {
-      $lookup: {
-        from: 'processedtasks',
-        let: { 'taskId': '$taskId' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: [ '$_id', '$$taskId' ] },
-                  { $eq: [ '$checklistStatus', 'submit' ] },
-                ],
-              },
-            },
-          },
-          {
-            $project: {
-              'userName': 1,
-              'createdAt': 1,
-              'createdByName': 1,
-              'submitTime_string': 1,
-            },
-          },
-        ],
-        as: 'taskData',
-      },
-
-    }, { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: false } },
-    {
-      $lookup: {
-        from: 'storefixtures',
-        let: { 'fixtureId': '$fixtureId' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: [ '$_id', '$$fixtureId' ] },
-                ],
-              },
-            },
-          },
-        ],
-        as: 'storeFixtureData',
-      },
-    },
-    {
-      $unwind: { path: '$storeFixtureData', preserveNullAndEmptyArrays: true },
-    },
-    {
-      $lookup: {
-        from: 'fixtureconfigs',
-        let: { 'fixtureConfigId': '$storeFixtureData.fixtureConfigId' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: [ '$_id', '$$fixtureConfigId' ] },
-                ],
-              },
-            },
-          },
-        ],
-        as: 'FixtureData',
-      },
-    },
-    {
-      $unwind: { path: '$FixtureData', preserveNullAndEmptyArrays: true },
-    },
+  const vmStages = type === 'vm' ? [
     {
       $unwind: { path: '$FixtureData.vmConfig', preserveNullAndEmptyArrays: true },
     },
     {
       $lookup: {
         from: 'planovmdetails',
-        let: { 'vmId': '$FixtureData.vmConfig.vmId' },
+        let: { vmId: '$FixtureData.vmConfig.vmId' },
         pipeline: [
           {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: [ '$_id', '$$vmId' ] },
-                ],
-              },
-            },
+            $match: { $expr: { $eq: [ '$_id', '$$vmId' ] } },
           },
           {
-            $project: {
-              vmName: 1,
-            },
+            $project: { vmName: 1 },
           },
         ],
         as: 'vmDetails',
@@ -253,59 +153,10 @@ export async function getplanoFeedback( req, res ) {
       $unwind: { path: '$vmDetails', preserveNullAndEmptyArrays: true },
     },
     {
-      $project: {
-        '_id': 1,
-        'type': 1,
-        'type': 1,
-        'taskId': 1,
-        'taskData': 1,
-        'answers': 1,
-        'createdAt': 1,
-        'date_iso': 1,
-        'date_string': 1,
-        'fixtureId': 1,
-        'floorId': 1,
-        'planoId': 1,
-        'status': 1,
-        'taskType': 1,
-        'FixtureData': 1,
-        'FixtureData': {
-          _id: '$FixtureData._id',
-          clientId: '$FixtureData.clientId',
-          clientId: '$FixtureData.clientId',
-          fixtureCapacity: '$FixtureData.fixtureCapacity',
-          fixtureCategory: '$FixtureData.fixtureCategory',
-          fixtureLength: '$FixtureData.fixtureLength',
-          fixtureLibraryId: '$FixtureData.fixtureLibraryId',
-          fixtureName: '$FixtureData.fixtureName',
-          fixtureStaticLength: '$FixtureData.fixtureStaticLength',
-          fixtureStaticWidth: '$FixtureData.fixtureStaticWidth',
-          fixtureType: '$FixtureData.fixtureType',
-          fixtureWidth: '$FixtureData.fixtureWidth',
-          footer: '$FixtureData.footer',
-          header: '$FixtureData.header',
-          isBodyEnabled: '$FixtureData.isBodyEnabled',
-          productBrandName: '$FixtureData.productBrandName',
-          productCategory: '$FixtureData.productCategory',
-          productResolutionLevel: '$FixtureData.productResolutionLevel',
-          productSubCategory: '$FixtureData.productSubCategory',
-          shelfConfig: '$FixtureData.shelfConfig',
-          status: '$FixtureData.status',
-          templateIndex: '$FixtureData.templateIndex',
-          shelfConfig: '$FixtureData.shelfConfig',
-          vmConfig: {
-            vmName: '$vmDetails.vmName',
-            endYPosition: '$FixtureData.vmConfig.endYPosition',
-            startYPosition: '$FixtureData.vmConfig.startYPosition',
-            vmId: '$FixtureData.vmConfig.vmId',
-            xZone: '$FixtureData.vmConfig.xZone',
-            yZone: '$FixtureData.vmConfig.yZone',
-            position: '$FixtureData.vmConfig.position',
-          },
-        },
+      $set: {
+        'FixtureData.vmConfig.vmName': '$vmDetails.vmName',
       },
     },
-
     {
       $group: {
         _id: '$_id',
@@ -334,20 +185,7 @@ export async function getplanoFeedback( req, res ) {
       },
     },
     {
-      $project: {
-        _id: 1,
-        answers: 1,
-        createdAt: 1,
-        date_iso: 1,
-        date_string: 1,
-        fixtureId: 1,
-        floorId: 1,
-        planoId: 1,
-        status: 1,
-        taskType: 1,
-        type: 1,
-        taskId: 1,
-        taskData: 1,
+      $set: {
         FixtureData: {
           $mergeObjects: [
             '$baseFixtureData',
@@ -370,39 +208,114 @@ export async function getplanoFeedback( req, res ) {
         },
       },
     },
-    {
-      $sort: { _id: -1 },
-    },
+  ] : [];
+
+
+  let pipeline = [
+    matchStage,
+    taskLookup,
+    unwindTask,
+    ...commonLookups,
+    ...vmStages,
+    { $sort: { _id: -1 } },
+  ];
+  if ( filterByApprovalStatus&&filterByApprovalStatus!='' ) {
+    let filterByApprovalCond = { $eq: filterByApprovalStatus };
+    if ( filterByApprovalStatus !='pending' ) {
+      filterByApprovalCond = { $ne: 'pending' };
+    }
+    console.log( '*********************' );
+    pipeline = [];
+    pipeline.push( matchStage );
+    pipeline.push(
+        { $unwind: '$answers' },
+        { $unwind: '$answers.issues' },
+        { $unwind: '$answers.issues.Details' },
+        {
+          $match: {
+            'answers.issues.Details.status': filterByApprovalCond,
+          },
+        },
+        {
+          $group: {
+            _id: '$_id',
+            doc: { $first: '$$ROOT' },
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: [ '$doc', { answers: '$doc.originalAnswers' } ],
+            },
+          },
+        },
+        {
+          $project: {
+            originalAnswers: 0, // remove the temp field
+          },
+        },
+        {
+          $addFields: {
+            answers: {
+              $map: {
+                input: {
+                  $cond: [
+                    { $isArray: '$answers' },
+                    '$answers',
+                    { $cond: [ { $gt: [ { $type: '$answers' }, 'missing' ] }, [ '$answers' ], [] ] },
+                  ],
+                },
+                as: 'ans',
+                in: {
+                  $mergeObjects: [
+                    '$$ans',
+                    {
+                      issues: {
+                        $map: {
+                          input: {
+                            $cond: [
+                              { $isArray: '$$ans.issues' },
+                              '$$ans.issues',
+                              { $cond: [ { $gt: [ { $type: '$$ans.issues' }, 'missing' ] }, [ '$$ans.issues' ], [] ] },
+                            ],
+                          },
+                          as: 'issue',
+                          in: {
+                            $mergeObjects: [
+                              '$$issue',
+                              {
+                                Details: {
+                                  $cond: [
+                                    { $isArray: '$$issue.Details' },
+                                    '$$issue.Details',
+                                    { $cond: [ { $gt: [ { $type: '$$issue.Details' }, 'missing' ] }, [ '$$issue.Details' ], [] ] },
+                                  ],
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
 
 
     );
-
-
-    let findvmCompliance = await planoTaskService.aggregate( queryVm );
-
-
-    let layoutComment = await planoGlobalCommentService.find( {
-      planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-      floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-      taskType: 'layout',
-    } );
-    let fixtureComment = await planoGlobalCommentService.find( {
-      planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-      floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-      taskType: 'fixture',
-    } );
-    let vmComment = await planoGlobalCommentService.find( {
-      planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-      floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-      taskType: 'vm',
-    } );
-
-    res.sendSuccess( { layoutData: findPlanoCompliance, layoutComment: layoutComment, fixtureComment: fixtureComment, vmComment: vmComment, fixtureData: findfixtureCompliance, VmData: findvmCompliance } );
-  } catch ( e ) {
-    logger.error( { functionName: 'getplanoFeedback', error: e, message: req.body } );
-    return res.sendError( e, 500 );
+    pipeline.push( taskLookup );
+    pipeline.push( unwindTask );
+    pipeline.push( ...commonLookups );
+    pipeline.push( ...vmStages );
   }
+
+
+  return pipeline;
 }
+
 export async function getStoreFixturesfeedback( req, res ) {
   try {
     let query = [];
@@ -673,7 +586,7 @@ export async function updateFixtureStatus( req, res ) {
               'status': 'complete',
             },
         );
-        if ( req.body.taskType==='layout' ) {
+        if ( req.body.taskType === 'layout' ) {
           await planoTaskService.updateMany(
               {
                 planoId: new mongoose.Types.ObjectId( req.body.planoId ),
