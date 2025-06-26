@@ -77,7 +77,17 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
             $expr: {
               $and: [
                 { $eq: [ '$_id', '$$taskId' ] },
-                { $eq: [ '$checklistStatus', 'submit' ] },
+                {
+                  $or: [
+                    { $eq: [ '$redoStatus', true ] },
+                    {
+                      $and: [
+                        { $eq: [ '$redoStatus', false ] },
+                        { $eq: [ '$checklistStatus', 'submit' ] },
+                      ],
+                    },
+                  ],
+                },
               ],
             },
           },
@@ -219,9 +229,9 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
     ...vmStages,
     { $sort: { _id: -1 } },
   ];
-  if ( filterByApprovalStatus&&filterByApprovalStatus!='' ) {
+  if ( filterByApprovalStatus && filterByApprovalStatus != '' ) {
     let filterByApprovalCond = { $eq: filterByApprovalStatus };
-    if ( filterByApprovalStatus !='pending' ) {
+    if ( filterByApprovalStatus != 'pending' ) {
       filterByApprovalCond = { $ne: 'pending' };
     }
     console.log( '*********************' );
