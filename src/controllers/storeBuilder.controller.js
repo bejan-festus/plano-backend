@@ -3631,9 +3631,7 @@ export async function planoList( req, res ) {
         orQuery.push( { $and: [ { 'taskDetails.vmStatus': 'pending' }, { 'planoTask.taskStatus.type': 'vm' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
       }
       if ( inputData.filter.status.includes( 'completed' ) ) {
-        orQuery.push( { $and: [ { 'taskDetails.layoutStatus': 'complete' }, { 'planoTask.taskStatus.type': 'layout' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
-        orQuery.push( { $and: [ { 'taskDetails.fixtureStatus': 'complete' }, { 'planoTask.taskStatus.type': 'fixture' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
-        orQuery.push( { $and: [ { 'taskDetails.vmStatus': 'complete' }, { 'planoTask.taskStatus.type': 'vm' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
+        orQuery.push( { $and: [ { 'taskDetails.layoutStatus': 'complete' }, { 'taskDetails.fixtureStatus': 'complete' }, { 'taskDetails.vmStatus': 'complete' } ] } );
       }
       if ( inputData.filter.status.includes( 'yetToAssign' ) ) {
         orQuery.push( { $expr: { $eq: [ { $size: '$planoTask' }, 0 ] } } );
