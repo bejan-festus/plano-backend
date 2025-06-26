@@ -3012,7 +3012,7 @@ export async function storeFixturesTaskv2( req, res ) {
 
                             const compliance = await planoTaskComplianceService.findOne( {
                               fixtureId: fixture._id,
-                              type: req.body?.type ? req.body.type : 'fixture',
+                              type: req.body?.type ? req.body.type : 'fixture', date_string: req.body.date,
                             }, { status: 1, answers: 1, taskType: 1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
@@ -3048,8 +3048,11 @@ export async function storeFixturesTaskv2( req, res ) {
                                   issue?.Details?.some( ( detail ) => detail.status === 'disagree' ),
                                 ),
                               );
-                              if ( hasDisagree || compliance?.taskType == 'redo' ) {
+                              if ( hasDisagree ) {
                                 redoCount++;
+                                disabled = false;
+                              }
+                              if ( compliance?.taskType == 'redo' ) {
                                 disabled = false;
                               }
                             }
@@ -3106,7 +3109,7 @@ export async function storeFixturesTaskv2( req, res ) {
 
                       const compliance = await planoTaskComplianceService.findOne( {
                         fixtureId: fixture._id,
-                        type: req.body?.type ? req.body.type : 'fixture',
+                        type: req.body?.type ? req.body.type : 'fixture', date_string: req.body.date,
                       }, { status: 1, answers: 1, taskType: 1 } );
 
                       const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
@@ -3142,8 +3145,11 @@ export async function storeFixturesTaskv2( req, res ) {
                           ),
                         );
 
-                        if ( hasDisagree || compliance.taskType == 'redo' ) {
+                        if ( hasDisagree ) {
                           redoCount++;
+                          disabled = false;
+                        }
+                        if ( compliance.taskType == 'redo' ) {
                           disabled = false;
                         }
                       }
@@ -3557,27 +3563,47 @@ export async function planoList( req, res ) {
         },
       } );
     }
-    if ( inputData?.filter?.taskPending?.length && inputData?.filter?.taskPending != 'all' ) {
+    if ( inputData?.filter?.taskPending?.length && inputData?.filter?.taskPending !== 'all' ) {
       let andQuery = [];
 
-      if ( inputData.filter.taskPending == 'layout' ) {
+      if ( inputData.filter.taskPending === 'layout' ) {
         andQuery.push(
-            { 'planoTask.taskStatus.type': 'layout' },
-            { 'planoTask.taskStatus.status': 'submit' },
+            {
+              'planoTask.taskStatus': {
+                $elemMatch: {
+                  type: 'layout',
+                  status: 'submit',
+                },
+              },
+            },
             { 'taskDetails.layoutStatus': 'pending' },
         );
       }
-      if ( inputData.filter.taskPending == 'fixture' ) {
+
+      if ( inputData.filter.taskPending === 'fixture' ) {
         andQuery.push(
-            { 'planoTask.taskStatus.type': 'fixture' },
-            { 'planoTask.taskStatus.status': 'submit' },
+            {
+              'planoTask.taskStatus': {
+                $elemMatch: {
+                  type: 'fixture',
+                  status: 'submit',
+                },
+              },
+            },
             { 'taskDetails.fixtureStatus': 'pending' },
         );
       }
-      if ( inputData.filter.taskPending == 'vm' ) {
+
+      if ( inputData.filter.taskPending === 'vm' ) {
         andQuery.push(
-            { 'planoTask.taskStatus.type': 'vm' },
-            { 'planoTask.taskStatus.status': 'submit' },
+            {
+              'planoTask.taskStatus': {
+                $elemMatch: {
+                  type: 'vm',
+                  status: 'submit',
+                },
+              },
+            },
             { 'taskDetails.vmStatus': 'pending' },
         );
       }
