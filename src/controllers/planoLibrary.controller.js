@@ -77,7 +77,7 @@ export async function fixtureBulkUpload( req, res ) {
       let FixLibCode = await getMaxFixtureLibCode();
       groupedData[ele].fixtureLibCode = FixLibCode;
       // fixtureData.push( groupedData[ele] );
-      await planoLibraryService.findOneAndUpdate( { 'fixtureCategory': groupedData[ele].fixtureCategory, 'fixtureWidth.value': groupedData[ele].fixtureWidth.value, 'fixtureWidth.unit': groupedData[ele].fixtureWidth.unit }, groupedData[ele] );
+      await planoLibraryService.upsertOne( { 'fixtureCategory': groupedData[ele].fixtureCategory, 'fixtureWidth.value': groupedData[ele].fixtureWidth.value, 'fixtureWidth.unit': groupedData[ele].fixtureWidth.unit }, groupedData[ele] );
       // }
     }
     // let deleteList = inputData.deleteFixtureList.map( ( ele ) => new ObjectId( ele ) );
