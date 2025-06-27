@@ -4183,3 +4183,16 @@ export async function getTaskDetails( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+
+export async function getPlanoUser( req, res ) {
+  try {
+    let userList = await planoStaticData.findOne( { type: 'user' }, { data: 1 } );
+    if ( !userList?.data?.includes( req.user.email ) ) {
+      return res.sendSuccess( 'Unauthorized' );
+    }
+    return res.sendSuccess( 'Authorized' );
+  } catch ( e ) {
+    logger.error( { functionName: 'getPlanoUser', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
