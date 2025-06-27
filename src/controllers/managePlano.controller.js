@@ -1,7 +1,7 @@
 import * as floorService from '../service/storeBuilder.service.js';
 import { logger } from 'tango-app-api-middleware';
 // import * as storeService from '../service/store.service.js';
-// import * as planoService from '../service/planogram.service.js';
+import * as planoService from '../service/planogram.service.js';
 import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as fixtureShelfService from '../service/fixtureShelf.service.js';
 // import * as planoProductService from '../service/planoProduct.service.js';
@@ -634,8 +634,23 @@ export async function updateFixtureStatus( req, res ) {
             { 'iss._id': new mongoose.Types.ObjectId( req.body.issueId ) },
           ] );
     }
+    let vmTask = await planoTaskService.find(
+        {
+          planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+          floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+          type: 'vm',
+        },
 
-
+    );
+    let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
+    if ( allTaskDone.length === 0 ) {
+      await planoService.updateOne(
+          {
+            _id: new mongoose.Types.ObjectId( req.body.planoId ),
+          },
+          { planoProgress: 100 },
+      );
+    }
     res.sendSuccess( 'updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateFixtureStatus', error: e } );
