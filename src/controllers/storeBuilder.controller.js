@@ -3053,9 +3053,9 @@ export async function storeFixturesTaskv2( req, res ) {
                                 redoCount++;
                                 disabled = false;
                               }
-                              if ( compliance?.taskType == 'redo' ) {
-                                disabled = false;
-                              }
+                            }
+                            if ( compliance?.taskType == 'redo' ) {
+                              disabled = false;
                             }
 
                             return {
@@ -3153,9 +3153,9 @@ export async function storeFixturesTaskv2( req, res ) {
                           redoCount++;
                           disabled = false;
                         }
-                        if ( compliance.taskType == 'redo' ) {
-                          disabled = false;
-                        }
+                      }
+                      if ( compliance?.taskType == 'redo' ) {
+                        disabled = false;
                       }
 
                       return {
