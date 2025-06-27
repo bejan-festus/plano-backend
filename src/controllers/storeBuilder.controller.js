@@ -3053,9 +3053,9 @@ export async function storeFixturesTaskv2( req, res ) {
                                 redoCount++;
                                 disabled = false;
                               }
-                              if ( compliance?.taskType == 'redo' ) {
-                                disabled = false;
-                              }
+                            }
+                            if ( compliance?.taskType == 'redo' ) {
+                              disabled = false;
                             }
 
                             return {
@@ -3153,9 +3153,9 @@ export async function storeFixturesTaskv2( req, res ) {
                           redoCount++;
                           disabled = false;
                         }
-                        if ( compliance.taskType == 'redo' ) {
-                          disabled = false;
-                        }
+                      }
+                      if ( compliance?.taskType == 'redo' ) {
+                        disabled = false;
                       }
 
                       return {
@@ -4180,6 +4180,19 @@ export async function getTaskDetails( req, res ) {
     return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false } );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function getPlanoUser( req, res ) {
+  try {
+    let userList = await planoStaticData.findOne( { type: 'user' }, { data: 1 } );
+    if ( !userList?.data?.includes( req.user.email ) ) {
+      return res.sendSuccess( 'Unauthorized' );
+    }
+    return res.sendSuccess( 'Authorized' );
+  } catch ( e ) {
+    logger.error( { functionName: 'getPlanoUser', error: e } );
     return res.sendError( e, 500 );
   }
 }
