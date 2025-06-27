@@ -50,4 +50,5 @@ storeBuilderRouter
 
 storeBuilderRouter
     .post( '/planoList', isAllowedSessionHandler, storeBuilderController.planoList )
-    .get( '/taskDetails', isAllowedSessionHandler, storeBuilderController.getTaskDetails );
+    .get( '/taskDetails', isAllowedSessionHandler, storeBuilderController.getTaskDetails )
+    .get( '/getPlanoUser', isAllowedSessionHandler, storeBuilderController.getPlanoUser );
