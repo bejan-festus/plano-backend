@@ -293,8 +293,6 @@ export async function createTask( req, res ) {
               for ( let j=0; j<req.body.days; j++ ) {
                 let planoProgress = req.body.checkListName == 'Fixture Verification' ? 50 : req.body.checkListName == 'VM Verification' ? 75 : 25;
                 if ( req.body?.checkListName && req.body.checkListName == 'Layout Verification' ) {
-                  let taskIdList = await planoTaskService.find( { planoId: planoDetails?._id, floorId: taskData?.floorId } );
-                  taskIdList = taskIdList.map( ( ele ) => ele.taskId );
                   await planoTaskService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId } );
                   planoProgress = 25;
                   await processedService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId, isPlano: true } );
