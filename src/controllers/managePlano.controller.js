@@ -648,7 +648,7 @@ export async function updateFixtureStatus( req, res ) {
           {
             _id: new mongoose.Types.ObjectId( req.body.planoId ),
           },
-          { planoProgress: 100 },
+          { $set: { planoProgress: 100 } },
       );
     }
     res.sendSuccess( 'updated successfully' );
