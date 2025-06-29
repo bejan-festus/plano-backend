@@ -290,14 +290,14 @@ export async function createTask( req, res ) {
               taskData.userName = userDetails.userName;
               taskData.userEmail = userDetails.email;
               taskData.planoId = planoDetails?._id;
+              let planoProgress = req.body.checkListName == 'Fixture Verification' ? 50 : req.body.checkListName == 'VM Verification' ? 75 : 25;
+              if ( req.body?.checkListName && req.body.checkListName == 'Layout Verification' ) {
+                await planoTaskService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId } );
+                planoProgress = 25;
+                await processedService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId, isPlano: true } );
+              }
+              await planoService.updateOne( { _id: planoDetails?._id }, { $set: { planoProgress } } );
               for ( let j=0; j<req.body.days; j++ ) {
-                let planoProgress = req.body.checkListName == 'Fixture Verification' ? 50 : req.body.checkListName == 'VM Verification' ? 75 : 25;
-                if ( req.body?.checkListName && req.body.checkListName == 'Layout Verification' ) {
-                  await planoTaskService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId } );
-                  planoProgress = 25;
-                  await processedService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId, isPlano: true } );
-                }
-                await planoService.updateOne( { _id: planoDetails?._id }, { $set: { planoProgress } } );
                 let currDate = dayjs().add( j, 'day' );
                 let time = '12:00 AM';
                 if ( currDate.format( 'YYYY-MM-DD' ) == dayjs().format( 'YYYY-MM-DD' ) ) {
