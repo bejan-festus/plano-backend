@@ -453,6 +453,12 @@ export async function getTemplateList( req, res ) {
       count: fixtureDetails[0].count[0].total,
       data: fixtureDetails[0].templateData,
     };
+
+    result.data.forEach( ( ele ) => {
+      ele.productBrandName = [ ...new Set( ele.productBrandName.map( ( product ) => product ) ) ];
+      ele.productCategory = [ ...new Set( ele.productCategory.map( ( product ) => product ) ) ];
+      ele.productSubCategory = [ ...new Set( ele.productSubCategory.map( ( product ) => product ) ) ];
+    } );
     return res.sendSuccess( result );
   } catch ( e ) {
     console.log( e );
