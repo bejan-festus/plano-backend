@@ -2655,7 +2655,7 @@ export async function storeFixturesv2( req, res ) {
         planograms.map( async ( planogram ) => {
           const floors = await storeBuilderService.find(
               { planoId: planogram._id },
-              { floorName: 1, layoutPolygon: 1, planoId: 1 },
+              { floorName: 1, layoutPolygon: 1, planoId: 1, isEdited: 1 },
           );
 
           const floorsWithFixtures = await Promise.all(
@@ -2669,7 +2669,7 @@ export async function storeFixturesv2( req, res ) {
                         floorId: floor._id,
                         associatedElementType: element.elementType,
                         associatedElementNumber: element.elementNumber,
-                      }, { shelfcount: 0 }, { associatedElementfixtureNumber: 1 } );
+                      }, { shelfcount: 0 }, { associatedElementFixtureNumber: 1 } );
 
                       const fixturesWithStatus = await Promise.all(
                           fixtures.map( async ( fixture ) => {
@@ -2768,7 +2768,7 @@ export async function storeFixturesv2( req, res ) {
                     { associatedElementType: { $exists: false } },
                     { associatedElementNumber: { $exists: false } },
                   ],
-                }, { shelfcount: 0 }, { associatedElementfixtureNumber: 1 } );
+                }, { shelfcount: 0 }, { associatedElementFixtureNumber: 1 } );
 
 
                 const centerFixturesWithStatus = await Promise.all(
@@ -2978,7 +2978,7 @@ export async function storeFixturesTaskv2( req, res ) {
         planograms.map( async ( planogram ) => {
           const floors = await storeBuilderService.find(
               { planoId: planogram._id },
-              { floorName: 1, layoutPolygon: 1, planoId: 1 },
+              { floorName: 1, layoutPolygon: 1, planoId: 1, isEdited: 1 },
           );
 
           const floorsWithFixtures = await Promise.all(
@@ -2993,7 +2993,7 @@ export async function storeFixturesTaskv2( req, res ) {
                         floorId: floor._id,
                         associatedElementType: element.elementType,
                         associatedElementNumber: element.elementNumber,
-                      }, { shelfcount: 0 }, { fixtureNumber: 1 } );
+                      }, { shelfcount: 0 }, { associatedElementFixtureNumber: 1 } );
 
                       const fixturesWithStatus = await Promise.all(
                           fixtures.map( async ( fixture ) => {
@@ -3087,13 +3087,13 @@ export async function storeFixturesTaskv2( req, res ) {
                     } ),
                 );
 
-                const centerFixtures = await storeFixtureService.find( {
+                const centerFixtures = await storeFixtureService.findAndSort( {
                   floorId: floor._id,
                   $and: [
                     { associatedElementType: { $exists: false } },
                     { associatedElementNumber: { $exists: false } },
                   ],
-                } );
+                }, { shelfcount: 0 }, { associatedElementFixtureNumber: 1 } );
 
                 const centerFixturesWithStatus = await Promise.all(
                     centerFixtures.map( async ( fixture ) => {
@@ -3162,7 +3162,7 @@ export async function storeFixturesTaskv2( req, res ) {
                       return {
                         ...fixture.toObject(),
                         status: compliance?.status ? compliance.status : '',
-                        shelfCount: shelves.shelves,
+                        shelfCount: shelves.length,
                         productCount: productCount,
                         disabled: req?.body?.redo ? disabled : false,
                         vmCount: vmCount,

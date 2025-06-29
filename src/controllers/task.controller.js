@@ -15,6 +15,7 @@ import mongoose from 'mongoose';
 import * as floorService from '../service/storeBuilder.service.js';
 import * as planoStaticService from '../service/planoStaticData.service.js';
 import * as assignService from '../service/assignService.service.js';
+import * as storeBuilderService from '../service/storeBuilder.service.js';
 
 
 dayjs.extend( timeZone );
@@ -112,6 +113,9 @@ async function createUser( data ) {
 
 export async function createTask( req, res ) {
   try {
+    if ( req.body?.floorId ) {
+      await storeBuilderService.updateOne( { _id: new mongoose.Types.ObjectId( req.body?.floorId ) }, { isEdited: false } );
+    }
     let scheduleEndTime = '11:59 PM';
     if ( req.body?.redo ) {
       if ( !req.body.taskId ) {

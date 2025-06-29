@@ -8593,6 +8593,7 @@ export async function migrateCrestv1( req, res ) {
                 vmName: vm.name + ' - 1',
                 vmHeight: configData1.vmHeightmm,
                 vmWidth: configData1.vmWidthmm,
+                ...( vm?.preview_image_url && { preview_image_url: vm?.preview_image_url } ),
               },
               {
                 startYPosition: configData2.startShelf,
@@ -8602,11 +8603,39 @@ export async function migrateCrestv1( req, res ) {
                 vmName: vm.name + ' - 2',
                 vmHeight: configData2.vmHeightmm,
                 vmWidth: configData2.vmWidthmm,
+                ...( vm?.preview_image_url2 && { preview_image_url: vm?.preview_image_url2 } ),
               },
             ];
           } );
 
           const vmTemplate = await Promise.all( vmConfig.map( async ( vmTemplate, k ) => {
+            let attachmentId = '';
+            let imgPath = '';
+            let imageMeta = null;
+            if ( vmTemplate?.preview_image_url ) {
+              const parsedUrl = new URL( vmTemplate.preview_image_url );
+              attachmentId = parsedUrl.searchParams.get( 'attachment_id' );
+
+              const isVmImageExist = await planoVmService.findOne( { crestImageId: attachmentId } );
+
+              if ( !isVmImageExist ) {
+                const vmImageData = await fetchVmImage( attachmentId );
+
+                imageMeta = await getImageMetadata( vmImageData );
+
+                const params = {
+                  Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
+                  Key: `crestVms/`,
+                  fileName: `${attachmentId}.${imageMeta.fileExtension}`,
+                  ContentType: imageMeta.contentType,
+                  body: vmImageData,
+                };
+
+                const imgUpload = await fileUpload( params );
+
+                imgPath = imgUpload.Key;
+              }
+            }
             const vmInsertData = {
               clientId: '11',
               vmName: vmTemplate.vmName,
@@ -8622,6 +8651,11 @@ export async function migrateCrestv1( req, res ) {
               vmBrand: vmTemplate.vmBrand,
               vmType: 'LKVM',
             };
+
+            if ( attachmentId && imgPath ) {
+              vmInsertData.crestImageId = attachmentId;
+              vmInsertData.vmImageUrl = imgPath;
+            }
 
             const vmIdentifier = `vm${k+1}=${vmTemplate.vmName}+${vmTemplate.vmHeight}+${vmTemplate.vmWidth}+${vmTemplate.startYPosition}+${vmTemplate.endYPosition}+${vmTemplate.xZone}`;
 
