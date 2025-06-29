@@ -2669,7 +2669,7 @@ export async function storeFixturesv2( req, res ) {
                         floorId: floor._id,
                         associatedElementType: element.elementType,
                         associatedElementNumber: element.elementNumber,
-                      }, { shelfcount: 0 }, { fixtureNumber: 1 } );
+                      }, { shelfcount: 0 }, { associatedElementfixtureNumber: 1 } );
 
                       const fixturesWithStatus = await Promise.all(
                           fixtures.map( async ( fixture ) => {
@@ -2762,13 +2762,14 @@ export async function storeFixturesv2( req, res ) {
                     } ),
                 );
 
-                const centerFixtures = await storeFixtureService.find( {
+                const centerFixtures = await storeFixtureService.findAndSort( {
                   floorId: floor._id,
                   $and: [
                     { associatedElementType: { $exists: false } },
                     { associatedElementNumber: { $exists: false } },
                   ],
-                } );
+                }, { shelfcount: 0 }, { associatedElementfixtureNumber: 1 } );
+
 
                 const centerFixturesWithStatus = await Promise.all(
                     centerFixtures.map( async ( fixture ) => {
@@ -2838,7 +2839,7 @@ export async function storeFixturesv2( req, res ) {
                       return {
                         ...fixture.toObject(),
                         status: fixtureStatus,
-                        shelfCount: shelves.shelves,
+                        shelfCount: shelves.length,
                         productCount: productCount,
                         vmCount: vmCount,
                         shelfConfig: shelfDetails,
