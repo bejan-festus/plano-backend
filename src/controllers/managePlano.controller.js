@@ -26,7 +26,7 @@ export async function getplanoFeedback( req, res ) {
     console.log( taskTypes );
     await Promise.all(
         taskTypes.map( async ( type, index ) => {
-          const pipeline = buildPipelineByType( type, req.body.planoId, req.body.floorId, filterByStatus, filterByApprovalStatus );
+          const pipeline = buildPipelineByType( type, req.body.planoId, req.body.floorId, filterByStatus, filterByApprovalStatus, req.body.showtask );
 
           const data = await planoTaskService.aggregate( pipeline );
           console.log( '-------', data );
@@ -56,7 +56,7 @@ export async function getplanoFeedback( req, res ) {
     return res.sendError( e, 500 );
   }
 }
-function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByApprovalStatus ) {
+function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByApprovalStatus, showtask ) {
   console.log( type, planoId, floorId, filterByStatus );
   const matchStage = {
     $match: {
@@ -67,7 +67,7 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
     },
   };
 
-  const taskLookup = {
+  let taskLookup = {
     $lookup: {
       from: 'processedtasks',
       let: { taskId: '$taskId' },
@@ -104,6 +104,34 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
       as: 'taskData',
     },
   };
+  if ( showtask ) {
+    taskLookup = {
+      $lookup: {
+        from: 'processedtasks',
+        let: { taskId: '$taskId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$taskId' ] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              userName: 1,
+              createdAt: 1,
+              createdByName: 1,
+              submitTime_string: 1,
+            },
+          },
+        ],
+        as: 'taskData',
+      },
+    };
+  }
 
   const unwindTask = { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: false } };
 
