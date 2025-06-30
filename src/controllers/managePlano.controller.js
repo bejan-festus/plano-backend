@@ -418,7 +418,9 @@ export async function updateStorePlano( req, res ) {
     } );
 
     await floorService.updateOne( { _id: new mongoose.Types.ObjectId( floorId ) },
-        { layoutPolygon: layoutPolygon } );
+        { layoutPolygon: layoutPolygon,
+          ...( req.body?.editMode === true && { isEdited: true } ),
+        } );
 
     const currentWallFixtures = data.layoutPolygon.flatMap( ( element ) =>
       ( element.fixtures || [] ).map( ( fixture ) => fixture ),
