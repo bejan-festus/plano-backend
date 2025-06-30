@@ -3344,7 +3344,7 @@ export async function planoList( req, res ) {
                   $and: [
                     { $eq: [ '$planoId', '$$plano' ] },
                     // { $in: [ '$taskId', pendingDetails.map( ( ele ) => ele.taskId ) ] },
-                    { $eq: [ '$taskType', 'initial' ] },
+                    // { $eq: [ '$taskType', 'initial' ] },
                   ],
                 },
               },
@@ -3362,13 +3362,28 @@ export async function planoList( req, res ) {
                           in: {
                             $concatArrays: [
                               '$$value',
-                              { $ifNull: [ '$$this.issues', [] ] },
+                              {
+                                $reduce: {
+                                  input: { $ifNull: [ '$$this.issues', [] ] },
+                                  initialValue: [],
+                                  in: {
+                                    $concatArrays: [
+                                      '$$value',
+                                      { $ifNull: [ '$$this.Details', [] ] },
+                                    ],
+                                  },
+                                },
+                              },
                             ],
                           },
                         },
                       },
-                      as: 'issue',
-                      in: { $eq: [ '$$issue.status', 'pending' ] },
+                      as: 'detail',
+                      in: {
+                        $or: [
+                          { $eq: [ '$$detail.status', 'pending' ] },
+                        ],
+                      },
                     },
                   },
                 },
@@ -3739,7 +3754,7 @@ export async function planoList( req, res ) {
       {
         $match: {
           taskId: { $in: pendingDetails.map( ( ele ) => ele.taskId ) },
-          taskType: 'initial',
+          // taskType: 'initial',
         },
       },
       {
@@ -3754,13 +3769,28 @@ export async function planoList( req, res ) {
                     in: {
                       $concatArrays: [
                         '$$value',
-                        { $ifNull: [ '$$this.issues', [] ] },
+                        {
+                          $reduce: {
+                            input: { $ifNull: [ '$$this.issues', [] ] },
+                            initialValue: [],
+                            in: {
+                              $concatArrays: [
+                                '$$value',
+                                { $ifNull: [ '$$this.Details', [] ] },
+                              ],
+                            },
+                          },
+                        },
                       ],
                     },
                   },
                 },
-                as: 'issue',
-                in: { $eq: [ '$$issue.status', 'pending' ] },
+                as: 'detail',
+                in: {
+                  $or: [
+                    { $eq: [ '$$detail.status', 'pending' ] },
+                  ],
+                },
               },
             },
           },
