@@ -860,13 +860,12 @@ export async function uploadBrandList( req, res ) {
     let inputData = req.body;
 
     let brandData = inputData.brandData.reduce( ( acc, ele ) => {
-      console.log( ele?.category, ele );
       if ( !acc[ele.brandName] ) {
         acc[ele.brandName] = {
           brandName: ele.brandName,
           clientId: inputData.clientId,
-          category: [ ...new Set( ele?.category?.map( ( ele ) => ele ) ) ],
-          subCategory: [ ...new Set( ele?.subCategory?.map( ( ele ) => ele ) ) ],
+          category: [ ...new Set( ele?.category?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
+          subCategory: [ ...new Set( ele?.subCategory?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
         };
       } else {
         acc[ele.brandName].category.push( ...ele.category );

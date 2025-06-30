@@ -3894,6 +3894,7 @@ export async function getTaskDetails( req, res ) {
           planoId: new mongoose.Types.ObjectId( req.query.planoId ),
           isPlano: true,
           date_iso: { $lte: new Date( dayjs().format( 'YYYY-MM-DD' ) ) },
+          floorId: new mongoose.Types.ObjectId( req.query.floorId ),
         },
       },
       {
@@ -3987,6 +3988,41 @@ export async function getTaskDetails( req, res ) {
                     },
                   },
                 },
+                hasDisagreeIssues: {
+                  $anyElementTrue: {
+                    $map: {
+                      input: {
+                        $reduce: {
+                          input: '$answers',
+                          initialValue: [],
+                          in: {
+                            $concatArrays: [
+                              '$$value',
+                              {
+                                $reduce: {
+                                  input: { $ifNull: [ '$$this.issues', [] ] },
+                                  initialValue: [],
+                                  in: {
+                                    $concatArrays: [
+                                      '$$value',
+                                      { $ifNull: [ '$$this.Details', [] ] },
+                                    ],
+                                  },
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      },
+                      as: 'detail',
+                      in: {
+                        $or: [
+                          { $eq: [ '$$detail.status', 'disagree' ] },
+                        ],
+                      },
+                    },
+                  },
+                },
               },
             },
             {
@@ -4028,6 +4064,33 @@ export async function getTaskDetails( req, res ) {
                     ],
                   },
                 },
+                layoutDisagree: {
+                  $sum: {
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'layout' ] }, '$hasDisagreeIssues' ] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                fixtureDisagree: {
+                  $sum: {
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'fixture' ] }, '$hasDisagreeIssues' ] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                vmDisagree: {
+                  $sum: {
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'vm' ] }, '$hasDisagreeIssues' ] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
               },
             },
             {
@@ -4057,6 +4120,9 @@ export async function getTaskDetails( req, res ) {
                 layoutPending: { $sum: '$layoutPending' },
                 fixturePending: { $sum: '$fixturePending' },
                 vmPending: { $sum: '$vmPending' },
+                layoutDisagree: { $sum: '$layoutDisagree' },
+                fixtureDisagree: { $sum: '$fixtureDisagree' },
+                vmDisagree: { $sum: '$vmDisagree' },
               },
             },
             {
@@ -4068,6 +4134,7 @@ export async function getTaskDetails( req, res ) {
                       $and: [
                         { $gt: [ '$layoutCount', 0 ] },
                         { $eq: [ '$layoutPending', 0 ] },
+                        { $eq: [ '$layoutDisagree', 0 ] },
                       ],
                     },
                     then: 'complete',
@@ -4087,7 +4154,25 @@ export async function getTaskDetails( req, res ) {
                           ],
                         },
                         then: 'pending',
-                        else: '',
+                        else: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                {
+                                  $gt: [ '$layoutCount', 0 ],
+                                },
+                                {
+                                  $gt: [
+                                    '$layoutDisagree',
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                            then: 'disagree',
+                            else: '',
+                          },
+                        },
                       },
                     },
                   },
@@ -4099,6 +4184,9 @@ export async function getTaskDetails( req, res ) {
                         { $gt: [ '$fixtureCount', 0 ] },
                         {
                           $eq: [ '$fixturePending', 0 ],
+                        },
+                        {
+                          $eq: [ '$fixtureDisagree', 0 ],
                         },
                       ],
                     },
@@ -4122,7 +4210,25 @@ export async function getTaskDetails( req, res ) {
                           ],
                         },
                         then: 'pending',
-                        else: '',
+                        else: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                {
+                                  $gt: [ '$fixtureCount', 0 ],
+                                },
+                                {
+                                  $gt: [
+                                    '$fixtureDisagree',
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                            then: 'disagree',
+                            else: '',
+                          },
+                        },
                       },
                     },
                   },
@@ -4133,6 +4239,7 @@ export async function getTaskDetails( req, res ) {
                       $and: [
                         { $gt: [ '$vmCount', 0 ] },
                         { $eq: [ '$vmPending', 0 ] },
+                        { $eq: [ '$vmDisagree', 0 ] },
                       ],
                     },
                     then: 'complete',
@@ -4145,7 +4252,25 @@ export async function getTaskDetails( req, res ) {
                           ],
                         },
                         then: 'pending',
-                        else: '',
+                        else: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                {
+                                  $gt: [ '$vmCount', 0 ],
+                                },
+                                {
+                                  $gt: [
+                                    '$vmDisagree',
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                            then: 'disagree',
+                            else: '',
+                          },
+                        },
                       },
                     },
                   },
@@ -4157,6 +4282,9 @@ export async function getTaskDetails( req, res ) {
                 fixtureCount: 1,
                 vmCount: 1,
                 completeLayout: 1,
+                layoutDisagree: 1,
+                fixtureDisagree: 1,
+                vmDisagree: 1,
               },
             },
           ],
@@ -4206,8 +4334,7 @@ export async function getTaskDetails( req, res ) {
     ];
 
     let taskInfo = await planotaskService.aggregate( query );
-    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ele.feedbackStatus != 'complete' ) || ele.status != 'submit' ) && !ele?.breach );
-    console.log( disabledInfo );
+    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ![ 'complete', 'disagree' ].includes( ele.feedbackStatus ) ) || ele.status != 'submit' ) && !ele?.breach );
     return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false } );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
