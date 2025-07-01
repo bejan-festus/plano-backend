@@ -259,91 +259,95 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
   ];
   if ( filterByApprovalStatus && filterByApprovalStatus != '' ) {
     let filterByApprovalCond = { $eq: filterByApprovalStatus };
-    if ( filterByApprovalStatus != 'pending' ) {
-      filterByApprovalCond = { $ne: 'pending' };
-    }
-    console.log( '*********************' );
+
+    console.log( '*********************', filterByApprovalCond );
     pipeline = [];
     pipeline.push( matchStage );
-    pipeline.push(
-        { $unwind: '$answers' },
-        { $unwind: '$answers.issues' },
-        { $unwind: '$answers.issues.Details' },
-        {
-          $match: {
-            'answers.issues.Details.status': filterByApprovalCond,
-          },
-        },
-        {
-          $group: {
-            _id: '$_id',
-            doc: { $first: '$$ROOT' },
-          },
-        },
-        {
-          $replaceRoot: {
-            newRoot: {
-              $mergeObjects: [ '$doc', { answers: '$doc.originalAnswers' } ],
-            },
-          },
-        },
-        {
-          $project: {
-            originalAnswers: 0, // remove the temp field
-          },
-        },
-        {
-          $addFields: {
-            answers: {
-              $map: {
-                input: {
-                  $cond: [
-                    { $isArray: '$answers' },
-                    '$answers',
-                    { $cond: [ { $gt: [ { $type: '$answers' }, 'missing' ] }, [ '$answers' ], [] ] },
-                  ],
-                },
-                as: 'ans',
-                in: {
-                  $mergeObjects: [
-                    '$$ans',
-                    {
-                      issues: {
-                        $map: {
-                          input: {
-                            $cond: [
-                              { $isArray: '$$ans.issues' },
-                              '$$ans.issues',
-                              { $cond: [ { $gt: [ { $type: '$$ans.issues' }, 'missing' ] }, [ '$$ans.issues' ], [] ] },
-                            ],
-                          },
-                          as: 'issue',
-                          in: {
-                            $mergeObjects: [
-                              '$$issue',
-                              {
-                                Details: {
-                                  $cond: [
-                                    { $isArray: '$$issue.Details' },
-                                    '$$issue.Details',
-                                    { $cond: [ { $gt: [ { $type: '$$issue.Details' }, 'missing' ] }, [ '$$issue.Details' ], [] ] },
-                                  ],
+    if ( filterByApprovalStatus === 'pending' ) {
+      pipeline.push(
+          {
+            $addFields: {
+              answers: {
+                $map: {
+                  input: '$answers',
+                  as: 'ans',
+                  in: {
+                    $mergeObjects: [
+                      '$$ans',
+                      {
+                        issues: {
+                          $map: {
+                            input: '$$ans.issues',
+                            as: 'issue',
+                            in: {
+                              $mergeObjects: [
+                                '$$issue',
+                                {
+                                  Details: {
+                                    $filter: {
+                                      input: '$$issue.Details',
+                                      as: 'detail',
+                                      cond: { $eq: [ '$$detail.status', 'pending' ] },
+                                    },
+                                  },
                                 },
-                              },
-                            ],
+                              ],
+                            },
                           },
                         },
                       },
-                    },
-                  ],
+                    ],
+                  },
                 },
               },
             },
           },
-        },
 
 
-    );
+      );
+    } else {
+      pipeline.push(
+          {
+            $addFields: {
+              answers: {
+                $map: {
+                  input: '$answers',
+                  as: 'ans',
+                  in: {
+                    $mergeObjects: [
+                      '$$ans',
+                      {
+                        issues: {
+                          $map: {
+                            input: '$$ans.issues',
+                            as: 'issue',
+                            in: {
+                              $mergeObjects: [
+                                '$$issue',
+                                {
+                                  Details: {
+                                    $filter: {
+                                      input: '$$issue.Details',
+                                      as: 'detail',
+                                      cond: { $ne: [ '$$detail.status', 'pending' ] },
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+
+
+      );
+    }
     pipeline.push( taskLookup );
     pipeline.push( unwindTask );
     pipeline.push( ...commonLookups );
@@ -672,14 +676,16 @@ export async function updateFixtureStatus( req, res ) {
         },
 
     );
-    let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
-    if ( allTaskDone.length === 0 ) {
-      await planoService.updateOne(
-          {
-            _id: new mongoose.Types.ObjectId( req.body.planoId ),
-          },
-          { $set: { planoProgress: 100 } },
-      );
+    if ( vmTask.length>0 ) {
+      let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
+      if ( allTaskDone.length === 0 ) {
+        await planoService.updateOne(
+            {
+              _id: new mongoose.Types.ObjectId( req.body.planoId ),
+            },
+            { $set: { planoProgress: 100 } },
+        );
+      }
     }
     res.sendSuccess( 'updated successfully' );
   } catch ( e ) {

@@ -598,7 +598,8 @@ export async function updateAnswersv2( req, res ) {
     if ( !taskDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-
+    // console.log( req.body.answers[0] );
+    // console.log( req.body.answers[0].issues[0] );
     let data = {
       fixtureId: req.body.fixtureId,
       answers: req.body.answers,
@@ -612,7 +613,8 @@ export async function updateAnswersv2( req, res ) {
       storeName: req.body?.storeName,
       storeId: req.body?.storeId,
     };
-    console.log( '111111', data );
+    // console.log( '111111', data.answers[0] );
+    // console.log( '111111', data.answers[0].issues[0] );
     if ( req.body.type==='layout' ) {
       await planoTaskService.updateOne( { planoId: req.body.planoId, taskType: req.body.taskType, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
     } else {
