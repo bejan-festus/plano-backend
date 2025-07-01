@@ -8920,7 +8920,6 @@ export async function updatePlanoMappings( req, res ) {
     return res.sendError( 'Unauthorized', 401 );
   }
   try {
-    console.log( JSON.stringify( req.body ) );
     const floor = await storeBuilderService.findOne( { storeName: req.body.storeName } );
 
     for ( let i = 0; i < req.body?.walls?.length; i++ ) {
