@@ -840,8 +840,8 @@ export async function addUpdateBrandList( req, res ) {
         brandData.push( {
           clientId: inputData.clientId,
           brandName: ele.brand,
-          category: [ ...new Set( ele.category ) ],
-          subCategory: [ ...new Set( ele.subCategory ) ],
+          category: [ ...new Set( ele?.category?.map( ( ele ) => ele ) ) ],
+          subCategory: [ ...new Set( ele?.subCategory?.map( ( ele ) => ele ) ) ],
         } );
       }
     } );
