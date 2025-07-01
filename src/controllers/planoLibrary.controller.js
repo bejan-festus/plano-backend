@@ -267,94 +267,37 @@ export async function FixtureLibraryList( req, res ) {
       {
         $lookup: {
           from: 'fixtureconfigs',
-          let: { libraryId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: [ '$fixtureLibraryId', '$$libraryId' ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                templateId: { $push: '$_id' },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                templateId: 1,
-              },
-            },
-          ],
+          localField: '_id',
+          foreignField: 'fixtureLibraryId',
           as: 'fixtureTemplate',
         },
       },
       {
-        $project: {
-          fixtureCategorySize: 1,
-          fixtureWidth: 1,
-          fixtureHeight: 1,
-          fixtureLength: 1,
-          shelfConfig: 1,
-          shelfCount: { $size: '$shelfConfig' },
-          fixtureCategory: 1,
-          clientId: 1,
-          fixtureType: 1,
-          status: 1,
-          header: 1,
-          footer: 1,
-          fixtureLibCode: 1,
-          templateId: { $ifNull: [ { $arrayElemAt: [ '$fixtureTemplate.templateId', 0 ] }, [] ] },
+        $set: {
+          templateId: {
+            $setUnion: [
+              { $map: { input: '$fixtureTemplate', as: 'fc', in: '$$fc._id' } },
+              [],
+            ],
+          },
         },
       },
       {
         $lookup: {
           from: 'storefixtures',
-          let: { libraryId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: [ '$fixtureLibraryId', '$$libraryId' ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                planoId: { $push: '$planoId' },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                planoId: 1,
-              },
-            },
-          ],
+          localField: '_id',
+          foreignField: 'fixtureLibraryId',
           as: 'storeFixtureDetails',
         },
       },
       {
-        $project: {
-          fixtureWidth: 1,
-          fixtureHeight: 1,
-          fixtureLength: 1,
-          shelfConfig: 1,
-          shelfCount: 1,
-          fixtureCategory: 1,
-          clientId: 1,
-          fixtureType: 1,
-          status: 1,
-          templateId: 1,
-          header: 1,
-          footer: 1,
-          fixtureLibCode: 1,
-          planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
-          templateCount: { $size: '$templateId' },
+        $set: {
+          planoId: {
+            $setUnion: [
+              { $map: { input: '$storeFixtureDetails', as: 'sf', in: '$$sf.planoId' } },
+              [],
+            ],
+          },
         },
       },
       {
@@ -386,14 +329,14 @@ export async function FixtureLibraryList( req, res ) {
           fixtureLength: 1,
           fixtureType: 1,
           shelfConfig: 1,
-          shelfCount: 1,
+          shelfCount: { $size: '$shelfConfig' },
           fixtureCategory: 1,
           clientId: 1,
           planoId: 1,
           templateId: 1,
           header: 1,
           footer: 1,
-          templateCount: 1,
+          templateCount: { $size: '$templateId' },
           fixtureLibCode: 1,
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
@@ -1030,13 +973,7 @@ export async function getVmLibList( req, res ) {
             {
               $group: {
                 _id: null,
-                templateId: { $push: '$_id' },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                templateId: 1,
+                templateIds: { $addToSet: '$_id' },
               },
             },
           ],
@@ -1044,66 +981,26 @@ export async function getVmLibList( req, res ) {
         },
       },
       {
-        $project: {
-          vmName: 1,
-          vmType: 1,
-          vmBrand: 1,
-          vmCategory: 1,
-          clientId: 1,
-          vmHeight: 1,
-          status: 1,
-          vmWidth: 1,
-          vmImageUrl: 1,
-          isDoubleSided: 1,
-          vmSubCategory: 1,
-          vmLibCode: 1,
-          templateId: { $ifNull: [ { $arrayElemAt: [ '$fixtureTemplate.templateId', 0 ] }, [] ] },
+        $set: {
+          templateId: { $ifNull: [ { $arrayElemAt: [ '$fixtureTemplate.templateIds', 0 ] }, [] ] },
         },
       },
       {
         $lookup: {
           from: 'storefixtures',
-          let: { libraryId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $in: [ '$$libraryId', { $ifNull: [ '$vmConfig.vmId', [] ] } ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                planoId: { $push: '$planoId' },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                planoId: 1,
-              },
-            },
-          ],
+          localField: 'templateId',
+          foreignField: 'fixtureConfigId',
           as: 'storeFixtureDetails',
         },
       },
       {
-        $project: {
-          vmName: 1,
-          vmType: 1,
-          vmBrand: 1,
-          vmCategory: 1,
-          clientId: 1,
-          vmHeight: 1,
-          status: 1,
-          vmWidth: 1,
-          vmImageUrl: 1,
-          isDoubleSided: 1,
-          templateId: 1,
-          vmLibCode: 1,
-          vmSubCategory: 1,
-          planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
+        $set: {
+          planoId: {
+            $setUnion: [
+              { $map: { input: '$storeFixtureDetails', as: 'sf', in: '$$sf.planoId' } },
+              [],
+            ],
+          },
           templateCount: { $size: '$templateId' },
         },
       },
@@ -1522,27 +1419,27 @@ export async function fixtureNameList( req, res ) {
       {
         $group: {
           _id: '',
-          fixtureName: {
-            $addToSet: {
+          fixtureDetails: {
+            $push: { fixtureName: {
               $concat: [
                 '$fixtureCategory',
                 ' - ',
                 { $toString: '$fixtureWidth.value' },
                 '$fixtureWidth.unit',
-              ],
+              ] }, id: '$_id',
             },
           },
         },
       },
       {
         $project: {
-          _id: 0,
-          fixtureName: 1,
+          _id: 1,
+          fixtureDetails: 1,
         },
       },
     ] );
 
-    return res.sendSuccess( getFixtureDetails?.[0]?.fixtureName || [] );
+    return res.sendSuccess( getFixtureDetails?.[0]?.fixtureDetails || [] );
   } catch ( e ) {
     logger.error( { functionName: 'fixtureNameList', error: e } );
     return res.sendError( e, 500 );
@@ -1551,7 +1448,7 @@ export async function fixtureNameList( req, res ) {
 
 export async function vmNameList( req, res ) {
   try {
-    let getVmDetails = await vmService.find( { clientId: req.query.clientId, status: 'complete' }, { vmName: 1, vmWidth: 1, vmHeight: 1, vmImageUrl: 1 } );
+    let getVmDetails = await vmService.find( { clientId: req.query.clientId, status: 'complete' }, { vmName: 1, vmWidth: 1, vmHeight: 1, vmImageUrl: 1, vmType: 1 } );
     return res.sendSuccess( getVmDetails );
   } catch ( e ) {
     logger.error( { functionName: 'vmNameList', error: e } );

@@ -3640,7 +3640,7 @@ export async function planoList( req, res ) {
               },
             },
           },
-          { 'taskDetails.layoutStatus': 'pending' },
+          // { 'taskDetails.layoutStatus': 'pending' },
       );
       query.push( {
         $match: {
@@ -3656,9 +3656,36 @@ export async function planoList( req, res ) {
         orQuery.push( { 'planoTask.taskStatus.status': { $in: [ 'open', 'inprogress' ] } } );
       }
       if ( inputData.filter.status.includes( 'reviewPending' ) ) {
-        orQuery.push( { $and: [ { 'taskDetails.layoutStatus': 'pending' }, { 'planoTask.taskStatus.type': 'layout' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
-        orQuery.push( { $and: [ { 'taskDetails.fixtureStatus': 'pending' }, { 'planoTask.taskStatus.type': 'fixture' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
-        orQuery.push( { $and: [ { 'taskDetails.vmStatus': 'pending' }, { 'planoTask.taskStatus.type': 'vm' }, { 'planoTask.taskStatus.status': 'submit' } ] } );
+        orQuery.push( {
+          $and: [
+            { 'planoTask.taskStatus': {
+              $elemMatch: {
+                type: 'layout',
+                status: 'submit',
+              },
+            } }, { 'taskDetails.layoutStatus': 'pending' },
+          ],
+        } );
+        orQuery.push( {
+          $and: [
+            { 'planoTask.taskStatus': {
+              $elemMatch: {
+                type: 'fixture',
+                status: 'submit',
+              },
+            } }, { 'taskDetails.fixtureStatus': 'pending' },
+          ],
+        } );
+        orQuery.push( {
+          $and: [
+            { 'planoTask.taskStatus': {
+              $elemMatch: {
+                type: 'vm',
+                status: 'submit',
+              },
+            } }, { 'taskDetails.vmStatus': 'pending' },
+          ],
+        } );
       }
       if ( inputData.filter.status.includes( 'completed' ) ) {
         orQuery.push( { $and: [ { 'taskDetails.layoutStatus': 'complete' }, { 'taskDetails.fixtureStatus': 'complete' }, { 'taskDetails.vmStatus': 'complete' } ] } );
