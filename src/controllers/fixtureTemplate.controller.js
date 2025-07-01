@@ -539,3 +539,32 @@ export async function getAllTemplates( req, res ) {
     logger.error( { functionName: 'getAllTemplates', error: e } );
   }
 }
+
+export async function getFixtureTemplate( req, res ) {
+  try {
+    let fixtureTemplate = await fixtureConfigService.findOne( { _id: new mongoose.Types.ObjectId( req.query.templateId ) } );
+
+    if ( !fixtureTemplate ) {
+      return res.sendError( 'No data found', 204 );
+    }
+
+    const templateDoc = fixtureTemplate.toObject();
+
+
+    if ( templateDoc?.vmConfig?.length ) {
+      templateDoc.vmConfig = await Promise.all( templateDoc.vmConfig.map( async ( vm ) => {
+        let vmDetails = await vmService.findOne( { _id: vm.vmId } );
+        console.log( vmDetails );
+        if ( vmDetails ) {
+          vm = { ...vm, ...vmDetails.toObject() };
+          return vm;
+        }
+      } ) );
+    }
+
+
+    res.sendSuccess( templateDoc );
+  } catch ( e ) {
+    logger.error( { functionName: 'getFixtureTemplate', error: e } );
+  }
+}

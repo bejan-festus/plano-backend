@@ -267,94 +267,37 @@ export async function FixtureLibraryList( req, res ) {
       {
         $lookup: {
           from: 'fixtureconfigs',
-          let: { libraryId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: [ '$fixtureLibraryId', '$$libraryId' ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                templateId: { $push: '$_id' },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                templateId: 1,
-              },
-            },
-          ],
+          localField: '_id',
+          foreignField: 'fixtureLibraryId',
           as: 'fixtureTemplate',
         },
       },
       {
-        $project: {
-          fixtureCategorySize: 1,
-          fixtureWidth: 1,
-          fixtureHeight: 1,
-          fixtureLength: 1,
-          shelfConfig: 1,
-          shelfCount: { $size: '$shelfConfig' },
-          fixtureCategory: 1,
-          clientId: 1,
-          fixtureType: 1,
-          status: 1,
-          header: 1,
-          footer: 1,
-          fixtureLibCode: 1,
-          templateId: { $ifNull: [ { $arrayElemAt: [ '$fixtureTemplate.templateId', 0 ] }, [] ] },
+        $set: {
+          templateId: {
+            $setUnion: [
+              { $map: { input: '$fixtureTemplate', as: 'fc', in: '$$fc._id' } },
+              [],
+            ],
+          },
         },
       },
       {
         $lookup: {
           from: 'storefixtures',
-          let: { libraryId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: [ '$fixtureLibraryId', '$$libraryId' ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                planoId: { $push: '$planoId' },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                planoId: 1,
-              },
-            },
-          ],
+          localField: '_id',
+          foreignField: 'fixtureLibraryId',
           as: 'storeFixtureDetails',
         },
       },
       {
-        $project: {
-          fixtureWidth: 1,
-          fixtureHeight: 1,
-          fixtureLength: 1,
-          shelfConfig: 1,
-          shelfCount: 1,
-          fixtureCategory: 1,
-          clientId: 1,
-          fixtureType: 1,
-          status: 1,
-          templateId: 1,
-          header: 1,
-          footer: 1,
-          fixtureLibCode: 1,
-          planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
-          templateCount: { $size: '$templateId' },
+        $set: {
+          planoId: {
+            $setUnion: [
+              { $map: { input: '$storeFixtureDetails', as: 'sf', in: '$$sf.planoId' } },
+              [],
+            ],
+          },
         },
       },
       {
@@ -386,14 +329,14 @@ export async function FixtureLibraryList( req, res ) {
           fixtureLength: 1,
           fixtureType: 1,
           shelfConfig: 1,
-          shelfCount: 1,
+          shelfCount: { $size: '$shelfConfig' },
           fixtureCategory: 1,
           clientId: 1,
           planoId: 1,
           templateId: 1,
           header: 1,
           footer: 1,
-          templateCount: 1,
+          templateCount: { $size: '$templateId' },
           fixtureLibCode: 1,
           planoStatus: { $ifNull: [ { $arrayElemAt: [ '$planoStatus.statusList', 0 ] }, [] ] },
           status: {
@@ -698,11 +641,10 @@ export async function uploadVmImage( req, res ) {
     if ( !req.params?.vmId ) {
       return res.sendError( 'id is required', 400 );
     }
-    console.log( req.files );
     let params = {
       Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-      Key: `vmType/${req.params.vmId}/${Date.now()}/`,
-      fileName: req.files.file.name,
+      Key: `vmType/${req.params.vmId}/`,
+      fileName: Date.now() +'.'+ req.files?.file?.name?.split( '.' )?.slice( -1 )?.[0],
       ContentType: req.files.file.mimeType,
       body: req.files.file.data,
     };
@@ -770,44 +712,44 @@ export async function getBrandList( req, res ) {
 
       sheet.getRow( 1 ).values = [ 'Brand Name', 'Brand Category', 'Brand SubCategory' ];
 
-      let rowStart = 2;
-      let lockedRowNumber = [];
+      // let rowStart = 2;
+      // let lockedRowNumber = [];
       if ( req.body.emptyDownload ) {
         getBrandDetails = [];
       }
-      getBrandDetails.forEach( ( ele ) => {
-        sheet.getRow( rowStart ).values = [ ele.brandName, ele.category.toString(), ele.subCategory.toString() ];
-        if ( ele.isUsed ) {
-          lockedRowNumber.push( rowStart );
-        }
-        rowStart = rowStart + 1;
-      } );
+      // getBrandDetails.forEach( ( ele ) => {
+      //   sheet.getRow( rowStart ).values = [ ele.brandName, ele.category.toString(), ele.subCategory.toString() ];
+      //   if ( ele.isUsed ) {
+      //     lockedRowNumber.push( rowStart );
+      //   }
+      //   rowStart = rowStart + 1;
+      // } );
 
-      let unlockCellValues = 20000;
-      let splitLoop = [];
+      // let unlockCellValues = 20000;
+      // let splitLoop = [];
 
-      for ( let i=1; i<=unlockCellValues; i+=2000 ) {
-        splitLoop.push( { start: i, end: i + 1999 } );
-      }
+      // for ( let i=1; i<=unlockCellValues; i+=2000 ) {
+      //   splitLoop.push( { start: i, end: i + 1999 } );
+      // }
 
-      await Promise.all( splitLoop.map( ( item ) => {
-        for ( let i=item.start; i<=item.end; i++ ) {
-          const row = sheet.getRow( i );
-          if ( i > rowStart - 1 ) {
-            row.values = [ '', '', '', '', '', '', '', '', '', '' ];
-          }
-          if ( !lockedRowNumber.includes( i ) && i != 1 ) {
-            row.eachCell( ( cell ) => {
-              cell.protection = { locked: false };
-            } );
-          }
-        }
-      } ) );
+      // await Promise.all( splitLoop.map( ( item ) => {
+      //   for ( let i=item.start; i<=item.end; i++ ) {
+      //     const row = sheet.getRow( i );
+      //     if ( i > rowStart - 1 ) {
+      //       row.values = [ '', '', '', '', '', '', '', '', '', '' ];
+      //     }
+      //     if ( !lockedRowNumber.includes( i ) && i != 1 ) {
+      //       row.eachCell( ( cell ) => {
+      //         cell.protection = { locked: false };
+      //       } );
+      //     }
+      //   }
+      // } ) );
 
-      await sheet.protect( 'password123', {
-        selectLockedCells: false,
-        selectUnlockedCells: true,
-      } );
+      // await sheet.protect( 'password123', {
+      //   selectLockedCells: false,
+      //   selectUnlockedCells: true,
+      // } );
 
       sheet.columns.forEach( ( column ) => {
         let maxLength = 10;
@@ -841,8 +783,8 @@ export async function addUpdateBrandList( req, res ) {
         brandData.push( {
           clientId: inputData.clientId,
           brandName: ele.brand,
-          category: [ ...new Set( ele.category ) ],
-          subCategory: [ ...new Set( ele.subCategory ) ],
+          category: [ ...new Set( ele?.category?.map( ( ele ) => ele ) ) ],
+          subCategory: [ ...new Set( ele?.subCategory?.map( ( ele ) => ele ) ) ],
         } );
       }
     } );
@@ -860,27 +802,66 @@ export async function uploadBrandList( req, res ) {
     let inputData = req.body;
 
     let brandData = inputData.brandData.reduce( ( acc, ele ) => {
-      if ( !acc[ele.brandName] ) {
-        acc[ele.brandName] = {
-          brandName: ele.brandName,
+      let category = ele?.['Brand Category'].split( ',' );
+      let subCategory = ele?.['Brand SubCategory'].split( ',' );
+      if ( !acc[ele['Brand Name']] ) {
+        acc[ele['Brand Name']] = {
+          brandName: ele['Brand Name'],
           clientId: inputData.clientId,
-          category: [ ...new Set( ele?.category?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
-          subCategory: [ ...new Set( ele?.subCategory?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
+          category: [ ...new Set( category?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
+          subCategory: [ ...new Set( subCategory?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
         };
       } else {
-        acc[ele.brandName].category.push( ...ele.category );
-        if ( ele?.subCategory.length ) {
-          acc[ele.brandName].subCategory.push( ...ele?.subCategory );
+        category.forEach( ( cat ) => {
+          if ( !acc[ele['Brand Name']].category.includes( cat ) ) {
+            acc[ele['Brand Name']].category.push( cat );
+          }
+        } );
+        if ( subCategory.length ) {
+          subCategory.forEach( ( cat ) => {
+            if ( !acc[ele['Brand Name']].subCategory.includes( cat ) ) {
+              acc[ele['Brand Name']].subCategory.push( cat );
+            }
+          } );
         }
       }
       return acc;
     }, {} );
+    await Promise.all( Object.keys( brandData ).map( async ( brand ) => {
+      let brandLower = brand.toLowerCase();
+      let query = [
+        {
+          $addFields: {
+            brandLower: { $toLower: '$brandName' },
+          },
+        },
+        {
+          $match: {
+            brandLower: brandLower,
+            clientId: inputData.clientId,
+          },
+        },
+      ];
+      let brandDetails = await planoProductService.aggregate( query );
+      if ( brandDetails.length ) {
+        let getCategory = brandDetails[0]?.category;
+        let getsubCategory = brandDetails[0]?.subCategory;
+        brandData[brand].category.forEach( ( ele ) => {
+          if ( !getCategory.includes( ele ) ) {
+            getCategory.push( ele );
+          }
+        } );
+        brandData[brand].subCategory.forEach( ( ele ) => {
+          if ( !getsubCategory.includes( ele ) ) {
+            getsubCategory.push( ele );
+          }
+        } );
+        await planoProductService.updateOne( { _id: brandDetails[0]._id }, { category: getCategory, subCategory: getsubCategory } );
+      } else {
+        await planoProductService.create( brandData[brand] );
+      }
+    } ) );
 
-    await planoProductService.deleteMany( { clientId: inputData.clientId, _id: { $nin: inputData.brandUsedList } } );
-    await planoProductService.insertMany( Object.values( brandData ) );
-    // await Promise.all( Object.keys( brandData ).map( async ( ele ) => {
-    //   await planoProductService.updateOne( { brandName: { $regex: brandData[ele].brandName, $options: 'i' }, clientId: req.body.clientId }, brandData[ele] );
-    // } ) );
     return res.sendSuccess( 'Brand details upload successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'uploadBrandList', error: e } );
@@ -992,13 +973,7 @@ export async function getVmLibList( req, res ) {
             {
               $group: {
                 _id: null,
-                templateId: { $push: '$_id' },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                templateId: 1,
+                templateIds: { $addToSet: '$_id' },
               },
             },
           ],
@@ -1006,66 +981,26 @@ export async function getVmLibList( req, res ) {
         },
       },
       {
-        $project: {
-          vmName: 1,
-          vmType: 1,
-          vmBrand: 1,
-          vmCategory: 1,
-          clientId: 1,
-          vmHeight: 1,
-          status: 1,
-          vmWidth: 1,
-          vmImageUrl: 1,
-          isDoubleSided: 1,
-          vmSubCategory: 1,
-          vmLibCode: 1,
-          templateId: { $ifNull: [ { $arrayElemAt: [ '$fixtureTemplate.templateId', 0 ] }, [] ] },
+        $set: {
+          templateId: { $ifNull: [ { $arrayElemAt: [ '$fixtureTemplate.templateIds', 0 ] }, [] ] },
         },
       },
       {
         $lookup: {
           from: 'storefixtures',
-          let: { libraryId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $in: [ '$$libraryId', { $ifNull: [ '$vmConfig.vmId', [] ] } ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                planoId: { $push: '$planoId' },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                planoId: 1,
-              },
-            },
-          ],
+          localField: 'templateId',
+          foreignField: 'fixtureConfigId',
           as: 'storeFixtureDetails',
         },
       },
       {
-        $project: {
-          vmName: 1,
-          vmType: 1,
-          vmBrand: 1,
-          vmCategory: 1,
-          clientId: 1,
-          vmHeight: 1,
-          status: 1,
-          vmWidth: 1,
-          vmImageUrl: 1,
-          isDoubleSided: 1,
-          templateId: 1,
-          vmLibCode: 1,
-          vmSubCategory: 1,
-          planoId: { $ifNull: [ { $arrayElemAt: [ '$storeFixtureDetails.planoId', 0 ] }, [] ] },
+        $set: {
+          planoId: {
+            $setUnion: [
+              { $map: { input: '$storeFixtureDetails', as: 'sf', in: '$$sf.planoId' } },
+              [],
+            ],
+          },
           templateCount: { $size: '$templateId' },
         },
       },
@@ -1469,5 +1404,54 @@ async function getMaxVMLibCode() {
     console.log( e );
     logger.error( { functionName: 'getMaxVMLibCode', error: e } );
     return false;
+  }
+}
+
+export async function fixtureNameList( req, res ) {
+  try {
+    let getFixtureDetails = await planoLibraryService.aggregate( [
+      {
+        $match: {
+          clientId: req.query.clientId,
+          status: 'complete',
+        },
+      },
+      {
+        $group: {
+          _id: '',
+          fixtureDetails: {
+            $push: { fixtureName: {
+              $concat: [
+                '$fixtureCategory',
+                ' - ',
+                { $toString: '$fixtureWidth.value' },
+                '$fixtureWidth.unit',
+              ] }, id: '$_id',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          fixtureDetails: 1,
+        },
+      },
+    ] );
+
+    return res.sendSuccess( getFixtureDetails?.[0]?.fixtureDetails || [] );
+  } catch ( e ) {
+    logger.error( { functionName: 'fixtureNameList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function vmNameList( req, res ) {
+  try {
+    let getVmDetails = await vmService.find( { clientId: req.query.clientId, status: 'complete' }, { vmName: 1, vmWidth: 1, vmHeight: 1, vmImageUrl: 1, vmType: 1 } );
+    return res.sendSuccess( getVmDetails );
+  } catch ( e ) {
+    logger.error( { functionName: 'vmNameList', error: e } );
+    return res.sendError( e, 500 );
   }
 }
