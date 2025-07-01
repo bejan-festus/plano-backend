@@ -884,14 +884,41 @@ export async function uploadBrandList( req, res ) {
       }
       return acc;
     }, {} );
+    await Promise.all( Object.keys( brandData ).map( async ( brand ) => {
+      let brandLower = brand.toLowerCase();
+      let query = [
+        {
+          $addFields: {
+            brandLower: { $toLower: '$brandName' },
+          },
+        },
+        {
+          $match: {
+            brandLower: brandLower,
+            clientId: inputData.clientId,
+          },
+        },
+      ];
+      let brandDetails = await planoProductService.aggregate( query );
+      if ( brandDetails.length ) {
+        let getCategory = brandDetails[0]?.category;
+        let getsubCategory = brandDetails[0]?.subCategory;
+        brandData[brand].category.forEach( ( ele ) => {
+          if ( !getCategory.includes( ele ) ) {
+            getCategory.push( ele );
+          }
+        } );
+        brandData[brand].subCategory.forEach( ( ele ) => {
+          if ( !getsubCategory.includes( ele ) ) {
+            getsubCategory.push( ele );
+          }
+        } );
+        await planoProductService.updateOne( { _id: brandDetails[0]._id }, { category: getCategory, subCategory: getsubCategory } );
+      } else {
+        await planoProductService.create( brandData[brand] );
+      }
+    } ) );
 
-    console.log( brandData );
-
-    // await planoProductService.deleteMany( { clientId: inputData.clientId, _id: { $nin: inputData.brandUsedList } } );
-    await planoProductService.insertMany( Object.values( brandData ) );
-    // await Promise.all( Object.keys( brandData ).map( async ( ele ) => {
-    //   await planoProductService.updateOne( { brandName: { $regex: brandData[ele].brandName, $options: 'i' }, clientId: req.body.clientId }, brandData[ele] );
-    // } ) );
     return res.sendSuccess( 'Brand details upload successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'uploadBrandList', error: e } );
