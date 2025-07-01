@@ -14,7 +14,8 @@ planoLibraryRouter
     .post( '/fixtureList', isAllowedSessionHandler, validate( validateDtos.fixtureVMListSchema ), planoLibraryController.FixtureLibraryList )
     .post( '/duplicateFixture', isAllowedSessionHandler, validate( validateDtos.bodyFixtureId ), planoLibraryController.duplicateFixture )
     .post( '/deleteFixture', isAllowedSessionHandler, validate( validateDtos.bodyFixtureId ), planoLibraryController.deleteFixture )
-    .get( '/fixtureSizeList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.getFixLibWidth );
+    .get( '/fixtureSizeList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.getFixLibWidth )
+    .get( '/fixtureNameList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.fixtureNameList );
 
 planoLibraryRouter
     .post( '/addVmType', isAllowedSessionHandler, validate( validateDtos.addVmType ), planoLibraryController.addVmType )
@@ -36,5 +37,6 @@ planoLibraryRouter
     .post( '/duplicateVmLib', isAllowedSessionHandler, validate( validateDtos.deleteVmLib ), planoLibraryController.duplicateVmLib )
     .post( '/deleteVmLib', isAllowedSessionHandler, validate( validateDtos.deleteVmLib ), planoLibraryController.deleteVmLibrary )
     .get( '/getVmDetails', isAllowedSessionHandler, validate( validateDtos.getVmDetails ), planoLibraryController.getVmDetails )
-    .post( '/vmBulkUpload', isAllowedSessionHandler, validate( validateDtos.vmBulkUpload ), planoLibraryController.vmBulkUpload );
+    .post( '/vmBulkUpload', isAllowedSessionHandler, validate( validateDtos.vmBulkUpload ), planoLibraryController.vmBulkUpload )
+    .get( '/vmNameList', isAllowedSessionHandler, validate( validateDtos.getClient ), planoLibraryController.vmNameList );
 

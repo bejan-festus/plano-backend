@@ -1509,3 +1509,52 @@ async function getMaxVMLibCode() {
     return false;
   }
 }
+
+export async function fixtureNameList( req, res ) {
+  try {
+    let getFixtureDetails = await planoLibraryService.aggregate( [
+      {
+        $match: {
+          clientId: req.query.clientId,
+          status: 'complete',
+        },
+      },
+      {
+        $group: {
+          _id: '',
+          fixtureName: {
+            $addToSet: {
+              $concat: [
+                '$fixtureCategory',
+                ' - ',
+                { $toString: '$fixtureWidth.value' },
+                '$fixtureWidth.unit',
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          fixtureName: 1,
+        },
+      },
+    ] );
+
+    return res.sendSuccess( getFixtureDetails?.[0]?.fixtureName || [] );
+  } catch ( e ) {
+    logger.error( { functionName: 'fixtureNameList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
+
+export async function vmNameList( req, res ) {
+  try {
+    let getVmDetails = await vmService.find( { clientId: req.query.clientId, status: 'complete' }, { vmName: 1, vmWidth: 1, vmHeight: 1, vmImageUrl: 1 } );
+    return res.sendSuccess( getVmDetails );
+  } catch ( e ) {
+    logger.error( { functionName: 'vmNameList', error: e } );
+    return res.sendError( e, 500 );
+  }
+}
