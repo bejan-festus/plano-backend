@@ -4,7 +4,7 @@ import * as storeService from '../service/store.service.js';
 import * as processedChecklistService from '../service/processedchecklist.service.js';
 import * as userService from '../service/user.service.js';
 import dayjs from 'dayjs';
-import { logger, fileUpload, signedUrl } from 'tango-app-api-middleware';
+import { logger, fileUpload, signedUrl, insertOpenSearchData } from 'tango-app-api-middleware';
 import * as planoTaskService from '../service/planoTask.service.js';
 import * as planoService from '../service/planogram.service.js';
 import * as checklistService from '../service/checklist.service.js';
@@ -598,8 +598,8 @@ export async function updateAnswersv2( req, res ) {
     if ( !taskDetails ) {
       return res.sendError( 'No data found', 204 );
     }
-    // console.log( req.body.answers[0] );
-    // console.log( req.body.answers[0].issues[0] );
+    console.log( req.body.answers[0] );
+    console.log( req.body.answers[0].issues[0] );
     let data = {
       fixtureId: req.body.fixtureId,
       answers: req.body.answers,
@@ -613,13 +613,15 @@ export async function updateAnswersv2( req, res ) {
       storeName: req.body?.storeName,
       storeId: req.body?.storeId,
     };
-    // console.log( '111111', data.answers[0] );
-    // console.log( '111111', data.answers[0].issues[0] );
+    console.log( '111111', data.answers[0] );
+    console.log( '111111', data.answers[0].issues[0] );
     if ( req.body.type==='layout' ) {
       await planoTaskService.updateOne( { planoId: req.body.planoId, taskType: req.body.taskType, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
     } else {
       await planoTaskService.updateOne( { planoId: req.body.planoId, floorId: req.body.floorId, fixtureId: req.body.fixtureId, type: req.body.type, date_string: dayjs().format( 'YYYY-MM-DD' ), ...( taskDetails?._id ) ? { taskId: taskDetails?._id } :{} }, data );
     }
+
+    await insertOpenSearchData( JSON.parse( process.env.OPENSEARCH ).planotaskcompliances, data );
 
     return res.sendSuccess( 'Fixture details updated successfully' );
   } catch ( e ) {
