@@ -698,11 +698,10 @@ export async function uploadVmImage( req, res ) {
     if ( !req.params?.vmId ) {
       return res.sendError( 'id is required', 400 );
     }
-    console.log( req.files );
     let params = {
       Bucket: JSON.parse( process.env.BUCKET ).storeBuilder,
-      Key: `vmType/${req.params.vmId}/${Date.now()}/`,
-      fileName: req.files.file.name,
+      Key: `vmType/${req.params.vmId}/`,
+      fileName: Date.now() +'.'+ req.files?.file?.name?.split( '.' )?.slice( -1 )?.[0],
       ContentType: req.files.file.mimeType,
       body: req.files.file.data,
     };
@@ -770,44 +769,44 @@ export async function getBrandList( req, res ) {
 
       sheet.getRow( 1 ).values = [ 'Brand Name', 'Brand Category', 'Brand SubCategory' ];
 
-      let rowStart = 2;
-      let lockedRowNumber = [];
+      // let rowStart = 2;
+      // let lockedRowNumber = [];
       if ( req.body.emptyDownload ) {
         getBrandDetails = [];
       }
-      getBrandDetails.forEach( ( ele ) => {
-        sheet.getRow( rowStart ).values = [ ele.brandName, ele.category.toString(), ele.subCategory.toString() ];
-        if ( ele.isUsed ) {
-          lockedRowNumber.push( rowStart );
-        }
-        rowStart = rowStart + 1;
-      } );
+      // getBrandDetails.forEach( ( ele ) => {
+      //   sheet.getRow( rowStart ).values = [ ele.brandName, ele.category.toString(), ele.subCategory.toString() ];
+      //   if ( ele.isUsed ) {
+      //     lockedRowNumber.push( rowStart );
+      //   }
+      //   rowStart = rowStart + 1;
+      // } );
 
-      let unlockCellValues = 20000;
-      let splitLoop = [];
+      // let unlockCellValues = 20000;
+      // let splitLoop = [];
 
-      for ( let i=1; i<=unlockCellValues; i+=2000 ) {
-        splitLoop.push( { start: i, end: i + 1999 } );
-      }
+      // for ( let i=1; i<=unlockCellValues; i+=2000 ) {
+      //   splitLoop.push( { start: i, end: i + 1999 } );
+      // }
 
-      await Promise.all( splitLoop.map( ( item ) => {
-        for ( let i=item.start; i<=item.end; i++ ) {
-          const row = sheet.getRow( i );
-          if ( i > rowStart - 1 ) {
-            row.values = [ '', '', '', '', '', '', '', '', '', '' ];
-          }
-          if ( !lockedRowNumber.includes( i ) && i != 1 ) {
-            row.eachCell( ( cell ) => {
-              cell.protection = { locked: false };
-            } );
-          }
-        }
-      } ) );
+      // await Promise.all( splitLoop.map( ( item ) => {
+      //   for ( let i=item.start; i<=item.end; i++ ) {
+      //     const row = sheet.getRow( i );
+      //     if ( i > rowStart - 1 ) {
+      //       row.values = [ '', '', '', '', '', '', '', '', '', '' ];
+      //     }
+      //     if ( !lockedRowNumber.includes( i ) && i != 1 ) {
+      //       row.eachCell( ( cell ) => {
+      //         cell.protection = { locked: false };
+      //       } );
+      //     }
+      //   }
+      // } ) );
 
-      await sheet.protect( 'password123', {
-        selectLockedCells: false,
-        selectUnlockedCells: true,
-      } );
+      // await sheet.protect( 'password123', {
+      //   selectLockedCells: false,
+      //   selectUnlockedCells: true,
+      // } );
 
       sheet.columns.forEach( ( column ) => {
         let maxLength = 10;
@@ -860,23 +859,35 @@ export async function uploadBrandList( req, res ) {
     let inputData = req.body;
 
     let brandData = inputData.brandData.reduce( ( acc, ele ) => {
-      if ( !acc[ele.brandName] ) {
-        acc[ele.brandName] = {
-          brandName: ele.brandName,
+      let category = ele?.['Brand Category'].split( ',' );
+      let subCategory = ele?.['Brand SubCategory'].split( ',' );
+      if ( !acc[ele['Brand Name']] ) {
+        acc[ele['Brand Name']] = {
+          brandName: ele['Brand Name'],
           clientId: inputData.clientId,
-          category: [ ...new Set( ele?.category?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
-          subCategory: [ ...new Set( ele?.subCategory?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
+          category: [ ...new Set( category?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
+          subCategory: [ ...new Set( subCategory?.filter( ( ele ) => ele ).map( ( ele ) => ele ) ) ],
         };
       } else {
-        acc[ele.brandName].category.push( ...ele.category );
-        if ( ele?.subCategory.length ) {
-          acc[ele.brandName].subCategory.push( ...ele?.subCategory );
+        category.forEach( ( cat ) => {
+          if ( !acc[ele['Brand Name']].category.includes( cat ) ) {
+            acc[ele['Brand Name']].category.push( cat );
+          }
+        } );
+        if ( subCategory.length ) {
+          subCategory.forEach( ( cat ) => {
+            if ( !acc[ele['Brand Name']].subCategory.includes( cat ) ) {
+              acc[ele['Brand Name']].subCategory.push( cat );
+            }
+          } );
         }
       }
       return acc;
     }, {} );
 
-    await planoProductService.deleteMany( { clientId: inputData.clientId, _id: { $nin: inputData.brandUsedList } } );
+    console.log( brandData );
+
+    // await planoProductService.deleteMany( { clientId: inputData.clientId, _id: { $nin: inputData.brandUsedList } } );
     await planoProductService.insertMany( Object.values( brandData ) );
     // await Promise.all( Object.keys( brandData ).map( async ( ele ) => {
     //   await planoProductService.updateOne( { brandName: { $regex: brandData[ele].brandName, $options: 'i' }, clientId: req.body.clientId }, brandData[ele] );

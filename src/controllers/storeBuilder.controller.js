@@ -17,6 +17,7 @@ import * as fixtureConfigService from '../service/fixtureConfig.service.js';
 import * as planoStaticData from '../service/planoStaticData.service.js';
 import * as planoVmService from '../service/planoVm.service.js';
 import * as planotaskService from '../service/processedTaskservice.js';
+import * as layoutService from '../service/storeBuilder.service.js';
 
 
 dayjs.extend( utc );
@@ -4334,7 +4335,11 @@ export async function getTaskDetails( req, res ) {
     ];
 
     let taskInfo = await planotaskService.aggregate( query );
-    let disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ![ 'complete', 'disagree' ].includes( ele.feedbackStatus ) ) || ele.status != 'submit' ) && !ele?.breach );
+    let disabledInfo = [];
+    let floorDetails = await layoutService.findOne( { _id: req.query.floorId }, { isEdited: 1 } );
+    if ( floorDetails && !floorDetails?.isEdited ) {
+      disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ![ 'complete', 'disagree' ].includes( ele.feedbackStatus ) ) || ele.status != 'submit' ) && !ele?.breach );
+    }
     return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false } );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
