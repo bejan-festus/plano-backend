@@ -3267,12 +3267,12 @@ export async function planoList( req, res ) {
       {
         $lookup: {
           from: 'storefixtures',
-          let: { plano: '$_id' },
+          let: { floor: '$layout.id' },
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $eq: [ '$planoId', '$$plano' ],
+                  $eq: [ '$floorId', '$$floor' ],
                 },
               },
             },
@@ -3367,19 +3367,6 @@ export async function planoList( req, res ) {
               },
             },
             { $sort: { _id: -1 } },
-            {
-              $group: {
-                _id: { floorId: '$floorId', type: '$type' },
-                doc: { $first: '$$ROOT' },
-              },
-            },
-            {
-              $project: {
-                type: '$_id.type',
-                floorId: '$_id.floorId',
-                answers: '$doc.answers',
-              },
-            },
             {
               $set: {
                 hasPendingIssues: {
@@ -3952,7 +3939,6 @@ export async function planoList( req, res ) {
     ];
 
     let pendingDetails = await planotaskService.aggregate( taskQuery );
-
     taskQuery = [
       {
         $match: {
@@ -4074,6 +4060,7 @@ export async function planoList( req, res ) {
     ];
 
     pendingDetails = await planoTaskComplianceService.aggregate( taskQuery );
+    // console.log( JSON.stringify( pendingDetails ) );
     let result = {
       data: planoDetails[0].data,
       count: planoDetails?.[0]?.count?.[0]?.total || 0,
