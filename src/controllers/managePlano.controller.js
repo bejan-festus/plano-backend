@@ -1,5 +1,5 @@
 import * as floorService from '../service/storeBuilder.service.js';
-import { logger } from 'tango-app-api-middleware';
+import { logger, insertOpenSearchData } from 'tango-app-api-middleware';
 // import * as storeService from '../service/store.service.js';
 import * as planoService from '../service/planogram.service.js';
 import * as storeFixtureService from '../service/storeFixture.service.js';
@@ -302,8 +302,6 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
               },
             },
           },
-
-
       );
     } else {
       pipeline.push(
@@ -814,7 +812,7 @@ export async function updateredostatus( req, res ) {
 
 export async function updateGlobalComment( req, res ) {
   try {
-    await planoGlobalCommentService.create( {
+    let payload ={
       userId: req.user._id,
       userName: req.user.userName,
       comment: req.body.comment,
@@ -823,7 +821,9 @@ export async function updateGlobalComment( req, res ) {
       floorId: new mongoose.Types.ObjectId( req.body.floorId ),
       taskType: req.body.taskType,
       clientId: req.body.clientId,
-    } );
+    };
+    await planoGlobalCommentService.create( payload );
+    await insertOpenSearchData( JSON.parse( process.env.OPENSEARCH ).planoglobalcomments, payload );
 
     res.sendSuccess( 'updated successfully' );
   } catch ( e ) {
@@ -838,6 +838,8 @@ export async function getGlobalComment( req, res ) {
       floorId: new mongoose.Types.ObjectId( req.body.floorId ),
       taskType: req.body.taskType,
     } );
+
+
     res.sendSuccess( layoutComment );
   } catch ( e ) {
     logger.error( { functionName: 'getGlobalComment', error: e } );
