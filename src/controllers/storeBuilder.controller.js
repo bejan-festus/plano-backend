@@ -3267,12 +3267,12 @@ export async function planoList( req, res ) {
       {
         $lookup: {
           from: 'storefixtures',
-          let: { plano: '$_id' },
+          let: { floor: '$layout.id' },
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $eq: [ '$planoId', '$$plano' ],
+                  $eq: [ '$floorId', '$$floor' ],
                 },
               },
             },
