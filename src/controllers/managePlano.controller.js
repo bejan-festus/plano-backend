@@ -735,6 +735,13 @@ export async function updateStoreFixture( req, res ) {
       };
     }
 
+    if ( data.productResolutionLevel == 'L1' ) {
+      currentFixtureDoc.productBrandName = [ ...new Set( data.productBrandName.map( ( ele ) => ele ) ) ];
+      currentFixtureDoc.productCategory = [ ...new Set( data.productCategory.map( ( ele ) => ele ) ) ];
+      currentFixtureDoc.productSubCategory = [ ...new Set( data.productSubCategory.map( ( ele ) => ele ) ) ];
+    }
+
+
     delete currentFixtureDoc._id;
 
 
