@@ -26,7 +26,7 @@ export async function getplanoFeedback( req, res ) {
     console.log( taskTypes );
     await Promise.all(
         taskTypes.map( async ( type, index ) => {
-          const pipeline = buildPipelineByType( type, req.body.planoId, req.body.floorId, filterByStatus, filterByApprovalStatus );
+          const pipeline = buildPipelineByType( type, req.body.planoId, req.body.floorId, filterByStatus, filterByApprovalStatus, req.body.showtask );
 
           const data = await planoTaskService.aggregate( pipeline );
           console.log( '-------', data );
@@ -56,7 +56,7 @@ export async function getplanoFeedback( req, res ) {
     return res.sendError( e, 500 );
   }
 }
-function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByApprovalStatus ) {
+function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByApprovalStatus, showtask ) {
   console.log( type, planoId, floorId, filterByStatus );
   const matchStage = {
     $match: {
@@ -67,7 +67,7 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
     },
   };
 
-  const taskLookup = {
+  let taskLookup = {
     $lookup: {
       from: 'processedtasks',
       let: { taskId: '$taskId' },
@@ -104,6 +104,34 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
       as: 'taskData',
     },
   };
+  if ( showtask ) {
+    taskLookup = {
+      $lookup: {
+        from: 'processedtasks',
+        let: { taskId: '$taskId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: [ '$_id', '$$taskId' ] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              userName: 1,
+              createdAt: 1,
+              createdByName: 1,
+              submitTime_string: 1,
+            },
+          },
+        ],
+        as: 'taskData',
+      },
+    };
+  }
 
   const unwindTask = { $unwind: { path: '$taskData', preserveNullAndEmptyArrays: false } };
 
@@ -231,91 +259,95 @@ function buildPipelineByType( type, planoId, floorId, filterByStatus, filterByAp
   ];
   if ( filterByApprovalStatus && filterByApprovalStatus != '' ) {
     let filterByApprovalCond = { $eq: filterByApprovalStatus };
-    if ( filterByApprovalStatus != 'pending' ) {
-      filterByApprovalCond = { $ne: 'pending' };
-    }
-    console.log( '*********************' );
+
+    console.log( '*********************', filterByApprovalCond );
     pipeline = [];
     pipeline.push( matchStage );
-    pipeline.push(
-        { $unwind: '$answers' },
-        { $unwind: '$answers.issues' },
-        { $unwind: '$answers.issues.Details' },
-        {
-          $match: {
-            'answers.issues.Details.status': filterByApprovalCond,
-          },
-        },
-        {
-          $group: {
-            _id: '$_id',
-            doc: { $first: '$$ROOT' },
-          },
-        },
-        {
-          $replaceRoot: {
-            newRoot: {
-              $mergeObjects: [ '$doc', { answers: '$doc.originalAnswers' } ],
-            },
-          },
-        },
-        {
-          $project: {
-            originalAnswers: 0, // remove the temp field
-          },
-        },
-        {
-          $addFields: {
-            answers: {
-              $map: {
-                input: {
-                  $cond: [
-                    { $isArray: '$answers' },
-                    '$answers',
-                    { $cond: [ { $gt: [ { $type: '$answers' }, 'missing' ] }, [ '$answers' ], [] ] },
-                  ],
-                },
-                as: 'ans',
-                in: {
-                  $mergeObjects: [
-                    '$$ans',
-                    {
-                      issues: {
-                        $map: {
-                          input: {
-                            $cond: [
-                              { $isArray: '$$ans.issues' },
-                              '$$ans.issues',
-                              { $cond: [ { $gt: [ { $type: '$$ans.issues' }, 'missing' ] }, [ '$$ans.issues' ], [] ] },
-                            ],
-                          },
-                          as: 'issue',
-                          in: {
-                            $mergeObjects: [
-                              '$$issue',
-                              {
-                                Details: {
-                                  $cond: [
-                                    { $isArray: '$$issue.Details' },
-                                    '$$issue.Details',
-                                    { $cond: [ { $gt: [ { $type: '$$issue.Details' }, 'missing' ] }, [ '$$issue.Details' ], [] ] },
-                                  ],
+    if ( filterByApprovalStatus === 'pending' ) {
+      pipeline.push(
+          {
+            $addFields: {
+              answers: {
+                $map: {
+                  input: '$answers',
+                  as: 'ans',
+                  in: {
+                    $mergeObjects: [
+                      '$$ans',
+                      {
+                        issues: {
+                          $map: {
+                            input: '$$ans.issues',
+                            as: 'issue',
+                            in: {
+                              $mergeObjects: [
+                                '$$issue',
+                                {
+                                  Details: {
+                                    $filter: {
+                                      input: '$$issue.Details',
+                                      as: 'detail',
+                                      cond: { $eq: [ '$$detail.status', 'pending' ] },
+                                    },
+                                  },
                                 },
-                              },
-                            ],
+                              ],
+                            },
                           },
                         },
                       },
-                    },
-                  ],
+                    ],
+                  },
                 },
               },
             },
           },
-        },
 
 
-    );
+      );
+    } else {
+      pipeline.push(
+          {
+            $addFields: {
+              answers: {
+                $map: {
+                  input: '$answers',
+                  as: 'ans',
+                  in: {
+                    $mergeObjects: [
+                      '$$ans',
+                      {
+                        issues: {
+                          $map: {
+                            input: '$$ans.issues',
+                            as: 'issue',
+                            in: {
+                              $mergeObjects: [
+                                '$$issue',
+                                {
+                                  Details: {
+                                    $filter: {
+                                      input: '$$issue.Details',
+                                      as: 'detail',
+                                      cond: { $ne: [ '$$detail.status', 'pending' ] },
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+
+
+      );
+    }
     pipeline.push( taskLookup );
     pipeline.push( unwindTask );
     pipeline.push( ...commonLookups );
@@ -644,14 +676,16 @@ export async function updateFixtureStatus( req, res ) {
         },
 
     );
-    let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
-    if ( allTaskDone.length === 0 ) {
-      await planoService.updateOne(
-          {
-            _id: new mongoose.Types.ObjectId( req.body.planoId ),
-          },
-          { $set: { planoProgress: 100 } },
-      );
+    if ( vmTask.length>0 ) {
+      let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
+      if ( allTaskDone.length === 0 ) {
+        await planoService.updateOne(
+            {
+              _id: new mongoose.Types.ObjectId( req.body.planoId ),
+            },
+            { $set: { planoProgress: 100 } },
+        );
+      }
     }
     res.sendSuccess( 'updated successfully' );
   } catch ( e ) {
