@@ -264,7 +264,10 @@ export async function createTask( req, res ) {
           let getUserEmail = req.body.stores.find( ( ele ) => ele.store.toLowerCase() == store.storeName.toLowerCase() );
           let planoDetails = await planoService.findOne( { storeName: store.storeName } );
           if ( planoDetails ) {
-            let floorDetails = await floorService.find( { planoId: planoDetails._id, ...( req.body?.floorId ) ? { _id: req.body?.floorId }:{} }, { _id: 1, floorName: 1 } );
+            const [ floorDetails, floorCount ] = await Promise.all( [
+              await floorService.find( { planoId: planoDetails._id, ...( req.body?.floorId ) ? { _id: req.body?.floorId }:{} }, { _id: 1, floorName: 1 } ),
+              await floorService.count( { planoId: planoDetails._id } ),
+            ] );
             for ( let i=0; i<floorDetails.length; i++ ) {
               if ( getUserEmail ) {
                 let query = [
@@ -284,7 +287,7 @@ export async function createTask( req, res ) {
                 userDetails = userDetails[0];
               }
               let taskData = { ...data };
-              if ( floorDetails.length > 1 ) {
+              if ( floorCount > 1 ) {
                 taskData.checkListName = taskData.checkListName +' - '+ floorDetails[i].floorName;
               }
               taskData.floorId = floorDetails[i]._id;
