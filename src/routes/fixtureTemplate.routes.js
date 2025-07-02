@@ -14,5 +14,6 @@ fixtureTemplateRouter
     .post( '/getTemplateList', validate( validateDtos.fixtureVMListSchema ), fixtureTemplateController.getTemplateList )
     .get( '/getTemplateDetails', validate( validateDtos.queryTemplateId ), fixtureTemplateController.getTemplateDetails )
     .post( '/updateFixtureTask', validate( validateDtos.updateFixtureTask ), fixtureTemplateController.updateFixtureTask )
-    .post( '/getAllTemplates', fixtureTemplateController.getAllTemplates );
+    .post( '/getAllTemplates', fixtureTemplateController.getAllTemplates )
+    .get( '/getTemplate', validate( validateDtos.queryTemplateId ), fixtureTemplateController.getFixtureTemplate );
 
