@@ -125,7 +125,7 @@ export async function createTask( req, res ) {
       if ( !taskInfo ) {
         return res.sendError( 'No data found', 204 );
       }
-      await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: 'open', redoStatus: true, date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(), scheduleEndTime_iso: dayjs.utc( scheduleEndTime, 'hh:mm A' ).format(), date_string: dayjs().format( 'YYYY-MM-DD' ) } );
+      await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: 'open', redoStatus: true, date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ), scheduleStartTime_iso: dayjs.utc( '12:00 AM', 'hh:mm A' ).format(), scheduleEndTime_iso: dayjs.utc( scheduleEndTime, 'hh:mm A' ).format(), date_string: dayjs().format( 'YYYY-MM-DD' ), date_iso: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } );
       return res.sendSuccess( 'Task redo triggered successfully' );
     } else {
       let taskDetails = await taskService.find( { isPlano: true, client_id: req.body.clientId, ...( req.body.checkListName )? { checkListName: req.body.checkListName } : {} } );
@@ -264,7 +264,10 @@ export async function createTask( req, res ) {
           let getUserEmail = req.body.stores.find( ( ele ) => ele.store.toLowerCase() == store.storeName.toLowerCase() );
           let planoDetails = await planoService.findOne( { storeName: store.storeName } );
           if ( planoDetails ) {
-            let floorDetails = await floorService.find( { planoId: planoDetails._id, ...( req.body?.floorId ) ? { _id: req.body?.floorId }:{} }, { _id: 1, floorName: 1 } );
+            const [ floorDetails, floorCount ] = await Promise.all( [
+              await floorService.find( { planoId: planoDetails._id, ...( req.body?.floorId ) ? { _id: req.body?.floorId }:{} }, { _id: 1, floorName: 1 } ),
+              await floorService.count( { planoId: planoDetails._id } ),
+            ] );
             for ( let i=0; i<floorDetails.length; i++ ) {
               if ( getUserEmail ) {
                 let query = [
@@ -284,7 +287,7 @@ export async function createTask( req, res ) {
                 userDetails = userDetails[0];
               }
               let taskData = { ...data };
-              if ( floorDetails.length > 1 ) {
+              if ( floorCount > 1 ) {
                 taskData.checkListName = taskData.checkListName +' - '+ floorDetails[i].floorName;
               }
               taskData.floorId = floorDetails[i]._id;
@@ -299,6 +302,9 @@ export async function createTask( req, res ) {
                 await planoTaskService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId } );
                 planoProgress = 25;
                 await processedService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId, isPlano: true } );
+              } else {
+                let type = req.body.checkListName == 'Fixture Verification' ? 'fixture' :'vm';
+                await planoTaskService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId, type: type } );
               }
               await planoService.updateOne( { _id: planoDetails?._id }, { $set: { planoProgress } } );
               for ( let j=0; j<req.body.days; j++ ) {
@@ -521,6 +527,9 @@ export async function updateStatus( req, res ) {
       email: req.user.email,
       comment: req.body.comments,
     };
+    if ( req.body.status == 'inprogress' ) {
+      await processedService.updateOne( { planoId: taskDetails.planoId, userEmail: taskDetails.userEmail, store_id: taskDetails.store_id, ...( taskDetails?.floorId ) ? { floorId: taskDetails.floorId } : {}, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } }, { checklistStatus: 'inprogress', startTime_string: timeString } );
+    }
     await processedService.updateOne( { _id: req.body.taskId }, { checklistStatus: req.body.status, ...( req.body.status == 'inprogress' ) ? { startTime_string: timeString } : { submitTime_string: timeString }, comments: { $push: comments } } );
     if ( req.body.status == 'submit' ) {
       await processedService.deleteMany( { planoId: taskDetails.planoId, userEmail: taskDetails.userEmail, store_id: taskDetails.store_id, ...( taskDetails?.floorId ) ? { floorId: taskDetails.floorId } : {}, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } } );
@@ -592,6 +601,7 @@ export async function updateAnswers( req, res ) {
     return res.sendError( e, 500 );
   }
 }
+
 export async function updateAnswersv2( req, res ) {
   try {
     let taskDetails = await processedService.findOne( { _id: new mongoose.Types.ObjectId( req.body.taskId ) } );

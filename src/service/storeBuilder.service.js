@@ -47,3 +47,7 @@ export async function upsertOne( query, record ) {
       { upsert: true, new: true },
   );
 }
+
+export async function count( query ) {
+  return model.storeLayoutModel.countDocuments( query );
+}
