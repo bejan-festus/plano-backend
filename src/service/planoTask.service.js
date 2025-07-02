@@ -34,6 +34,6 @@ export async function deleteMany( query ) {
   return model.planoTaskCompliance.deleteMany( query );
 }
 
-export async function findAndSort( query={},field={},sort={} ) {
-  return model.planoTaskCompliance.findOne( query, field ).sort(sort);
+export async function findAndSort( query={}, field={}, sort={} ) {
+  return model.planoTaskCompliance.findOne( query, field ).sort( sort );
 }
