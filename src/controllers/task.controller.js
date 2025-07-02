@@ -534,6 +534,20 @@ export async function updateStatus( req, res ) {
     if ( req.body.status == 'submit' ) {
       await processedService.deleteMany( { planoId: taskDetails.planoId, userEmail: taskDetails.userEmail, store_id: taskDetails.store_id, ...( taskDetails?.floorId ) ? { floorId: taskDetails.floorId } : {}, date_iso: { $gt: new Date( dayjs().format( 'YYYY-MM-DD' ) ) } } );
     }
+    let vmTask = await planoTaskService.find(
+        {
+          planoId: new mongoose.Types.ObjectId( taskDetails.planoId ),
+          floorId: new mongoose.Types.ObjectId( taskDetails.floorId ),
+          type: 'vm',
+        },
+
+    );
+    if ( vmTask.length>0 ) {
+      let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
+      if ( allTaskDone.length === 0 ) {
+        await floorService.updateOne( { _id: new mongoose.Types.ObjectId( taskDetails.floorId ) }, { planoProgress: 100 } );
+      }
+    }
     return res.sendSuccess( 'Task status updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'storeLayout', error: e } );
@@ -632,20 +646,7 @@ export async function updateAnswersv2( req, res ) {
     }
 
     await insertOpenSearchData( JSON.parse( process.env.OPENSEARCH ).planotaskcompliances, data );
-    let vmTask = await planoTaskService.find(
-        {
-          planoId: new mongoose.Types.ObjectId( req.body.planoId ),
-          floorId: new mongoose.Types.ObjectId( req.body.floorId ),
-          type: 'vm',
-        },
 
-    );
-    if ( vmTask.length>0 ) {
-      let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
-      if ( allTaskDone.length === 0 ) {
-        await floorService.updateOne( { _id: new mongoose.Types.ObjectId( req.body.floorId ) }, { planoProgress: 100 } );
-      }
-    }
     return res.sendSuccess( 'Fixture details updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateAnswers', error: e } );
