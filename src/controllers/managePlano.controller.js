@@ -1,7 +1,7 @@
 import * as floorService from '../service/storeBuilder.service.js';
 import { logger, insertOpenSearchData } from 'tango-app-api-middleware';
 // import * as storeService from '../service/store.service.js';
-// import * as planoService from '../service/planogram.service.js';
+import * as planoService from '../service/planogram.service.js';
 import * as storeFixtureService from '../service/storeFixture.service.js';
 import * as fixtureShelfService from '../service/fixtureShelf.service.js';
 // import * as planoProductService from '../service/planoProduct.service.js';
@@ -518,6 +518,8 @@ export async function updateStorePlano( req, res ) {
         } );
       }
     } );
+
+    await planoService.updateOne( { _id: floorData.toObject().planoId }, { $set: { updatedAt: new Date() } } );
 
     res.sendSuccess( 'Updated Successfully' );
   } catch ( e ) {
