@@ -306,7 +306,7 @@ export async function createTask( req, res ) {
                 let type = req.body.checkListName == 'Fixture Verification' ? 'fixture' :'vm';
                 await planoTaskService.deleteMany( { planoId: planoDetails?._id, floorId: taskData?.floorId, type: type } );
               }
-              await planoService.updateOne( { _id: planoDetails?._id }, { $set: { planoProgress } } );
+              await floorService.updateOne( { _id: taskData?.floorId }, { planoProgress } );
               for ( let j=0; j<req.body.days; j++ ) {
                 let currDate = dayjs().add( j, 'day' );
                 let time = '12:00 AM';

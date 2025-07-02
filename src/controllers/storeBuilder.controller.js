@@ -2645,7 +2645,7 @@ export async function storeFixturesv2( req, res ) {
             { storeId: { $in: req.body.id } },
           ],
         },
-        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1, validateShelfSections: 1, planoProgress: 1 },
+        { storeId: 1, storeName: 1, planoId: '$_id', productResolutionLevel: 1, scanType: 1, clientId: 1, validateShelfSections: 1 },
     );
 
     if ( !planograms?.length ) return res.sendError( 'No data found', 204 );
@@ -4528,14 +4528,11 @@ export async function getTaskDetails( req, res ) {
 
     let taskInfo = await planotaskService.aggregate( query );
     let disabledInfo = [];
-    const [ floorDetails, planoDetails ] = await Promise.all( [
-      await layoutService.findOne( { _id: req.query.floorId }, { isEdited: 1 } ),
-      await planoService.findOne( { _id: req.query.planoId }, { planoProgress: 1 } ),
-    ] );
+    let floorDetails = await layoutService.findOne( { _id: req.query.floorId }, { isEdited: 1, planoProgress: 1 } );
     if ( floorDetails && !floorDetails?.isEdited ) {
       disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ![ 'complete', 'disagree' ].includes( ele.feedbackStatus ) ) || ele.status != 'submit' ) && !ele?.breach );
     }
-    return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false, planoProgress: planoDetails?.planoProgress ?? 25 } );
+    return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false, planoProgress: floorDetails?.planoProgress ?? 25 } );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
     return res.sendError( e, 500 );
