@@ -4528,11 +4528,14 @@ export async function getTaskDetails( req, res ) {
 
     let taskInfo = await planotaskService.aggregate( query );
     let disabledInfo = [];
-    let floorDetails = await layoutService.findOne( { _id: req.query.floorId }, { isEdited: 1 } );
+    const [ floorDetails, planoDetails ] = await Promise.all( [
+      await layoutService.findOne( { _id: req.query.floorId }, { isEdited: 1 } ),
+      await planoService.findOne( { _id: req.query.planoId }, { planoProgress: 1 } ),
+    ] );
     if ( floorDetails && !floorDetails?.isEdited ) {
       disabledInfo = taskInfo?.[0]?.taskStatus?.filter( ( ele ) => ( ( ele.feedbackStatus && ![ 'complete', 'disagree' ].includes( ele.feedbackStatus ) ) || ele.status != 'submit' ) && !ele?.breach );
     }
-    return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false } );
+    return res.sendSuccess( { taskDetails: taskInfo?.[0]?.taskStatus, disabled: disabledInfo?.length ? true : false, planoProgress: planoDetails?.planoProgress ?? 25 } );
   } catch ( e ) {
     logger.error( { functionName: 'getTaskDetails', error: e } );
     return res.sendError( e, 500 );
