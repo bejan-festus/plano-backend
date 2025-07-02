@@ -677,12 +677,7 @@ export async function updateFixtureStatus( req, res ) {
     if ( vmTask.length>0 ) {
       let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
       if ( allTaskDone.length === 0 ) {
-        await planoService.updateOne(
-            {
-              _id: new mongoose.Types.ObjectId( req.body.planoId ),
-            },
-            { $set: { planoProgress: 100 } },
-        );
+        await floorService.updateOne( { _id: taskData?.floorId }, { planoProgress: 100 } );
       }
     }
     res.sendSuccess( 'updated successfully' );

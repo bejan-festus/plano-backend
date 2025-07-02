@@ -632,7 +632,20 @@ export async function updateAnswersv2( req, res ) {
     }
 
     await insertOpenSearchData( JSON.parse( process.env.OPENSEARCH ).planotaskcompliances, data );
+    let vmTask = await planoTaskService.find(
+        {
+          planoId: new mongoose.Types.ObjectId( req.body.planoId ),
+          floorId: new mongoose.Types.ObjectId( req.body.floorId ),
+          type: 'vm',
+        },
 
+    );
+    if ( vmTask.length>0 ) {
+      let allTaskDone = vmTask.filter( ( data ) => data.status === 'incomplete' );
+      if ( allTaskDone.length === 0 ) {
+        await floorService.updateOne( { _id: taskData?.floorId }, { planoProgress: 100 } );
+      }
+    }
     return res.sendSuccess( 'Fixture details updated successfully' );
   } catch ( e ) {
     logger.error( { functionName: 'updateAnswers', error: e } );
