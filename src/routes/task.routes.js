@@ -5,7 +5,7 @@ import * as taskController from '../controllers/task.controller.js';
 export const storeBuilderTaskRouter = express.Router();
 
 storeBuilderTaskRouter
-    .post( '/createTask', taskController.createTask )
+    .post( '/createTask', isAllowedSessionHandler, taskController.createTask )
     .post( '/createPlano', isAllowedSessionHandler, taskController.createPlano )
     .get( '/taskDetails', isAllowedSessionHandler, taskController.getTaskDetails )
     .post( '/uploadImage', isAllowedSessionHandler, taskController.uploadImage )
