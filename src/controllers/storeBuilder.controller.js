@@ -3013,10 +3013,10 @@ export async function storeFixturesTaskv2( req, res ) {
 
                             const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
 
-                            const compliance = await planoTaskComplianceService.findOne( {
+                            const compliance = await planoTaskComplianceService.findAndSort( {
                               fixtureId: fixture._id,
-                              type: req.body?.type ? req.body.type : 'fixture', date_string: req.body.date,
-                            }, { status: 1, answers: 1, taskType: 1 } );
+                              type: req.body?.type ? req.body.type : 'fixture',
+                            }, { status: 1, answers: 1, taskType: 1 }, { _id: -1 } );
 
                             const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3113,10 +3113,10 @@ export async function storeFixturesTaskv2( req, res ) {
 
                       const vmCount = await planoMappingService.count( { fixtureId: fixture._id, type: 'vm' } );
 
-                      const compliance = await planoTaskComplianceService.findOne( {
+                      const compliance = await planoTaskComplianceService.findAndSort( {
                         fixtureId: fixture._id,
-                        type: req.body?.type ? req.body.type : 'fixture', date_string: req.body.date,
-                      }, { status: 1, answers: 1, taskType: 1 } );
+                        type: req.body?.type ? req.body.type : 'fixture',
+                      }, { status: 1, answers: 1, taskType: 1 }, { _id: -1 } );
 
                       const shelves = await fixtureShelfService.findAndSort( { fixtureId: fixture._id }, { }, { shelfNumber: 1 } );
 
@@ -3241,13 +3241,26 @@ export async function planoList( req, res ) {
               },
             },
             {
-              $group: {
-                _id: '',
-                layoutDetails: { $push: { k: '$_id', v: '$status', planoId: '$$plano' } },
+              $project: {
+                _id: 0,
+                id: '$_id',
+                floorName: 1,
+                floorNumber: 1,
               },
             },
+            // {
+            //   $group: {
+            //     _id: '',
+            //     layoutDetails: { $push: { k: '$_id', v: '$status', planoId: '$$plano' } },
+            //   },
+            // },
           ],
           as: 'layout',
+        },
+      },
+      {
+        $set: {
+          layoutCount: { $size: '$layout' },
         },
       },
       { $unwind: { path: '$layout', preserveNullAndEmptyArrays: true } },
@@ -3279,13 +3292,14 @@ export async function planoList( req, res ) {
       {
         $lookup: {
           from: 'processedtasks',
-          let: { plano: '$_id' },
+          let: { floor: '$layout.id' },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: [ '$planoId', '$$plano' ] },
+                    // { $eq: [ '$planoId', '$$plano' ] },
+                    { $eq: [ '$floorId', '$$floor' ] },
                     { $eq: [ '$isPlano', true ] },
                     {
                       $lte: [ '$date_iso', new Date( dayjs().format( 'YYYY-MM-DD' ) ) ],
@@ -3335,15 +3349,17 @@ export async function planoList( req, res ) {
         $lookup: {
           from: 'planotaskcompliances',
           let: {
-            plano: '$_id',
+            // plano: '$_id',
             task: { $ifNull: [ '$taskIds', [] ] },
+            floor: '$layout.id',
           },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: [ '$planoId', '$$plano' ] },
+                    // { $eq: [ '$planoId', '$$plano' ] },
+                    { $eq: [ '$floorId', '$$floor' ] },
                     // { $in: [ '$taskId', pendingDetails.map( ( ele ) => ele.taskId ) ] },
                     // { $eq: [ '$taskType', 'initial' ] },
                   ],
@@ -3351,6 +3367,19 @@ export async function planoList( req, res ) {
               },
             },
             { $sort: { _id: -1 } },
+            {
+              $group: {
+                _id: { floorId: '$floorId', type: '$type' },
+                doc: { $first: '$$ROOT' },
+              },
+            },
+            {
+              $project: {
+                type: '$_id.type',
+                floorId: '$_id.floorId',
+                answers: '$doc.answers',
+              },
+            },
             {
               $set: {
                 hasPendingIssues: {
@@ -3388,11 +3417,46 @@ export async function planoList( req, res ) {
                     },
                   },
                 },
+                hasDisagreeIssues: {
+                  $anyElementTrue: {
+                    $map: {
+                      input: {
+                        $reduce: {
+                          input: '$answers',
+                          initialValue: [],
+                          in: {
+                            $concatArrays: [
+                              '$$value',
+                              {
+                                $reduce: {
+                                  input: { $ifNull: [ '$$this.issues', [] ] },
+                                  initialValue: [],
+                                  in: {
+                                    $concatArrays: [
+                                      '$$value',
+                                      { $ifNull: [ '$$this.Details', [] ] },
+                                    ],
+                                  },
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      },
+                      as: 'detail',
+                      in: {
+                        $or: [
+                          { $eq: [ '$$detail.status', 'disagree' ] },
+                        ],
+                      },
+                    },
+                  },
+                },
               },
             },
             {
               $group: {
-                _id: '$floorId',
+                _id: '',
                 layoutCount: {
                   $sum: { $cond: [ { $eq: [ '$type', 'layout' ] }, 1, 0 ] },
                 },
@@ -3429,37 +3493,67 @@ export async function planoList( req, res ) {
                     ],
                   },
                 },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                layoutCount: { $sum: '$layoutCount' },
-                fixtureCount: { $sum: '$fixtureCount' },
-                vmCount: { $sum: '$vmCount' },
-                completeLayout: {
+                layoutDisagree: {
                   $sum: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          { '$gt': [ '$layoutCount', 0 ] },
-                          { '$gt': [ '$layoutPending', 0 ] },
-                          { '$gt': [ '$fixtureCount', 0 ] },
-                          { '$gt': [ '$fixturePending', 0 ] },
-                          { '$gt': [ '$vmCount', 0 ] },
-                          { '$gt': [ '$fixturePending', 0 ] },
-                        ],
-                      },
-                      then: 1,
-                      else: 0,
-                    },
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'layout' ] }, '$hasDisagreeIssues' ] },
+                      1,
+                      0,
+                    ],
                   },
                 },
-                layoutPending: { $sum: '$layoutPending' },
-                fixturePending: { $sum: '$fixturePending' },
-                vmPending: { $sum: '$vmPending' },
+                fixtureDisagree: {
+                  $sum: {
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'fixture' ] }, '$hasDisagreeIssues' ] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                vmDisagree: {
+                  $sum: {
+                    $cond: [
+                      { $and: [ { $eq: [ '$type', 'vm' ] }, '$hasDisagreeIssues' ] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
               },
             },
+            // {
+            //   $group: {
+            //     _id: null,
+            //     layoutCount: { $sum: '$layoutCount' },
+            //     fixtureCount: { $sum: '$fixtureCount' },
+            //     vmCount: { $sum: '$vmCount' },
+            //     completeLayout: {
+            //       $sum: {
+            //         $cond: {
+            //           if: {
+            //             $and: [
+            //               { '$gt': [ '$layoutCount', 0 ] },
+            //               { '$gt': [ '$layoutPending', 0 ] },
+            //               { '$gt': [ '$fixtureCount', 0 ] },
+            //               { '$gt': [ '$fixturePending', 0 ] },
+            //               { '$gt': [ '$vmCount', 0 ] },
+            //               { '$gt': [ '$fixturePending', 0 ] },
+            //             ],
+            //           },
+            //           then: 1,
+            //           else: 0,
+            //         },
+            //       },
+            //     },
+            //     layoutPending: { $sum: '$layoutPending' },
+            //     fixturePending: { $sum: '$fixturePending' },
+            //     vmPending: { $sum: '$vmPending' },
+            //     layoutDisagree: { $sum: '$layoutDisagree' },
+            //     fixtureDisagree: { $sum: '$fixtureDisagree' },
+            //     vmDisagree: { $sum: '$vmDisagree' },
+            //   },
+            // },
             {
               $project: {
                 _id: 0,
@@ -3469,6 +3563,7 @@ export async function planoList( req, res ) {
                       $and: [
                         { $gt: [ '$layoutCount', 0 ] },
                         { $eq: [ '$layoutPending', 0 ] },
+                        { $eq: [ '$layoutDisagree', 0 ] },
                       ],
                     },
                     then: 'complete',
@@ -3488,7 +3583,25 @@ export async function planoList( req, res ) {
                           ],
                         },
                         then: 'pending',
-                        else: '',
+                        else: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                {
+                                  $gt: [ '$layoutCount', 0 ],
+                                },
+                                {
+                                  $gt: [
+                                    '$layoutDisagree',
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                            then: 'disagree',
+                            else: '',
+                          },
+                        },
                       },
                     },
                   },
@@ -3501,6 +3614,7 @@ export async function planoList( req, res ) {
                         {
                           $eq: [ '$fixturePending', 0 ],
                         },
+                        { $eq: [ '$fixtureDisagree', 0 ] },
                       ],
                     },
                     then: 'complete',
@@ -3523,7 +3637,46 @@ export async function planoList( req, res ) {
                           ],
                         },
                         then: 'pending',
-                        else: '',
+                        else: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                {
+                                  $gt: [
+                                    '$fixtureCount',
+                                    0,
+                                  ],
+                                },
+                                {
+                                  $gt: [
+                                    '$fixturePending',
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                            then: 'pending',
+                            else: {
+                              $cond: {
+                                if: {
+                                  $and: [
+                                    {
+                                      $gt: [ '$fixtureCount', 0 ],
+                                    },
+                                    {
+                                      $gt: [
+                                        '$fixtureDisagree',
+                                        0,
+                                      ],
+                                    },
+                                  ],
+                                },
+                                then: 'disagree',
+                                else: '',
+                              },
+                            },
+                          },
+                        },
                       },
                     },
                   },
@@ -3534,6 +3687,7 @@ export async function planoList( req, res ) {
                       $and: [
                         { $gt: [ '$vmCount', 0 ] },
                         { $eq: [ '$vmPending', 0 ] },
+                        { $eq: [ '$vmDisagree', 0 ] },
                       ],
                     },
                     then: 'complete',
@@ -3546,7 +3700,25 @@ export async function planoList( req, res ) {
                           ],
                         },
                         then: 'pending',
-                        else: '',
+                        else: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                {
+                                  $gt: [ '$vmCount', 0 ],
+                                },
+                                {
+                                  $gt: [
+                                    '$vmDisagree',
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                            then: 'disagree',
+                            else: '',
+                          },
+                        },
                       },
                     },
                   },
@@ -3558,6 +3730,9 @@ export async function planoList( req, res ) {
                 fixtureCount: 1,
                 vmCount: 1,
                 completeLayout: 1,
+                layoutDisagree: 1,
+                fixtureDisagree: 1,
+                vmDisagree: 1,
               },
             },
           ],
@@ -3569,7 +3744,7 @@ export async function planoList( req, res ) {
           storeId: 1,
           storeName: 1,
           layoutName: 1,
-          layoutDetails: '$layout.layoutDetails',
+          layoutDetails: '$layout',
           fixtureCount: '$fixtureDetails.fixtureCount',
           vmCount: '$fixtureDetails.vmCount',
           fixtureCapacity: '$fixtureDetails.fixtureCapacity',
@@ -3577,9 +3752,9 @@ export async function planoList( req, res ) {
           planoProgress: 1,
           createdAt: 1,
           lastUpdate: '$updatedAt',
-          taskDetails: { $ifNull: [ { $arrayElemAt: [ '$taskDetails', 0 ] }, [] ] },
+          taskDetails: { $ifNull: [ { $arrayElemAt: [ '$taskDetails', 0 ] }, {} ] },
           planoTask: { $ifNull: [ '$planoTask', [] ] },
-          layoutCount: { $size: '$layout.layoutDetails' },
+          layoutCount: 1,
         },
       },
     ];
@@ -4133,11 +4308,14 @@ export async function getTaskDetails( req, res ) {
                       if: {
                         $and: [
                           { '$gt': [ '$layoutCount', 0 ] },
-                          { '$gt': [ '$layoutPending', 0 ] },
+                          { '$eq': [ '$layoutPending', 0 ] },
+                          { '$eq': [ '$layoutDisagree', 0 ] },
                           { '$gt': [ '$fixtureCount', 0 ] },
-                          { '$gt': [ '$fixturePending', 0 ] },
+                          { '$eq': [ '$fixturePending', 0 ] },
+                          { '$eq': [ '$fixtureDisagree', 0 ] },
                           { '$gt': [ '$vmCount', 0 ] },
-                          { '$gt': [ '$fixturePending', 0 ] },
+                          { '$eq': [ '$vmPending', 0 ] },
+                          { '$eq': [ '$vmDisagree', 0 ] },
                         ],
                       },
                       then: 1,
